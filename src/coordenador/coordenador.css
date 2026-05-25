@@ -13,6 +13,11 @@
   font-family: 'Poppins', sans-serif;
 }
 
+/* App.css ou index.css */
+main, .pagina-conteudo {
+  padding-top: 64px; /* ajuste para a altura real do seu nav */
+}
+
 .upload-header { margin-bottom: 24px; }
 
 .upload-badge {
