@@ -1,41 +1,26 @@
 // src/coordenador/CadastroProfessores.jsx
 //
-// Tela do coordenador para cadastrar professores.
-// Faz tudo em um passo só:
-// 1. Cria a conta no Firebase Authentication
-// 2. Cria o perfil no Firestore (users/{uid})
-// 3. Vincula o e-mail ao nome no PDF (professores_escola/{emailId})
+// Usa Cloud Functions para criar a conta do professor
+// sem deslogar o coordenador.
 
 import { useState, useEffect } from 'react'
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
-import { collection, getDocs, setDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore'
-import { auth, db } from '../firebase'
-import { Users } from 'lucide-react'
+import { collection, getDocs } from 'firebase/firestore'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { db } from '../firebase'
 import './coordenador.css'
 
-function sanitizarEmail(email) {
-  return email.toLowerCase().replace(/[@.]/g, '_')
-}
-
-const FORM_INICIAL = {
-  nome: '',
-  email: '',
-  senha: '',
-  nomePDF: '',
-}
+const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
 
 export default function CadastroProfessores() {
   const [professores, setProfessores] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState(FORM_INICIAL)
-  const [salvando, setSalvando] = useState(false)
-  const [salvo, setSalvo] = useState(false)
-  const [erro, setErro] = useState('')
+  const [loading, setLoading]         = useState(true)
+  const [form, setForm]               = useState(FORM_INICIAL)
+  const [salvando, setSalvando]       = useState(false)
+  const [salvo, setSalvo]             = useState(false)
+  const [erro, setErro]               = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
 
-  useEffect(() => {
-    carregarProfessores()
-  }, [])
+  useEffect(() => { carregarProfessores() }, [])
 
   async function carregarProfessores() {
     const snap = await getDocs(collection(db, 'professores_escola'))
@@ -63,38 +48,16 @@ export default function CadastroProfessores() {
     setErro('')
 
     try {
-      // 1. Salva o usuário atual (coordenador) para relogar depois
-      const coordenador = auth.currentUser
-      const emailCoordenador = coordenador.email
+      // Chama a Cloud Function — não desloga o coordenador!
+      const functions = getFunctions()
+      const criarProfessor = httpsCallable(functions, 'criarProfessor')
 
-      // 2. Cria a conta do professor no Firebase Auth
-      const credencial = await createUserWithEmailAndPassword(
-        auth, form.email, form.senha
-      )
-      const novoUid = credencial.user.uid
-
-      // 3. Cria o perfil no Firestore
-      await setDoc(doc(db, 'users', novoUid), {
-        nome: form.nome,
-        nomeUsuario: '',
-        instituicao: '',
-        modalidade: 'Presencial',
-        email: form.email.toLowerCase(),
-        role: 'professor',
-        criadoEm: serverTimestamp(),
+      await criarProfessor({
+        nome:    form.nome,
+        email:   form.email,
+        senha:   form.senha,
+        nomePDF: form.nomePDF,
       })
-
-      // 4. Vincula e-mail ao nome no PDF
-      const emailId = sanitizarEmail(form.email)
-      await setDoc(doc(db, 'professores_escola', emailId), {
-        email: form.email.toLowerCase(),
-        nomePDF: form.nomePDF.toUpperCase().trim(),
-        criadoEm: serverTimestamp(),
-      })
-
-      // 5. O Firebase Auth troca o usuário logado ao criar nova conta
-      // Precisamos avisar o coordenador para fazer login novamente
-      // Isso é uma limitação do Firebase Client SDK
 
       setForm(FORM_INICIAL)
       setSalvo(true)
@@ -102,24 +65,23 @@ export default function CadastroProfessores() {
       await carregarProfessores()
 
     } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        setErro('Este e-mail já possui uma conta cadastrada.')
-      } else if (error.code === 'auth/invalid-email') {
-        setErro('E-mail inválido.')
-      } else if (error.code === 'auth/weak-password') {
-        setErro('Senha fraca. Use pelo menos 6 caracteres.')
-      } else {
-        setErro('Erro ao cadastrar: ' + error.message)
-      }
+      setErro(error.message || 'Erro ao cadastrar professor.')
     }
 
     setSalvando(false)
   }
 
-  async function handleDeletar(id) {
-    if (!confirm('Remover este professor? Isso não apaga a conta de acesso dele.')) return
-    await deleteDoc(doc(db, 'professores_escola', id))
-    setProfessores(prev => prev.filter(p => p.id !== id))
+  async function handleDeletar(email) {
+    if (!confirm('Remover este professor? Isso apaga a conta de acesso dele.')) return
+
+    try {
+      const functions = getFunctions()
+      const deletarProfessor = httpsCallable(functions, 'deletarProfessor')
+      await deletarProfessor({ email })
+      await carregarProfessores()
+    } catch (error) {
+      alert('Erro ao remover: ' + error.message)
+    }
   }
 
   return (
@@ -129,11 +91,10 @@ export default function CadastroProfessores() {
         <h2 className='upload-titulo'>Cadastro de Professores</h2>
         <p className='upload-desc'>
           Cadastre o professor criando a conta de acesso e vinculando ao nome
-          que aparece no PDF do horário.
+          que aparece no PDF do horário. O coordenador não é deslogado!
         </p>
       </div>
 
-      {/* Formulário */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
 
         <div className='perfil-grupo'>
@@ -154,20 +115,16 @@ export default function CadastroProfessores() {
             <input
               className='perfil-input'
               type={mostrarSenha ? 'text' : 'password'}
-              name='senha'
-              value={form.senha}
+              name='senha' value={form.senha}
               onChange={handleChange}
               placeholder='Mínimo 6 caracteres'
               style={{ paddingRight: 80 }}
             />
-            <button
-              onClick={() => setMostrarSenha(v => !v)}
-              style={{
-                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 11, color: '#888', fontFamily: 'Poppins, sans-serif',
-              }}
-            >
+            <button onClick={() => setMostrarSenha(v => !v)} style={{
+              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 11, color: '#888', fontFamily: 'Poppins, sans-serif',
+            }}>
               {mostrarSenha ? 'Ocultar' : 'Mostrar'}
             </button>
           </div>
@@ -179,9 +136,7 @@ export default function CadastroProfessores() {
         <div className='perfil-grupo'>
           <label className='perfil-label'>Nome no PDF do horário (MAIÚSCULAS)</label>
           <input
-            className='perfil-input'
-            name='nomePDF'
-            value={form.nomePDF}
+            className='perfil-input' name='nomePDF' value={form.nomePDF}
             onChange={e => setForm({ ...form, nomePDF: e.target.value.toUpperCase() })}
             placeholder='Ex: GETULIO, MARIA JOSÉ, ADILSON'
             style={{ textTransform: 'uppercase' }}
@@ -195,20 +150,16 @@ export default function CadastroProfessores() {
 
         {salvo && (
           <div className='upload-sucesso'>
-            ✅ Professor cadastrado com sucesso! Ele já pode fazer login com o e-mail e senha definidos.
+            ✅ Professor cadastrado! Ele já pode fazer login com o e-mail e senha definidos.
           </div>
         )}
 
-        <button
-          className='upload-btn'
-          onClick={handleSalvar}
-          disabled={salvando}
-        >
+        <button className='upload-btn' onClick={handleSalvar} disabled={salvando}>
           {salvando ? 'Cadastrando...' : 'Cadastrar professor'}
         </button>
       </div>
 
-      {/* Lista */}
+      {/* Lista de professores */}
       <div className='sec-titulo' style={{ fontFamily: 'Poppins, sans-serif' }}>
         Professores cadastrados ({professores.length})
       </div>
@@ -240,34 +191,21 @@ export default function CadastroProfessores() {
               {p.nomePDF?.charAt(0) || '?'}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>
-                {p.nomePDF}
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>{p.nomePDF}</div>
               <div style={{ fontSize: 11, color: '#888' }}>{p.email}</div>
             </div>
-            <button onClick={() => handleDeletar(p.id)}
+            <button onClick={() => handleDeletar(p.email)}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: 16, opacity: 0.4, transition: 'opacity .15s', padding: '2px 6px',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = '1'}
               onMouseLeave={e => e.currentTarget.style.opacity = '0.4'}
-              title='Remover vínculo'
+              title='Remover professor'
             >🗑️</button>
           </div>
         ))
       )}
-
-      {/* Aviso importante */}
-      <div style={{
-        marginTop: 20, padding: '12px 14px', borderRadius: 8,
-        background: '#FAEEDA', border: '0.5px solid #f0d0a0',
-        fontSize: 12, color: '#633806', fontFamily: 'Poppins, sans-serif',
-        lineHeight: 1.5,
-      }}>
-        ⚠️ <strong>Atenção:</strong> Ao cadastrar um professor, você será deslogado automaticamente
-        pelo Firebase. Faça login novamente com sua conta de coordenador.
-      </div>
     </div>
   )
 }

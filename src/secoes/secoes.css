@@ -1,5 +1,3 @@
-/* src/secoes/secoes.css */
-
 /* ── Dia seletor (Cronogramas) ── */
 .dia-seletor {
   display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
@@ -103,7 +101,7 @@
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
@@ -116,14 +114,16 @@
   font-weight: 500;
 }
 
-/* Célula de cada dia — quadrada e centralizada */
+/* Célula de cada dia — retângulo com número no canto superior direito */
 .cal-dia {
-  aspect-ratio: 1 / 1;          /* força célula quadrada */
+  aspect-ratio: 2 / 1.2;        /* retângulo maior */
+  width: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  border-radius: 50%;            /* círculo perfeito */
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  font-size: 14px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background .15s;
   position: relative;
@@ -139,12 +139,6 @@
   font-weight: 600;
 }
 
-/* Dia selecionado */
-.cal-dia.selecionado {
-  background: #6F3B9D;
-  color: #fff;
-  font-weight: 700;
-}
 
 /* Ponto laranja embaixo dos dias com evento */
 .cal-dia.tem-evento::after {
@@ -195,6 +189,14 @@
   box-shadow: 0 8px 32px rgba(111,59,157,0.18);
   display: flex; flex-direction: column; gap: 12px;
   max-height: 90vh; overflow-y: auto;
+  overflow: visible;
+  position: relative;
+  z-index: 1001;
+}
+
+/* Remover scroll quando dropdown está aberto */
+.modal.dropdown-aberto {
+  overflow-y: visible;
 }
 .modal-titulo {
   font-size: 15px; font-weight: 700; color: #1a1a1a;
@@ -226,10 +228,144 @@
   padding: 9px 12px; border-radius: 8px;
   border: 1px solid var(--borda); font-size: 13px;
   font-family: 'Poppins', sans-serif; color: var(--texto);
-  outline: none; transition: border-color .15s; width: 100%;
+  outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
   box-sizing: border-box;
 }
-.perfil-input:focus { border-color: var(--roxo); }
+.perfil-input:focus { border-color: var(--roxo); box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.1); }
+
+/* Select/Dropdown customizado */
+select.perfil-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236F3B9D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select.perfil-input:hover {
+  border-color: var(--roxo);
+  background-color: var(--roxo-claro);
+}
+
+select.perfil-input:focus {
+  border-color: var(--roxo);
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.1);
+}
+
+/* Customizar opções do select */
+select.perfil-input option {
+  background: #fff;
+  color: var(--texto);
+  padding: 10px;
+  border-radius: 6px;
+  margin: 2px 0;
+}
+
+select.perfil-input option:hover {
+  background: var(--roxo);
+  color: #fff;
+}
+
+select.perfil-input option:checked {
+  background: var(--roxo);
+  color: #fff;
+}
+
+/* ── Dropdown customizado ── */
+.perfil-grupo {
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+}
+
+.dropdown-trigger {
+  transition: all .15s;
+}
+.dropdown-trigger:hover {
+  border-color: var(--roxo) !important;
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.08);
+}
+.dropdown-trigger:focus {
+  outline: none;
+  border-color: var(--roxo) !important;
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.1);
+}
+
+.dropdown-trigger .arrow {
+  transition: transform .3s ease;
+}
+
+.dropdown-trigger.aberto .arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--roxo);
+  border-radius: 8px;
+  overflow: visible;
+  z-index: 99999;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: slideDown .15s ease-out;
+  min-width: 150px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: white;
+  color: var(--texto);
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all .1s;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dropdown-item:hover {
+  background-color: #F1EDF4;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:active {
+  background: var(--roxo);
+  color: #fff;
+}
+
+.dropdown-item:first-child {
+  border-radius: 7px 7px 0 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 7px 7px;
+}
 
 /* ── Vazio ── */
 .secao-vazia {

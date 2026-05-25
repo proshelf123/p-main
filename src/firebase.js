@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD4EN941sdYO3uyTEhhj37mViV8t2Sgf8s",
@@ -18,3 +19,4 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, 'firestoreproshelf');       // Firestore (banco de dados)
 export const storage = getStorage(app);    // Storage (arquivos)
+export const functions = getFunctions(app);
