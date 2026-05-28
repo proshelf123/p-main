@@ -201,7 +201,7 @@ export default function Bemvindo({
       >
         <div className='bv-header-texto'>
           <h1 className='bv-saudacao'>
-            {eCoordenador ? '👑 ' : ''}
+            {eCoordenador ? ' ' : ''}
             {saudacao(nome)}
           </h1>
           <p className='bv-subtitulo'>

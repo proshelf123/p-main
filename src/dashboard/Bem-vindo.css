@@ -3,8 +3,8 @@
 
 /* ── Wrapper geral ── */
 .bv-wrapper {
-  padding: 2rem 2.5rem 3rem;
-  max-width: 1100px;
+  padding: 3rem 0rem ;
+  max-width: 100em;
   margin: 0 auto;
 }
 
