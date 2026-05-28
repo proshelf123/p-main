@@ -7,6 +7,9 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore')
 
 initializeApp()
 
+// ── Aponta para o banco correto ──
+const db = getFirestore('firestoreproshelf')
+
 function sanitizarEmail(email) {
   return email.toLowerCase().replace(/[@.]/g, '_')
 }
@@ -15,25 +18,26 @@ function sanitizarEmail(email) {
 //  Criar professor
 // ─────────────────────────────────────────────────────────
 exports.criarProfessor = onCall(
-  { cors: true }, // ← permite chamadas de qualquer origem
+  { cors: true },
   async (request) => {
     const { auth, data } = request
 
-    // 1. Verifica autenticação
     if (!auth) {
       throw new HttpsError('unauthenticated', 'Você precisa estar logado.')
     }
 
-    // 2. Verifica se é coordenador
-    const db = getFirestore()
+    // Verifica se é coordenador no banco correto
     const coordSnap = await db.collection('users').doc(auth.uid).get()
+
     if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
-      throw new HttpsError('permission-denied', 'Apenas coordenadores podem cadastrar professores.')
+      throw new HttpsError(
+        'permission-denied',
+        'Apenas coordenadores podem cadastrar professores.'
+      )
     }
 
     const { nome, email, senha, nomePDF } = data
 
-    // 3. Valida campos
     if (!nome || !email || !senha || !nomePDF) {
       throw new HttpsError('invalid-argument', 'Preencha todos os campos.')
     }
@@ -42,7 +46,6 @@ exports.criarProfessor = onCall(
     }
 
     try {
-      // 4. Cria o usuário no Firebase Auth
       const authAdmin = getAuth()
       const novoUsuario = await authAdmin.createUser({
         email: email.toLowerCase(),
@@ -50,7 +53,6 @@ exports.criarProfessor = onCall(
         displayName: nome,
       })
 
-      // 5. Cria o perfil no Firestore
       await db.collection('users').doc(novoUsuario.uid).set({
         nome,
         nomeUsuario: '',
@@ -61,7 +63,6 @@ exports.criarProfessor = onCall(
         criadoEm: FieldValue.serverTimestamp(),
       })
 
-      // 6. Vincula e-mail ao nome no PDF
       const emailId = sanitizarEmail(email)
       await db.collection('professores_escola').doc(emailId).set({
         email: email.toLowerCase(),
@@ -92,7 +93,6 @@ exports.deletarProfessor = onCall(
       throw new HttpsError('unauthenticated', 'Não autenticado.')
     }
 
-    const db = getFirestore()
     const coordSnap = await db.collection('users').doc(auth.uid).get()
     if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
       throw new HttpsError('permission-denied', 'Apenas coordenadores podem remover professores.')
@@ -117,7 +117,7 @@ exports.deletarProfessor = onCall(
     } catch (error) {
       if (error.code === 'auth/user-not-found') {
         const emailId = sanitizarEmail(email)
-        await getFirestore().collection('professores_escola').doc(emailId).delete()
+        await db.collection('professores_escola').doc(emailId).delete()
         return { sucesso: true, mensagem: 'Vínculo removido.' }
       }
       throw new HttpsError('internal', error.message)
