@@ -62,7 +62,7 @@ export default function Arquivos({ uid }) {
 
   return (
     <div className='card'>
-      <div className='card-titulo'>📁 Arquivos</div>
+      <div className='card-titulo'>Arquivos</div>
 
       {loading ? (
         <p className='secao-vazia'>Carregando...</p>

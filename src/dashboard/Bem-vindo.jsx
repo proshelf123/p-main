@@ -276,17 +276,6 @@ export default function Bemvindo({
             <MiniCalendario eventos={eventos} />
           </div>
 
-          {/* Próximos eventos */}
-          <div className='bv-card-aside'>
-            <div className='bv-secao-header'>
-              <div className='bv-secao-titulo'>
-                <Clock size={15} />
-                <h2>Próximos eventos</h2>
-              </div>
-            </div>
-            <ProximosEventos eventos={eventos} />
-          </div>
-
         </aside>
       </div>
     </div>

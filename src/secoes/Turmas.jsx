@@ -310,7 +310,7 @@ export default function Turmas({ uid }) {
   return (
     <div className='card'>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div className='card-titulo' style={{ marginBottom: 0 }}>👥 Turmas</div>
+        <div className='card-titulo' style={{ marginBottom: 0, marginRight: '15px', }}>Turmas</div>
         <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => { setErroTurma(''); setModalTurma(true) }}>
           + Nova turma
         </button>

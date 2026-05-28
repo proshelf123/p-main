@@ -49,7 +49,7 @@ export default function CadastroProfessores() {
 
     try {
       // Chama a Cloud Function — não desloga o coordenador!
-      const functions = getFunctions()
+      const functions = getFunctions(undefined, 'us-central1')
       const criarProfessor = httpsCallable(functions, 'criarProfessor')
 
       await criarProfessor({
@@ -75,7 +75,7 @@ export default function CadastroProfessores() {
     if (!confirm('Remover este professor? Isso apaga a conta de acesso dele.')) return
 
     try {
-      const functions = getFunctions()
+      const functions = getFunctions(undefined, 'us-central1')
       const deletarProfessor = httpsCallable(functions, 'deletarProfessor')
       await deletarProfessor({ email })
       await carregarProfessores()
