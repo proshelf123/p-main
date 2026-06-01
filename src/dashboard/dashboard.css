@@ -34,7 +34,7 @@
   background: var(--branco);
   border-bottom: 1px solid var(--borda);
   box-shadow: 0 2px 12px rgba(111, 59, 157, 0.06);
-  z-index: 50;
+  z-index: 9999;
 }
 
 .cabecalho-logo { justify-self: start; }

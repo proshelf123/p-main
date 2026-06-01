@@ -208,7 +208,7 @@ function TurmaCard({ turma, periodo, onClick }) {
       }}
       onClick={onClick}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, }}>
         <span
           style={{
             fontSize: 20,

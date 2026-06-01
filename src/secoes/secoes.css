@@ -188,8 +188,8 @@
   padding: 24px;
   box-shadow: 0 8px 32px rgba(111,59,157,0.18);
   display: flex; flex-direction: column; gap: 12px;
-  max-height: 90vh; overflow-y: auto;
-  overflow: visible;
+  max-height: 90vh;
+  overflow: visible !important;
   position: relative;
   z-index: 1001;
 }
@@ -222,14 +222,14 @@
 .btn-cancelar:hover { border-color: var(--roxo); color: var(--roxo); }
 
 /* ── Inputs do modal (perfil-grupo/label/input) ── */
-.perfil-grupo { display: flex; flex-direction: column; gap: 4px; }
+.perfil-grupo { display: flex; flex-direction: column; gap: 4px;}
 .perfil-label { font-size: 11px; font-weight: 500; color: var(--texto-sec); }
 .perfil-input {
   padding: 9px 12px; border-radius: 8px;
   border: 1px solid var(--borda); font-size: 13px;
   font-family: 'Poppins', sans-serif; color: var(--texto);
   outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
-  box-sizing: border-box;
+  box-sizing: border-box; z-index: 1; overflow: visible !important;
 }
 .perfil-input:focus { border-color: var(--roxo); box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.1); }
 
@@ -343,7 +343,7 @@ select.perfil-input option:checked {
   display: flex;
   align-items: center;
   text-align: left;
-  white-space: nowrap;
+  white-space: nowrap; 
 }
 
 .dropdown-item:hover {

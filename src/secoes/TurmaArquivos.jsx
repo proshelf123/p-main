@@ -111,10 +111,12 @@ export default function TurmaArquivos({ turma, periodo, onVoltar }) {
             fontWeight: 600,
             cursor: "pointer",
             padding: 0,
-            marginBottom: 12,
+            height: 30,
+            marginBottom: 50,
             display: "flex",
             alignItems: "center",
             gap: 4,
+            borderRadius: 6,
           }}
         >
           ← Voltar para Arquivos
@@ -286,21 +288,6 @@ export default function TurmaArquivos({ turma, periodo, onVoltar }) {
                         gap: 14,
                       }}
                     >
-                      <div
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 10,
-                          background: cor + "15",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 20,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {emoji}
-                      </div>
                       <div style={{ flexGrow: 1, minWidth: 0 }}>
                         <p
                           style={{

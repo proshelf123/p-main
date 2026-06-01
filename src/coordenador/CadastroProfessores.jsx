@@ -95,7 +95,7 @@ export default function CadastroProfessores() {
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20, }}>
 
         <div className='perfil-grupo'>
           <label className='perfil-label'>Nome completo do professor</label>
