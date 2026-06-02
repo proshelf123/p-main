@@ -37,7 +37,12 @@
   z-index: 9999;
 }
 
-.cabecalho-logo { justify-self: start; }
+.cabecalho-logo {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+}
+
 #logo { height: 60px; }
 
 .lista-nav {

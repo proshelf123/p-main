@@ -21,7 +21,7 @@ function saudacao(nome) {
   const primeiro = nome?.split(' ')[0] ?? ''
   if (h < 12) return `Bom dia, ${primeiro}!`
   if (h < 18) return `Boa tarde, ${primeiro}!`
-  return `Boa noite, ${primo}!`
+  return `Boa noite, ${primeiro}!`
 }
 
 // Gera os dias do mês atual para o mini-calendário

@@ -77,14 +77,16 @@ function Dashboard() {
     switch (secaoAtiva) {
       case 'Início':
         return (
-          <Bemvindo
-            professor={professor}
-            uid={uid}
-            cronogramas={cronogramas}
-            eventos={eventos}
-            onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
-            onIrCalendario={() => setSecaoAtiva('Calendário')}
-          />
+          <>
+            <Bemvindo
+              professor={professor}
+              uid={uid}
+              cronogramas={cronogramas}
+              eventos={eventos}
+              onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
+              onIrCalendario={() => setSecaoAtiva('Calendário')}
+            />
+          </>
         )
       case 'Cronogramas':    return <Cronogramas uid={uid} professor={professor} />
       case 'Turmas':         return <Turmas uid={uid} />
@@ -106,18 +108,23 @@ function Dashboard() {
       {/* ── Header ── */}
       <header className='cabecalho-dashboard'>
 
-        {/* Logo clicável leva de volta para Início */}
-        <div
-          className='cabecalho-logo'
-          style={{ cursor: 'pointer' }}
-          onClick={() => setSecaoAtiva('Início')}
-          title='Ir para Início'
-        >
+        {/* Logo */}
+        <div className='cabecalho-logo'>
           <img src={Logo} id='logo' alt='ProShelf' />
         </div>
 
         <nav>
           <ul className='lista-nav'>
+            {/* Botão Home */}
+            <li>
+              <button
+                className={`nav-link ${secaoAtiva === 'Início' ? 'ativo' : ''}`}
+                onClick={() => setSecaoAtiva('Início')}
+              >
+                Home
+              </button>
+            </li>
+
             {/* Seções normais — visíveis para todos */}
             {secoesNav.map(s => (
               <li key={s}>
