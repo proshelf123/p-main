@@ -8,6 +8,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { db } from '../firebase'
 import './coordenador.css'
+import { Trash2 } from 'lucide-react';
 
 const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
 
@@ -202,7 +203,7 @@ export default function CadastroProfessores() {
               onMouseEnter={e => e.currentTarget.style.opacity = '1'}
               onMouseLeave={e => e.currentTarget.style.opacity = '0.4'}
               title='Remover professor'
-            >🗑️</button>
+            ><Trash2 size={16} /></button>
           </div>
         ))
       )}

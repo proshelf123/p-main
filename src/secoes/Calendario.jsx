@@ -3,6 +3,7 @@ import { buscarEventos, criarEvento, deletarEvento } from '../firebase/estrutura
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
 import CustomDatePicker from './dropdown-calendario'
+import { Trash2 } from 'lucide-react';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB']
@@ -160,16 +161,9 @@ export default function Calendario({ uid }) {
         {diaSelecionado && (
           <div style={{ marginTop: 12, borderTop: '1px solid #eee', paddingTop: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', marginRight: 10 }}>
                 {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
               </span>
-              <button
-                className='btn-upload'
-                style={{ marginTop: 0, fontSize: 11, padding: '4px 10px' }}
-                onClick={() => abrirModal(diaSelecionado)}
-              >
-                + Evento
-              </button>
             </div>
             {eventosDiaSel.length === 0 ? (
               <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Nenhum evento neste dia.</p>
@@ -180,7 +174,7 @@ export default function Calendario({ uid }) {
                   <div key={ev.id} className='cal-evento' style={{ borderLeftColor: tipo.cor }}>
                     <div className='cal-evento-nome'>{ev.titulo}</div>
                     <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                    <button className='arquivo-acao' onClick={() => handleDeletar(ev.id)} title='Remover'>🗑️</button>
+                    <button className='arquivo-acao' onClick={() => handleDeletar(ev.id)} title='Remover'><Trash2 size={16} /></button>
                   </div>
                 )
               })
@@ -193,7 +187,7 @@ export default function Calendario({ uid }) {
       {/* ── Eventos do mês ── */}
       <div className='card'>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos — {MESES[mes]}</div>
+          <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos em: {MESES[mes]}</div>
           <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => abrirModal()}>
             + Novo evento
           </button>
@@ -219,7 +213,7 @@ export default function Calendario({ uid }) {
                 <div className='cal-evento-data'>{formatarData(ev.data)}</div>
                 <div className='cal-evento-nome'>{ev.titulo}</div>
                 <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                <button className='arquivo-acao' onClick={(e) => { e.stopPropagation(); handleDeletar(ev.id) }} title='Remover'>🗑️</button>
+                <button className='arquivo-acao' onClick={(e) => { e.stopPropagation(); handleDeletar(ev.id) }} title='Remover'><Trash2 size={16} /></button>
               </div>
             )
           })

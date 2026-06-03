@@ -15,6 +15,7 @@ import Turmas from '../secoes/Turmas'
 import Arquivos from '../secoes/Arquivos'
 import Calendario from '../secoes/Calendario'
 import Perfil from '../perfil/Perfil'
+import IconePerfil from '../assets/Frame 4.png'
 
 // ── Importações exclusivas do coordenador ──
 import UploadCronograma from '../coordenador/UploadCronograma'
@@ -165,7 +166,7 @@ function Dashboard() {
             onClick={() => setDropdownAberto(v => !v)}
             aria-label='Menu do usuário'
           >
-            <CircleUserRound size={46} color='#6F3B9D' />
+          <img src={IconePerfil} alt='Perfil' className='perfil-icone' />
           </button>
 
           <AnimatePresence>

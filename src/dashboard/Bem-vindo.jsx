@@ -1,7 +1,7 @@
 // src/secoes/Bemvindo.jsx
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, Clock, CalendarDays, ChevronRight, Layers } from 'lucide-react'
+import { BookOpen, Clock, Calendar, ChevronRight, Layers } from 'lucide-react'
 import './Bem-vindo.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -218,7 +218,7 @@ export default function Bemvindo({
             <span>{cronogramas.length} cronograma{cronogramas.length !== 1 ? 's' : ''}</span>
           </div>
           <div className='bv-chip'>
-            <CalendarDays size={14} />
+            <Calendar size={14} />
             <span>
               {eventos.filter(e => new Date(e.data) >= hoje()).length} evento{
                 eventos.filter(e => new Date(e.data) >= hoje()).length !== 1 ? 's' : ''
@@ -266,7 +266,7 @@ export default function Bemvindo({
           <div className='bv-card-aside'>
             <div className='bv-secao-header'>
               <div className='bv-secao-titulo'>
-                <CalendarDays size={15} />
+                <Calendar size={15} />
                 <h2>Calendário</h2>
               </div>
               <button className='bv-link' onClick={onIrCalendario}>

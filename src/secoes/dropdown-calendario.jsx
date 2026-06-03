@@ -1,6 +1,8 @@
 // CustomDatePicker.jsx
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { Calendar } from 'lucide-react';
+
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -205,7 +207,7 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
         <span style={{ color: displayValue ? 'var(--texto)' : '#aaa' }}>
           {displayValue ?? 'dd/mm/aaaa'}
         </span>
-        <span style={{ color: 'var(--roxo)', fontSize: 16 }}>📅</span>
+        <span style={{ color: 'var(--roxo)', fontSize: 16 }}><Calendar size={20}/></span>
       </button>
 
       {popup}

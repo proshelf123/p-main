@@ -69,6 +69,9 @@
 .nav-link.ativo { background: var(--roxo); color: #fff; font-weight: 500; }
 
 /* ── Perfil / dropdown ── */
+
+.perfil-icone { width: 60px; height: 60px; border-radius: 50%; }
+
 .perfil-wrapper { justify-self: end; position: relative; }
 
 .perfil-btn {
