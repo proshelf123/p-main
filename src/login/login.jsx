@@ -86,16 +86,17 @@ function Login() {
                             value={senha}
                             onChange={(e) => setSenha(e.target.value)}
                         />
+                        <Link to="/esqueci-senha" className='esqueci'>
+                            Esqueci minha senha
+                        </Link>
                     </div>
-
-                    <Link to="/esqueci-senha" style={{textDecoration:"none", userSelect:"none"}} className='esqueci'>Esqueci minha senha</Link>
 
                     <button className='btn-entrar' onClick={handleLogin}>
                         Entrar
                         <span className="arrow">›</span>
                     </button>
 
-                    <p>Se esse for o seu primeiro acesso, clique <a href='#' className='aqui'>Aqui.</a></p>
+                    <p>Se esse for o seu primeiro acesso, clique <Link to="/primeiro-acesso" className='aqui'>Aqui.</Link></p>
                 </div>
             </div>
         </>

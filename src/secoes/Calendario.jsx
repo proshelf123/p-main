@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { buscarEventos, criarEvento, deletarEvento } from '../firebase/estrutura'
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
+import CustomDatePicker from './dropdown-calendario'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-const DIAS_SEMANA = ['D','S','T','Q','Q','S','S']
+const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB']
 
 const COR_TIPO = {
   reuniao:   { bg: '#EEEDFE', cor: '#6F3B9D', label: 'Reunião' },
@@ -26,14 +27,14 @@ export default function Calendario({ uid }) {
   const [form, setForm] = useState(FORM_INICIAL)
   const [erro, setErro] = useState('')
   const [diaSelecionado, setDiaSelecionado] = useState(null)
-  const [dropdownAberto, setDropdownAberto] = useState(null)  // ← MANTENHA ISTO
+  const [dropdownAberto, setDropdownAberto] = useState(null)
 
   useEffect(() => {
     if (!uid) return
     buscarEventos(uid).then(dados => { setEventos(dados); setLoading(false) })
   }, [uid])
 
-  function diasDoMes(m, a)      { return new Date(a, m + 1, 0).getDate() }
+  function diasDoMes(m, a)         { return new Date(a, m + 1, 0).getDate() }
   function primeiroDiaSemana(m, a) { return new Date(a, m, 1).getDay() }
 
   function temEvento(dia) {
@@ -97,35 +98,59 @@ export default function Calendario({ uid }) {
   const total = diasDoMes(mes, ano)
   const primeiro = primeiroDiaSemana(mes, ano)
   const celulas = Array(primeiro).fill(null).concat(Array.from({ length: total }, (_, i) => i + 1))
-
   const eventosDiaSel = eventosDoDia(diaSelecionado)
 
   return (
     <div className='grid-2'>
-      {/* Calendário visual */}
+
+      {/* ── Calendário visual ── */}
       <div className='card'>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <button className='cal-nav' onClick={() => { if (mes === 0) { setMes(11); setAno(a => a-1) } else setMes(m => m-1) }}>‹</button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{MESES[mes]} {ano}</span>
-          <button className='cal-nav' onClick={() => { if (mes === 11) { setMes(0); setAno(a => a+1) } else setMes(m => m+1) }}>›</button>
+
+        {/* Header roxo pill */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 12,
+          background: 'var(--roxo)',
+          borderRadius: 40,
+          padding: '8px 12px',
+        }}>
+          <button
+            className='cal-nav-header'
+            onClick={() => { if (mes === 0) { setMes(11); setAno(a => a - 1) } else setMes(m => m - 1) }}
+          >
+            ‹
+          </button>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.2 }}>
+            {MESES[mes]} {ano}
+          </span>
+          <button
+            className='cal-nav-header'
+            onClick={() => { if (mes === 11) { setMes(0); setAno(a => a + 1) } else setMes(m => m + 1) }}
+          >
+            ›
+          </button>
         </div>
 
+        {/* Grade do calendário */}
         <div className='cal-grid'>
           {DIAS_SEMANA.map((d, i) => (
             <div key={i} className='cal-dia-label'>{d}</div>
           ))}
           {celulas.map((dia, i) => {
-            const isHoje = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
-            const comEvento = dia && temEvento(dia)
+            if (!dia) return <div key={i} className='cal-dia vazia' />
+            const isHoje     = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
+            const comEvento  = temEvento(dia)
             const isSelecionado = dia === diaSelecionado
             return (
               <div
-                key={i}
+                key={isSelecionado ? `sel-${i}` : i}
                 className={`cal-dia ${isHoje ? 'hoje' : ''} ${comEvento ? 'tem-evento' : ''} ${isSelecionado ? 'selecionado' : ''}`}
-                onClick={() => dia && setDiaSelecionado(dia === diaSelecionado ? null : dia)}
-                style={{ cursor: dia ? 'pointer' : 'default' }}
+                onClick={() => setDiaSelecionado(dia === diaSelecionado ? null : dia)}
+                style={{ cursor: 'pointer' }}
               >
-                {dia || ''}
+                {dia}
               </div>
             )
           })}
@@ -136,13 +161,15 @@ export default function Calendario({ uid }) {
           <div style={{ marginTop: 12, borderTop: '1px solid #eee', paddingTop: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>
-                {String(diaSelecionado).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}
+                {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
               </span>
               <button
                 className='btn-upload'
                 style={{ marginTop: 0, fontSize: 11, padding: '4px 10px' }}
                 onClick={() => abrirModal(diaSelecionado)}
-              >+ Evento</button>
+              >
+                + Evento
+              </button>
             </div>
             {eventosDiaSel.length === 0 ? (
               <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Nenhum evento neste dia.</p>
@@ -160,9 +187,10 @@ export default function Calendario({ uid }) {
             )}
           </div>
         )}
-      </div>
 
-      {/* Eventos do mês */}
+      </div>{/* fim card calendário */}
+
+      {/* ── Eventos do mês ── */}
       <div className='card'>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos — {MESES[mes]}</div>
@@ -198,7 +226,7 @@ export default function Calendario({ uid }) {
         )}
       </div>
 
-      {/* Modal novo evento */}
+      {/* ── Modal novo evento ── */}
       {modalAberto && (
         <div className='modal-overlay' onClick={() => setModalAberto(false)}>
           <div className='modal' onClick={e => e.stopPropagation()}>
@@ -206,19 +234,23 @@ export default function Calendario({ uid }) {
 
             <div className='perfil-grupo'>
               <label className='perfil-label'>Título</label>
-              <input className='perfil-input' value={form.titulo}
-                onChange={e => setForm({...form, titulo: e.target.value})}
-                placeholder='Nome do evento' autoFocus />
+              <input
+                className='perfil-input'
+                value={form.titulo}
+                onChange={e => setForm({ ...form, titulo: e.target.value })}
+                placeholder='Nome do evento'
+                autoFocus
+              />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className='perfil-grupo'>
-                <label className='perfil-label'>Data</label>
-                <input className='perfil-input' type='date' value={form.data}
-                  onChange={e => setForm({...form, data: e.target.value})} />
-              </div>
-              
-              {/* ← USE O NOVO COMPONENTE AQUI */}
+              <CustomDatePicker
+                value={form.data}
+                onChange={(dataStr) => setForm({ ...form, data: dataStr })}
+                eventos={eventos}
+                dropdownAberto={dropdownAberto}
+                setDropdownAberto={setDropdownAberto}
+              />
               <DropdownComPortal
                 label='Tipo'
                 opcoes={Object.values(COR_TIPO).map(v => v.label)}
@@ -235,9 +267,13 @@ export default function Calendario({ uid }) {
 
             <div className='perfil-grupo'>
               <label className='perfil-label'>Descrição (opcional)</label>
-              <textarea className='perfil-input' rows={2} value={form.descricao}
-                onChange={e => setForm({...form, descricao: e.target.value})}
-                placeholder='Detalhes do evento' />
+              <textarea
+                className='perfil-input'
+                rows={2}
+                value={form.descricao}
+                onChange={e => setForm({ ...form, descricao: e.target.value })}
+                placeholder='Detalhes do evento'
+              />
             </div>
 
             {erro && <p style={{ color: '#c0392b', fontSize: 12, margin: '4px 0' }}>{erro}</p>}
@@ -251,6 +287,7 @@ export default function Calendario({ uid }) {
           </div>
         </div>
       )}
+
     </div>
   )
 }

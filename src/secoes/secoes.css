@@ -8,8 +8,19 @@
   font-size: 12px; font-family: 'Poppins', sans-serif;
   cursor: pointer; color: var(--texto-sec); transition: all .15s;
 }
-.dia-btn:hover { border-color: var(--roxo); color: var(--roxo); }
-.dia-btn.ativo { background: var(--roxo); color: #fff; border-color: var(--roxo); }
+.dia-btn:hover { 
+  
+  border-color: var(--roxo); 
+  color: var(--roxo); 
+
+}
+
+.dia-btn.ativo { 
+  
+  background: var(--roxo); 
+  color: #fff; border-color: var(--roxo); 
+
+}
 
 /* ── Aula linha (Cronogramas) ── */
 .aula-linha {
@@ -17,13 +28,37 @@
   padding: 8px 12px; border-radius: 8px;
   margin-bottom: 6px; background: var(--bg);
 }
-.aula-num { font-size: 11px; color: var(--texto-sec); min-width: 48px; }
-.aula-disc {
-  font-size: 12px; font-weight: 500;
-  padding: 3px 12px; border-radius: 20px;
+.aula-num { 
+
+  font-size: 11px; 
+  color: var(--texto-sec); 
+  min-width: 48px; 
+
 }
-.aula-turma { font-size: 12px; color: var(--texto-sec); margin-left: auto; }
-.aula-sala { font-size: 11px; color: #bbb; min-width: 56px; text-align: right; }
+
+.aula-disc {
+
+  font-size: 12px; 
+  font-weight: 500;
+  padding: 3px 12px; 
+  border-radius: 20px;
+
+}
+
+.aula-turma { 
+  font-size: 12px; 
+  color: var(--texto-sec); 
+  margin-left: auto; 
+
+}
+
+.aula-sala { 
+  font-size: 11px; 
+  color: #bbb; 
+  min-width: 56px; 
+  text-align: right; 
+
+}
 
 /* ── Turmas ── */
 .turma-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -98,47 +133,158 @@
 .btn-upload:hover { background: var(--roxo-claro); }
 
 /* ── Calendário ── */
+.cal-nav-header {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 22px;
+  padding: 0 6px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-nav-header:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: 4px;
   margin-bottom: 12px;
+}
+
+/* Labels dos dias da semana — pill roxo */
+.cal-dia-label {
+  font-size: 10px;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  font-weight: 600;
+  background: #B199C7;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* Célula de cada dia — quadrada e compacta */
+.cal-dia {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 5px 7px;
+  font-size: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+  line-height: 1;
+  user-select: none;
+  background: #F1EDF4;
+  color: var(--texto);
+  box-sizing: border-box;
+}
+
+/* Sem hover */
+.cal-dia:hover {
+  background: #F1EDF4;
+}
+
+/* Hoje: anel roxo, sem fundo sólido */
+.cal-dia.hoje {
+  outline: 2px solid var(--roxo);
+  outline-offset: -2px;
+  color: var(--roxo);
+  font-weight: 700;
+  background: #F1EDF4;
+}
+
+/* Hoje + selecionado */
+.cal-dia.hoje.selecionado {
+  outline: none;
+  color: #fff;
+  background: var(--roxo);
+}
+
+/* Selecionado: fundo roxo com animação pop */
+.cal-dia.selecionado {
+  background: var(--roxo);
+  color: #fff;
+  font-weight: 600;
+  animation: cal-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cal-pop {
+  0%   { transform: scale(0.65); opacity: 0.4; }
+  100% { transform: scale(1);    opacity: 1;   }
+}
+
+/* Ponto de evento */
+.cal-dia.tem-evento::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--laranja);
+}
+.cal-dia.hoje.tem-evento::after,
+.cal-dia.selecionado.tem-evento::after {
+  background: #fff;
+}
+
+/* Células vazias — transparentes */
+.cal-dia.vazia {
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
 }
 
 /* Labels dos dias da semana */
 .cal-dia-label {
   font-size: 10px;
-  color: var(--texto-sec);
+  color: white;
   text-align: center;
   padding: 4px 0;
   font-weight: 500;
 }
 
-/* Célula de cada dia — retângulo com número no canto superior direito */
-.cal-dia {
-  aspect-ratio: 2 / 1.2;        /* retângulo maior */
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 12px 16px;
-  font-size: 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background .15s;
-  position: relative;
-  line-height: 1;
-  user-select: none;
-}
+
 .cal-dia:hover:not(:empty) { background: var(--roxo-claro); }
 
-/* Dia atual */
 .cal-dia.hoje {
+  outline: 2px solid var(--roxo);
+  outline-offset: -2px;
+  color: var(--roxo);
+  font-weight: 600;
+  background: transparent;
+}
+ 
+.cal-dia.hoje.selecionado {
+  outline: none;
+  color: #fff;
+}
+
+.cal-dia.selecionado {
   background: var(--roxo);
   color: #fff;
   font-weight: 600;
+  animation: cal-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-
+ 
+@keyframes cal-pop {
+  0%   { transform: scale(0.65); opacity: 0.4; }
+  100% { transform: scale(1);    opacity: 1;   }
+}
 
 /* Ponto laranja embaixo dos dias com evento */
 .cal-dia.tem-evento::after {

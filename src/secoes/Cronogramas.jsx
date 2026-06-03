@@ -3,7 +3,6 @@
 // Busca o cronograma do professor logado em 2 passos:
 // 1. Lê professores_escola/{emailSanitizado} para descobrir o nomePDF
 // 2. Lê cronogramas_escola/{nomePDF}/aulas para pegar as aulas
-
 import { useState, useEffect } from 'react'
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'

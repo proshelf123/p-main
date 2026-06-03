@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
-
 * {
     margin: 0;
     padding: 0;
@@ -17,6 +16,7 @@ body, html {
     height: 100vh;
 }
 
+/* ── Lado roxo ─────────────────────────────────────────────────────────────── */
 .lado-roxo {
     width: 50%;
     background-color: #6F3B9D;
@@ -25,6 +25,7 @@ body, html {
     justify-content: center;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .lado-roxo::before {
@@ -107,7 +108,9 @@ body, html {
     z-index: 1;
 }
 
+/* ── Lado branco ───────────────────────────────────────────────────────────── */
 .lado-branco {
+    --form-width: 380px;
     width: 50%;
     display: flex;
     flex-direction: column;
@@ -117,52 +120,76 @@ body, html {
     padding: 60px;
 }
 
+.logo-login {
+    width: 300px;
+    height: 85px;
+    margin-bottom: 8px;
+}
+
 #acessar {
     font-weight: 400;
     font-size: 28px;
+    margin-bottom: 4px;
 }
 
-.logo-login {
-    position: relative;
-    bottom: 30px;
-    width: 300px;
-    height: 85px;
-}
-
+/* ── Campos ────────────────────────────────────────────────────────────────── */
 .campo {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 60%;
+    width: var(--form-width);
+}
+
+.campo label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
 }
 
 .campo input {
-    padding: 16px;
-    border: 1px solid #ccc;
+    padding: 14px 16px;
+    border: 1.5px solid #ccc;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 15px;
     outline: none;
     width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    color: #222;
 }
 
+.campo input:focus {
+    border-color: #6F3B9D;
+    box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
+}
+
+/* Link dentro do .campo de senha — alinhado à esquerda do input */
 .esqueci {
-    position: relative;
-    right: 160px;
     color: #6F3B9D;
     font-weight: 600;
+    font-size: 14px;
     text-decoration: none;
+    /* align-self não precisa de valor pois o pai (.campo) já tem
+       align-items padrão (stretch), então o link ocupa 100% da largura
+       e o text-align define onde o texto aparece dentro dele */
+    margin-left: 160px;
+    margin-top: 5px;
 }
 
+.esqueci:hover {
+    text-decoration: underline;
+}
+
+/* ── Botão — mesma largura dos inputs ──────────────────────────────────────── */
 .btn-entrar {
-    width: 30%;
-    padding: 10px 20px;
+    width: var(--form-width);
+    padding: 14px 20px;
     background-color: #6F3B9D;
     color: white;
     border: none;
     border-radius: 18px;
     font-size: 18px;
     cursor: pointer;
-    margin-top: 40px;
+    margin-top: 8px;
     position: relative;
     overflow: hidden;
     display: inline-flex;
@@ -173,7 +200,8 @@ body, html {
 }
 
 .btn-entrar:hover {
-    transform: scale(1.06);
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(111, 59, 157, 0.35);
 }
 
 .btn-entrar::before {
@@ -214,4 +242,21 @@ body, html {
 .aqui {
     color: #6F3B9D;
     font-weight: 600;
+    text-decoration: none;
+}
+
+.aqui:hover {
+    text-decoration: underline;
+}
+
+/* ── Responsivo ────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .lado-branco { --form-width: 300px; }
+}
+
+@media (max-width: 768px) {
+    .pagina-login { flex-direction: column; }
+    .lado-roxo    { width: 100%; height: 220px; }
+    .lado-branco  { width: 100%; padding: 32px 24px; --form-width: 90%; }
+    .icone-login  { width: 220px; }
 }
