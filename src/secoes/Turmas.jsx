@@ -21,7 +21,9 @@ const COR_TIPO = {
 }
 
 const PERIODOS = ['Matutino', 'Vespertino', 'Noturno']
-const FORM_TURMA_INICIAL    = { nome: '', disciplina: '', periodo: 'Matutino' }
+
+// 1. Adicionado campos de professor ao estado inicial do formulário
+const FORM_TURMA_INICIAL    = { nome: '', disciplina: '', periodo: 'Matutino', professor: '', professorId: '' }
 const FORM_REGISTRO_INICIAL = { data: '', conteudo: '', descricao: '', informacoes: '', tipo: 'teorica' }
 
 function coresDe(disciplina) {
@@ -36,7 +38,7 @@ export default function Turmas({ uid }) {
   const [registros, setRegistros]             = useState([])
   const [loading, setLoading]                 = useState(true)
   const [modalTurma, setModalTurma]           = useState(false)
-  const [painelRegistro, setPainelRegistro]   = useState(false)  // painel lateral, não modal
+  const [painelRegistro, setPainelRegistro]   = useState(false)
   const [formTurma, setFormTurma]             = useState(FORM_TURMA_INICIAL)
   const [formRegistro, setFormRegistro]       = useState(FORM_REGISTRO_INICIAL)
   const [salvando, setSalvando]               = useState(false)
@@ -44,7 +46,28 @@ export default function Turmas({ uid }) {
   const [erroRegistro, setErroRegistro]       = useState('')
   const [dropdownAberto, setDropdownAberto]   = useState(null)
 
+  // 2. Estados novos para controle da lista de professores cadastrados
+  const [professores, setProfessores]         = useState([])
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
+
   useEffect(() => { if (uid) carregarTurmas() }, [uid])
+
+  // 3. Carrega a lista de professores simulada (Substitua pela sua busca do Firebase se necessário)
+  useEffect(() => {
+    if (uid) {
+      // Se você tiver uma função no banco como 'buscarProfessores(uid)', pode usá-la aqui:
+      // buscarProfessores(uid).then(dados => setProfessores(dados))
+
+      // Lista mocada para testes baseada no seu exemplo:
+      setProfessores([
+        { id: 'prof1', nome: 'Henrique Paulo Dourado' },
+        { id: 'prof2', nome: 'Henrique Silva' },
+        { id: 'prof3', nome: 'Helena Cavalcanti' },
+        { id: 'prof4', nome: 'Maria Souza' },
+        { id: 'prof5', nome: 'Carlos Alberto' }
+      ])
+    }
+  }, [uid])
 
   async function carregarTurmas() {
     const dados = await buscarTurmas(uid)
@@ -66,6 +89,7 @@ export default function Turmas({ uid }) {
     if (!formTurma.disciplina.trim()) { setErroTurma('Informe a disciplina.'); return }
     setSalvando(true)
     try {
+      // formTurma já incluirá as propriedades 'professor' e 'professorId' automaticamente
       await criarTurma(uid, formTurma)
       await carregarTurmas()
       setModalTurma(false)
@@ -102,8 +126,8 @@ export default function Turmas({ uid }) {
 
   function DropdownCustomizado({ label, opcoes, valor, onChange, id }) {
     return (
-      <div className='perfil-grupo' style={{ position: 'relative' }}>
-        {label && <label className='perfil-label'>{label}</label>}
+      <div className='perfil-grupo' style={{ position: 'relative', zIndex: dropdownAberto === id ? 99999 : 'auto' }}>
+      {label && <label className='perfil-label'>{label}</label>}
         <button
           className={`dropdown-trigger ${dropdownAberto === id ? 'aberto' : ''}`}
           onClick={() => setDropdownAberto(dropdownAberto === id ? null : id)}
@@ -137,68 +161,75 @@ export default function Turmas({ uid }) {
 
   const turmasFiltradas = turmas.filter(t => t.disciplina === disciplinaAtiva)
 
+  // 4. Lógica de filtragem em tempo real para os professores cadastrados
+  const professoresFiltrados = formTurma.professor.trim() === ''
+    ? professores
+    : professores.filter(p => p.nome.toLowerCase().includes(formTurma.professor.toLowerCase()))
+
   // ══════════════════════════════════════
   //  TELA: registros de uma turma
   // ══════════════════════════════════════
   if (turmaAberta) {
     return (
       <div className='card' style={{ position: 'relative', minHeight: 400 }}>
-
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          {/* Esquerda: voltar + info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className='btn-voltar' onClick={() => { setTurmaAberta(null); setPainelRegistro(false) }}>
               ← Voltar
             </button>
-
             <div className='registro-info'>
               <div style={{ fontSize: 16, color: '#000000', fontWeight: 600 }}>{turmaAberta.disciplina}</div>
               <div style={{ fontSize: 15, color: '#555' }}>{turmaAberta.nome}</div>
+              {turmaAberta.professor && (
+                <div style={{ fontSize: 12, color: 'var(--roxo)', fontWeight: 500 }}>Prof(a): {turmaAberta.professor}</div>
+              )}
             </div>
           </div>
-
-          {/* Direita: legenda */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-            {Object.entries(COR_TIPO).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: v.bg, flexShrink: 0 }} />
-                <span style={{ fontSize: 16, color: '#444' }}>{v.label}</span>
-              </div>
-            ))}
-          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+  {Object.entries(COR_TIPO).map(([k, v]) => (
+    <div 
+      key={k} 
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', // Alinha a bolinha e o texto perfeitamente pelo centro vertical
+        gap: 8,               // Distância padrão e limpa entre a bolinha e o texto
+        width: '100%' 
+      }}
+    >
+      <div 
+        style={{ 
+          width: 10, 
+          height: 10, 
+          borderRadius: '50%', 
+          background: v.bg, 
+          flexShrink: 0 // Garante que a bolinha não seja esmagada se o texto for longo
+        }} 
+      />
+      <span style={{ fontSize: 16, color: '#444', lineHeight: 1 }}>
+        {v.label}
+      </span>
+    </div>
+  ))}
+</div>
         </div>
 
         {/* Lista de registros */}
         {registros.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <p style={{ fontSize: 13, color: '#aaa', marginBottom: 16 }}>Nenhum registro ainda.</p>
-            <div style={{ fontSize: 12, color: '#bbb' }}>
-              Adicione novos registros de aulas
-            </div>
+            <div style={{ fontSize: 12, color: '#bbb' }}>Adicione novos registros de aulas</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {registros.map((r, idx) => {
               const tipo = COR_TIPO[r.tipo] || COR_TIPO.teorica
               return (
-                <div
-                  key={r.id}
-                  className='registro-pill'
-                  style={{
-                    background: tipo.bg,
-                    animationDelay: `${idx * 50}ms`,
-                  }}
-                >
+                <div key={r.id} className='registro-pill' style={{ background: tipo.bg, animationDelay: `${idx * 50}ms` }}>
                   <span style={{ color: tipo.cor, fontSize: 13, flex: 1 }}>
                     Aula do dia {r.data.split('-').reverse().join('/')} — {r.conteudo}
                   </span>
-                  <button
-                    className='arquivo-acao'
-                    style={{ color: tipo.cor, opacity: 0.6 }}
-                    onClick={() => handleDeletarRegistro(r.id)}
-                    title='Remover'
-                  >
+                  <button className='arquivo-acao' style={{ color: tipo.cor, opacity: 0.6 }} onClick={() => handleDeletarRegistro(r.id)} title='Remover'>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -207,111 +238,66 @@ export default function Turmas({ uid }) {
           </div>
         )}
 
-        {/* Rodapé fixo com texto + botão estilizado */}
-        <div style={{
-          marginTop: 24, paddingTop: 16, borderTop: '1px solid #eee',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 13, color: '#aaa' }}>Adicione novos registros de aulas</span>
-          <button
-            className='btn-upload'
-            style={{ marginTop: 0 }}
-            onClick={() => { setErroRegistro(''); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true) }}
-          >
+          <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => { setErroRegistro(''); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true) }}>
             + Novo registro
           </button>
         </div>
 
-        {/* Painel de novo registro — slide-in pela direita */}
+        {/* Painel de novo registro */}
         {painelRegistro && (
           <>
-            {/* Overlay */}
-            <div
-              onClick={() => setPainelRegistro(false)}
-              style={{
-                position: 'fixed', inset: 0,
-                background: 'rgba(0,0,0,0.25)',
-                zIndex: 1100,
-                backdropFilter: 'blur(2px)',
-              }}
-            />
-
-            {/* Painel */}
-            <div style={{
-              position: 'fixed',
-              top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '100%', maxWidth: 420,
-              background: '#fff',
-              borderRadius: 16,
-              padding: 28,
-              zIndex: 1200,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-              animation: 'painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both',
-              display: 'flex', flexDirection: 'column', gap: 16,
-            }}>
-
-              {/* Título + fechar */}
+            <div onClick={() => setPainelRegistro(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 1100, backdropFilter: 'blur(2px)' }} />
+            <div style={{ 
+  position: 'fixed', 
+  top: '50%', 
+  left: '50%', 
+  transform: 'translate(-50%, -50%)', 
+  width: '100%', 
+  maxWidth: 480, 
+  background: '#fff', 
+  borderRadius: 16, 
+  padding: 28, 
+  zIndex: 1200, 
+  boxShadow: '0 12px 40px rgba(0,0,0,0.18)', 
+  animation: 'painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both', 
+  display: 'flex', 
+  flexDirection: 'column', 
+  gap: 16 
+}}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: '0 0 2px' }}>
-                    Novo registro de aula
-                  </h3>
-                  <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
-                    {turmaAberta.disciplina} · {turmaAberta.nome}
-                  </p>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 2px' }}>Novo registro de aula</h3>
+                  <p style={{ fontSize: 15, color: '#888', margin: 0 }}>{turmaAberta.disciplina} · {turmaAberta.nome}</p>
                 </div>
-                <button onClick={() => setPainelRegistro(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
+                <button onClick={() => setPainelRegistro(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
                   <X size={20} />
                 </button>
               </div>
 
-              {/* Data (Substituído pelo CustomDatePicker) */}
-              <CustomDatePicker
-                value={formRegistro.data}
-                onChange={(dataStr) => setFormRegistro({ ...formRegistro, data: dataStr })}
-                eventos={registros}
-                dropdownAberto={dropdownAberto}
-                setDropdownAberto={setDropdownAberto}
-              />
+              <CustomDatePicker value={formRegistro.data} onChange={(dataStr) => setFormRegistro({ ...formRegistro, data: dataStr })} registros={registros} dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto} />
 
-              {/* Conteúdo */}
               <div className='perfil-grupo'>
                 <label className='perfil-label'>Conteúdo</label>
-                <input className='perfil-input' value={formRegistro.conteudo}
-                  onChange={e => setFormRegistro({ ...formRegistro, conteudo: e.target.value })}
-                  placeholder='Digite o conteúdo que será aplicado na aula' />
+                <input className='perfil-input' value={formRegistro.conteudo} onChange={e => setFormRegistro({ ...formRegistro, conteudo: e.target.value })} placeholder='Digite o conteúdo que será aplicado na aula' />
               </div>
 
-              {/* Descrição */}
               <div className='perfil-grupo'>
                 <label className='perfil-label'>Descrição do conteúdo</label>
-                <textarea className='perfil-input' rows={2} value={formRegistro.descricao}
-                  onChange={e => setFormRegistro({ ...formRegistro, descricao: e.target.value })}
-                  placeholder='Descreva o conteúdo que será aplicado na aula' />
+                <textarea className='perfil-input' rows={2} value={formRegistro.descricao} onChange={e => setFormRegistro({ ...formRegistro, descricao: e.target.value })} placeholder='Descreva o conteúdo que será aplicado na aula' />
               </div>
 
-              {/* Informações adicionais */}
               <div className='perfil-grupo'>
                 <label className='perfil-label'>Informações adicionais</label>
-                <textarea className='perfil-input' rows={2} value={formRegistro.informacoes}
-                  onChange={e => setFormRegistro({ ...formRegistro, informacoes: e.target.value })}
-                  placeholder='Digite outras informações' />
+                <textarea className='perfil-input' rows={2} value={formRegistro.informacoes} onChange={e => setFormRegistro({ ...formRegistro, informacoes: e.target.value })} placeholder='Digite outras informações' />
               </div>
 
-              {/* Tipo — radio pills */}
               <div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                   {Object.entries(COR_TIPO).map(([key, v]) => (
-                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                      <input
-                        type='radio'
-                        name='tipo-registro'
-                        value={key}
-                        checked={formRegistro.tipo === key}
-                        onChange={() => setFormRegistro({ ...formRegistro, tipo: key })}
-style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }}                      />
+                    <label key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', marginLeft: 4, }}>
+                      <input type='radio' name='tipo-registro' value={key} checked={formRegistro.tipo === key} onChange={() => setFormRegistro({ ...formRegistro, tipo: key })} style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }} />
                       <span style={{ fontSize: 12, color: '#444' }}>{v.label}</span>
                     </label>
                   ))}
@@ -320,22 +306,7 @@ style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }}                   
 
               {erroRegistro && <p style={{ color: '#c0392b', fontSize: 12, margin: 0 }}>{erroRegistro}</p>}
 
-              {/* Botão salvar */}
-              <button
-                onClick={handleSalvarRegistro}
-                disabled={salvando}
-                style={{
-                  width: '100%', padding: '14px',
-                  borderRadius: 40, border: 'none',
-                  background: 'var(--roxo)', color: '#fff',
-                  fontSize: 14, fontFamily: "'Poppins', sans-serif",
-                  fontWeight: 600, cursor: salvando ? 'not-allowed' : 'pointer',
-                  opacity: salvando ? 0.6 : 1,
-                  transition: 'opacity 0.15s, transform 0.15s',
-                }}
-                onMouseEnter={e => { if (!salvando) e.currentTarget.style.transform = 'scale(1.02)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-              >
+              <button onClick={handleSalvarRegistro} disabled={salvando} style={{ marginTop: 10,width: '100%', padding: '14px', borderRadius: 40, border: 'none', background: 'var(--roxo)', color: '#fff', fontSize: 14, fontFamily: "'Poppins', sans-serif", fontWeight: 600, cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.6 : 1, transition: 'opacity 0.15s, transform 0.15s' }} onMouseEnter={e => { if (!salvando) e.currentTarget.style.transform = 'scale(1.02)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}>
                 {salvando ? 'Salvando...' : 'Salvar novo registro de aula'}
               </button>
             </div>
@@ -360,7 +331,7 @@ style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }}                   
       ) : turmas.length === 0 ? (
         <>
           <p className='secao-vazia'>Nenhuma turma cadastrada.</p>
-          <button className='btn-upload' onClick={() => { setErroTurma(''); setModalTurma(true) }}>
+          <button className='btn-upload' onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
             + Nova turma
           </button>
         </>
@@ -371,89 +342,108 @@ style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }}                   
               const c = coresDe(d)
               const ativa = disciplinaAtiva === d
               return (
-                <button key={d} className='turma-tab-pill'
-                  style={{
-                    background: ativa ? c.ativo : '#F1EDF4',
-                    color:      ativa ? '#fff'  : '#555',
-                    borderColor: ativa ? c.ativo : 'transparent',
-                    transform: ativa ? 'scale(1.05)' : 'scale(1)',
-                  }}
-                  onClick={() => setDisciplinaAtiva(d)}
-                >
+                <button key={d} className='turma-tab-pill' style={{ background: ativa ? c.ativo : '#F1EDF4', color: ativa ? '#fff' : '#555', borderColor: ativa ? c.ativo : 'transparent', transform: ativa ? 'scale(1.05)' : 'scale(1)' }} onClick={() => setDisciplinaAtiva(d)}>
                   {d}
                 </button>
               )
             })}
-            <button className='turma-tab-pill'
-              style={{ background: 'none', color: 'var(--roxo)', border: '1.5px dashed var(--roxo)', marginLeft: 'auto' }}
-              onClick={() => { setErroTurma(''); setModalTurma(true) }}
-            >
+            <button className='turma-tab-pill' style={{ background: 'none', color: 'var(--roxo)', border: '1.5px dashed var(--roxo)', marginLeft: 'auto' }} onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
               + Nova turma
             </button>
           </div>
 
           <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', margin: '0 0 12px' }}>{disciplinaAtiva}</p>
 
-<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-  {turmasFiltradas.map((t, idx) => {
-    const c = coresDe(t.disciplina)
-    return (
-      <div key={t.id} style={{ position: 'relative' }}>
-        <button className='turma-card-pill'
-          style={{ background: c.bg, color: c.cor, animationDelay: `${idx * 60}ms` }}
-          onClick={() => abrirTurma(t)}
-        >
-          <div style={{ textAlign: 'left' }}>
-            <span style={{ display: 'block', fontWeight: 600, fontSize: 13 }}>{t.nome}</span>
-            <span style={{ fontSize: 11, opacity: 0.75 }}>{t.periodo}</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {turmasFiltradas.map((t, idx) => {
+              const c = coresDe(t.disciplina)
+              return (
+                <div key={t.id} style={{ position: 'relative' }}>
+                  <button className='turma-card-pill' style={{ background: c.bg, color: c.cor, animationDelay: `${idx * 60}ms` }} onClick={() => abrirTurma(t)}>
+                    <div style={{ textAlign: 'left' }}>
+                      <span style={{ display: 'block', fontWeight: 600, fontSize: 13 }}>{t.nome}</span>
+                      <span style={{ fontSize: 11, opacity: 0.75 }}>{t.periodo}</span>
+                    </div>
+                    <span style={{ fontSize: 18, fontWeight: 300 }}>›</span>
+                  </button>
+                  <button onClick={e => handleDeletarTurma(t.id, e)} style={{ position: 'absolute', top: '50%', right: 26, transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.35, transition: 'opacity .15s' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.9'} onMouseLeave={e => e.currentTarget.style.opacity = '0.35'} title='Remover turma'>
+                    <Trash2 size={14} color={c.cor} />
+                  </button>
+                </div>
+              )
+            })}
           </div>
-          <span style={{ fontSize: 18, fontWeight: 300 }}>›</span>
-        </button>
-        <button
-          onClick={e => handleDeletarTurma(t.id, e)}
-          style={{
-            position: 'absolute', 
-            top: '56%', 
-            right: 30, // Alterado de 40 para 26 para ficar bem pertinho da seta!
-            transform: 'translateY(-50%)',
-            background: 'none', border: 'none', cursor: 'pointer',
-            opacity: 0.35, transition: 'opacity .15s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}
-          title='Remover turma'
-        >
-          <Trash2 size={20} color={c.cor} />
-        </button>
-      </div>
-    )
-  })}
-</div>
         </>
       )}
 
-      {/* Modal nova turma */}
+      {/* ── Modal Nova Turma com Autocomplete do Professor ── */}
       {modalTurma && (
         <div className='modal-overlay' onClick={() => setModalTurma(false)}>
           <div className='modal' onClick={e => e.stopPropagation()}>
             <h3 className='modal-titulo'>Nova turma</h3>
+            
             <div className='perfil-grupo'>
               <label className='perfil-label'>Nome da turma</label>
-              <input className='perfil-input' value={formTurma.nome}
-                onChange={e => setFormTurma({ ...formTurma, nome: e.target.value })}
-                placeholder='Ex: 1º RH, 2º Eletrônica' autoFocus />
+              <input className='perfil-input' value={formTurma.nome} onChange={e => setFormTurma({ ...formTurma, nome: e.target.value })} placeholder='Ex: 1º RH, 2º Eletrônica' autoFocus />
             </div>
+            
             <div className='perfil-grupo'>
               <label className='perfil-label'>Disciplina</label>
-              <input className='perfil-input' value={formTurma.disciplina}
-                onChange={e => setFormTurma({ ...formTurma, disciplina: e.target.value })}
-                placeholder='Ex: Matemática, Física, Química' />
+              <input className='perfil-input' value={formTurma.disciplina} onChange={e => setFormTurma({ ...formTurma, disciplina: e.target.value })} placeholder='Ex: Matemática, Física, Química' />
             </div>
-            <DropdownCustomizado label='Período' opcoes={PERIODOS}
-              valor={formTurma.periodo}
-              onChange={periodo => setFormTurma({ ...formTurma, periodo })}
-              id='periodo-turma' />
+
+            {/* 5. Novo Campo Autocomplete de Professor */}
+            <div className='perfil-grupo' style={{ position: 'relative', zIndex: mostrarSugestoes ? 99999 : 'auto' }}>
+  <label className='perfil-label'>Professor</label>
+  <input
+    className='perfil-input'
+    value={formTurma.professor}
+    onChange={e => {
+      setFormTurma({ ...formTurma, professor: e.target.value, professorId: '' })
+      setMostrarSugestoes(true)
+    }}
+    onFocus={() => setMostrarSugestoes(true)}
+    onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
+    placeholder='Digite o nome do professor...'
+  />
+  
+  {/* Menu suspenso de sugestões filtradas */}
+  {mostrarSugestoes && (
+    <div className='dropdown-menu' style={{
+      position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
+      maxHeight: '160px', overflowY: 'auto', zIndex: 1300, boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+    }}>
+      {professoresFiltrados.length > 0 ? (
+        professoresFiltrados.map(p => (
+          <button
+            key={p.id}
+            type='button'
+            className='dropdown-item'
+            onClick={() => {
+              setFormTurma({ ...formTurma, professor: p.nome, professorId: p.id })
+              setMostrarSugestoes(false)
+            }}
+            style={{
+              background: 'white', color: 'var(--texto)', textAlign: 'left',
+              width: '100%', border: 'none', padding: '10px 12px', cursor: 'pointer'
+            }}
+          >
+            {p.nome}
+          </button>
+        ))
+      ) : (
+        <div style={{ padding: '10px 12px', fontSize: 12, color: '#aaa', background: 'white' }}>
+          Nenhum professor encontrado
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
+            <DropdownCustomizado label='Período' opcoes={PERIODOS} valor={formTurma.periodo} onChange={periodo => setFormTurma({ ...formTurma, periodo })} id='periodo-turma' />
+            
             {erroTurma && <p style={{ color: '#c0392b', fontSize: 12, margin: '4px 0' }}>{erroTurma}</p>}
+            
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button className='perfil-salvar' onClick={handleSalvarTurma} disabled={salvando}>
                 {salvando ? 'Salvando...' : 'Salvar turma'}

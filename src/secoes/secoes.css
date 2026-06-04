@@ -466,11 +466,19 @@
 .perfil-grupo { display: flex; flex-direction: column; gap: 4px;}
 .perfil-label { font-size: 11px; font-weight: 500; color: var(--texto-sec); }
 .perfil-input {
-  padding: 9px 12px; border-radius: 8px;
-  border: 1px solid var(--borda); font-size: 13px;
-  font-family: 'Poppins', sans-serif; color: var(--texto);
-  outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
-  box-sizing: border-box; z-index: 1; overflow: visible !important;
+  resize: none;
+  padding: 9px 12px; 
+  border-radius: 8px;
+  border: 1px solid var(--borda); 
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif; 
+  color: var(--texto);
+  outline: none; 
+  transition: border-color .15s, box-shadow .15s; 
+  width: 100%;
+  box-sizing: border-box; 
+  z-index: 1; 
+  overflow: visible !important;
 }
 .perfil-input:focus { border-color: var(--roxo); box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.1); }
 
