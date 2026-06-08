@@ -1,12 +1,11 @@
+
 import { useState, useEffect } from 'react'
-import {
-  buscarTurmas, criarTurma, deletarTurma,
-  buscarRegistros, criarRegistroAula, deletarRegistro
+import { buscarTurmas, criarTurma, deletarTurma,
+  buscarRegistros, criarRegistroAula, deletarRegistro, buscarProfessores
 } from '../firebase/estrutura'
 import './secoes.css'
 import { Trash2, X } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
-
 const COR_DISCIPLINA = {
   'Matemática': { ativo: '#ED235C', bg: '#FCE4EC', cor: '#880e4f' },
   'Física':     { ativo: '#188AF5', bg: '#e3f2fd', cor: '#0d47a1' },
@@ -50,24 +49,15 @@ export default function Turmas({ uid }) {
   const [professores, setProfessores]         = useState([])
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
 
-  useEffect(() => { if (uid) carregarTurmas() }, [uid])
+  useEffect(() => { 
+    if (uid) carregarTurmas() }, [uid])
 
   // 3. Carrega a lista de professores simulada (Substitua pela sua busca do Firebase se necessário)
   useEffect(() => {
-    if (uid) {
-      // Se você tiver uma função no banco como 'buscarProfessores(uid)', pode usá-la aqui:
-      // buscarProfessores(uid).then(dados => setProfessores(dados))
-
-      // Lista mocada para testes baseada no seu exemplo:
-      setProfessores([
-        { id: 'prof1', nome: 'Henrique Paulo Dourado' },
-        { id: 'prof2', nome: 'Henrique Silva' },
-        { id: 'prof3', nome: 'Helena Cavalcanti' },
-        { id: 'prof4', nome: 'Maria Souza' },
-        { id: 'prof5', nome: 'Carlos Alberto' }
-      ])
-    }
-  }, [uid])
+  if (uid) {
+    buscarProfessores().then(dados => setProfessores(dados))
+  }
+}, [uid])
 
   async function carregarTurmas() {
     const dados = await buscarTurmas(uid)

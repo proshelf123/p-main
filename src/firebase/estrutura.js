@@ -1,8 +1,3 @@
-// src/firebase/estrutura.js
-//
-// Funções para salvar e buscar dados no Firestore do ProShelf.
-// Importe as funções que precisar em cada tela.
-//
 // Estrutura do banco:
 //
 // users/{uid}                        → perfil do professor
@@ -20,6 +15,17 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 
+// ═══════════════════════════════════════════════════════════
+//  PROFESSORES
+// ═══════════════════════════════════════════════════════════
+
+import { where } from "firebase/firestore"; // adicione 'where' no import já existente
+
+export async function buscarProfessores() {
+  const q = query(collection(db, "users"), where("role", "==", "professor"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, nome: d.data().nome, email: d.data().email }));
+}
 
 // ═══════════════════════════════════════════════════════════
 //  PERFIL DO PROFESSOR
@@ -68,6 +74,8 @@ export async function criarTurma(uid, dados) {
   return await addDoc(ref, {
     nome: dados.nome || "",
     disciplina: dados.disciplina || "",
+    professor: dados.professor || "",
+    professorId: dados.professorId || "",
     periodo: dados.periodo || "Matutino",
     criadoEm: serverTimestamp(),
   });

@@ -13,7 +13,11 @@
   --borda: #e8e4f0;
 }
 
-* { box-sizing: border-box; }
+* { 
+  box-sizing: border-box; 
+  margin: 0;
+  padding: 0;
+}
 
 .dash-wrapper {
   background: var(--bg);
@@ -41,20 +45,48 @@
   display: flex;
   align-items: center;
   justify-self: start;
+  margin-right: 40px;
 }
 
-#logo { height: 60px; }
+#logo { 
+  height: 60px;
+  display: block;
+  height: 60px;
+}
+
+/* ── Logo Dark Mode (escondido por padrão) ── */
+.logo-escuro {
+  display: none;
+  height: 50px;
+}
+
+/* ── Quando dark mode está ativo ── */
+:root.dark-mode #logo {
+  display: none;
+}
+
+:root.dark-mode .logo-escuro {
+  display: block;
+}
 
 .lista-nav {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   list-style: none;
   padding: 0;
   margin: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.lista-nav li {
+  display: flex;
+  align-items: center;
+  height: 36px;
 }
 
 .nav-link {
-  padding: 7px 16px;
+  padding: 0 18px;
   border-radius: 8px;
   border: none;
   background: none;
@@ -63,10 +95,24 @@
   color: var(--texto-sec);
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
 }
 
-.nav-link:hover { background: var(--roxo-claro); color: var(--roxo); }
-.nav-link.ativo { background: var(--roxo); color: #fff; font-weight: 500; }
+.nav-link:hover { 
+  background: var(--roxo-claro); 
+  color: var(--roxo); 
+}
+
+.nav-link.ativo { 
+  background: var(--roxo); 
+  color: #fff; 
+  font-weight: 600;
+}
 
 /* ── Perfil / dropdown ── */
 
@@ -75,38 +121,68 @@
 .perfil-wrapper { justify-self: end; position: relative; }
 
 .perfil-btn {
-  background: none; border: none; cursor: pointer;
-  display: flex; align-items: center;
-  padding: 4px; border-radius: 50%;
+  background: none; 
+  border: none; 
+  cursor: pointer;
+  display: flex; 
+  align-items: center;
+  padding: 4px; 
+  border-radius: 50%;
   transition: background 0.15s;
 }
+
 .perfil-btn:hover { background: var(--roxo-claro); }
 
 .dropdown {
-  position: absolute; top: calc(100% + 10px); right: 0;
-  background: var(--branco); border: 1px solid var(--borda);
-  border-radius: 12px; padding: 8px; min-width: 190px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 100;
+  position: absolute; 
+  top: calc(100% + 10px); 
+  right: 0;
+  background: var(--branco); 
+  border: 1px solid var(--borda);
+  border-radius: 12px; 
+  padding: 8px; 
+  min-width: 190px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
+  z-index: 100;
 }
 
 .dropdown-nome {
-  font-size: 12px; font-weight: 500; color: #999;
+  font-size: 12px; 
+  font-weight: 500; 
+  color: #999;
   padding: 4px 10px 8px;
 }
 
 .dropdown-item {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 9px 12px; border: none;
-  background: none; border-radius: 8px;
-  font-family: 'Poppins', sans-serif; font-size: 14px;
-  color: var(--texto); cursor: pointer; text-align: left;
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
+  width: 100%; 
+  padding: 9px 12px; 
+  border: none;
+  background: none; 
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif; 
+  font-size: 14px;
+  color: var(--texto); 
+  cursor: pointer; 
+  text-align: left;
   transition: background 0.12s, color 0.12s;
 }
-.dropdown-item:hover { background: var(--roxo-claro); color: var(--roxo); }
+
+.dropdown-item:hover { 
+  background: var(--roxo-claro); 
+  color: var(--roxo); 
+}
+
 .dropdown-item.sair { color: #c0392b; }
 .dropdown-item.sair:hover { background: #fdf0ef; }
 
-.dropdown-divisor { height: 1px; background: var(--borda); margin: 6px 0; }
+.dropdown-divisor { 
+  height: 1px; 
+  background: var(--borda); 
+  margin: 6px 0; 
+}
 
 /* ── Conteúdo principal ── */
 .dash-conteudo {
@@ -147,34 +223,76 @@
 }
 
 .bv-avatar {
-  width: 54px; height: 54px; border-radius: 50%;
-  background: var(--roxo); color: #fff;
-  font-size: 22px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
+  width: 54px; 
+  height: 54px; 
+  border-radius: 50%;
+  background: var(--roxo); 
+  color: #fff;
+  font-size: 22px; 
+  font-weight: 600;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.bv-texto h2 { font-size: 16px; font-weight: 600; color: var(--texto); margin-bottom: 3px; }
-.bv-texto p  { font-size: 12px; color: var(--texto-sec); }
+.bv-texto h2 { 
+  font-size: 16px; 
+  font-weight: 600; 
+  color: var(--texto); 
+  margin-bottom: 3px; 
+}
 
-.bv-stats { margin-left: auto; display: flex; gap: 12px; }
+.bv-texto p  { 
+  font-size: 12px; 
+  color: var(--texto-sec); 
+}
+
+.bv-stats { 
+  margin-left: auto; 
+  display: flex; 
+  gap: 12px; 
+}
 
 .bv-stat {
-  text-align: center; padding: 8px 18px;
-  background: var(--roxo-claro); border-radius: 10px;
+  text-align: center; 
+  padding: 8px 18px;
+  background: var(--roxo-claro); 
+  border-radius: 10px;
 }
-.bv-stat-num { font-size: 20px; font-weight: 600; color: var(--roxo); }
-.bv-stat-label { font-size: 10px; color: #7c5cbf; }
+
+.bv-stat-num { 
+  font-size: 20px; 
+  font-weight: 600; 
+  color: var(--roxo); 
+}
+
+.bv-stat-label { 
+  font-size: 10px; 
+  color: #7c5cbf; 
+}
 
 /* ── Botão adicionar (flutuante) ── */
 .btn-adicionar {
-  position: fixed; bottom: 88px; right: 24px;
-  width: 48px; height: 48px; border-radius: 50%;
-  background: var(--roxo); border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  position: fixed; 
+  bottom: 88px; 
+  right: 24px;
+  width: 48px; 
+  height: 48px; 
+  border-radius: 50%;
+  background: var(--roxo); 
+  border: none; 
+  cursor: pointer;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   box-shadow: 0 4px 16px rgba(111,59,157,.35);
-  transition: background 0.15s; z-index: 40; color: #fff; font-size: 24px;
+  transition: background 0.15s; 
+  z-index: 40; 
+  color: #fff; 
+  font-size: 24px;
 }
+
 .btn-adicionar:hover { background: #5a2f85; }
 
 /* ── Grids ── */
@@ -184,8 +302,11 @@
 @media (max-width: 768px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .bv-stats { display: none; }
-  .lista-nav { gap: 2px; }
-  .nav-link { font-size: 12px; padding: 6px 10px; }
+  .lista-nav { gap: 6px; }
+  .nav-link { 
+    font-size: 12px; 
+    padding: 0 12px;
+  }
 }
 
 /* ── Divisor no nav entre professor e coordenador ── */
@@ -193,7 +314,7 @@
   width: 1px;
   height: 20px;
   background: var(--borda);
-  margin: 0 6px;
+  margin: 0 4px;
   align-self: center;
 }
 

@@ -1,4 +1,5 @@
 // src/dashboard/dashboard.jsx
+// ═ VERSÃO ATUALIZADA COM CONFIGURAÇÕES ═
 
 import './dashboard.css'
 import { useState, useEffect, useRef } from 'react'
@@ -14,8 +15,10 @@ import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
 import Arquivos from '../secoes/Arquivos'
 import Calendario from '../secoes/Calendario'
+import Configuracoes from '../secoes/config'  // ← NOVA IMPORTAÇÃO
 import Perfil from '../perfil/Perfil'
 import IconePerfil from '../assets/Frame 4.png'
+import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 
 // ── Importações exclusivas do coordenador ──
 import UploadCronograma from '../coordenador/UploadCronograma'
@@ -24,7 +27,7 @@ import CadastroProfessores from '../coordenador/CadastroProfessores'
 // Seções visíveis para todos os professores
 // 'Início' é a tela de boas-vindas — não aparece no nav como botão extra,
 // mas é a seção padrão ao abrir o dashboard.
-const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
+const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário',]  // ← ADICIONADO
 
 // Seções extras visíveis só para o coordenador
 const SECOES_COORDENADOR = ['Upload Horário', 'Professores']
@@ -93,6 +96,7 @@ function Dashboard() {
       case 'Turmas':         return <Turmas uid={uid} />
       case 'Arquivos':       return <Arquivos uid={uid} />
       case 'Calendário':     return <Calendario uid={uid} />
+      case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />  // ← NOVO CASE
       // ── Seções exclusivas do coordenador ──
       case 'Upload Horário': return <UploadCronograma />
       case 'Professores':    return <CadastroProfessores />
@@ -112,6 +116,7 @@ function Dashboard() {
         {/* Logo */}
         <div className='cabecalho-logo'>
           <img src={Logo} id='logo' alt='ProShelf' />
+          <img src={LogoDarkMode} id='logo-dark' alt='ProShelf' className='logo-escuro' />
         </div>
 
         <nav>
@@ -189,7 +194,10 @@ function Dashboard() {
                 >
                   <UserRound size={15} /> Editar perfil
                 </button>
-                <button className='dropdown-item'>
+                <button 
+                  className='dropdown-item'
+                  onClick={() => { setSecaoAtiva('Configurações'); setDropdownAberto(false) }}
+                >
                   <Settings size={15} /> Configurações
                 </button>
                 <div className='dropdown-divisor' />

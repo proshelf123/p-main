@@ -17,7 +17,7 @@ function sanitizarEmail(email) {
 // ─────────────────────────────────────────────────────────
 //  Criar professor
 // ─────────────────────────────────────────────────────────
-exports.criarProfessor = onCall(
+exports.criarProfessor = onCall(async (request))
   { cors: true },
   async (request) => {
     const { auth, data } = request
@@ -79,12 +79,11 @@ exports.criarProfessor = onCall(
       throw new HttpsError('internal', 'Erro ao cadastrar: ' + error.message)
     }
   }
-)
 
 // ─────────────────────────────────────────────────────────
 //  Deletar professor
 // ─────────────────────────────────────────────────────────
-exports.deletarProfessor = onCall(
+exports.deletarProfessor = onCall(async (request)
   { cors: true },
   async (request) => {
     const { auth, data } = request

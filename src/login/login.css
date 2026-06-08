@@ -162,6 +162,70 @@ body, html {
     box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
 }
 
+.campo input.input-login-erro {
+    border-color: #d93025;
+    background-color: #fff7f6;
+    animation: tremerErro 0.35s ease;
+}
+
+.campo input.input-login-erro:focus {
+    border-color: #d93025;
+    box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.14);
+}
+
+.mensagem-login-erro {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(217, 48, 37, 0.25);
+    border-radius: 8px;
+    background-color: #fff3f1;
+    color: #b42318;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    animation: aparecerErro 0.35s ease both;
+}
+
+.mensagem-login-erro span {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: #d93025;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+@keyframes aparecerErro {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    70% {
+        opacity: 1;
+        transform: translateY(2px) scale(1);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes tremerErro {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
 /* Link dentro do .campo de senha — alinhado à esquerda do input */
 .esqueci {
     color: #6F3B9D;

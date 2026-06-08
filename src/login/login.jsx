@@ -9,11 +9,19 @@ import { Link } from 'react-router';
 function Login() {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
+    const [erroLogin, setErroLogin] = useState('');
+    const [animacaoErro, setAnimacaoErro] = useState(0);
+
+    const mostrarErro = (mensagem) => {
+        setErroLogin(mensagem);
+        setAnimacaoErro((valorAtual) => valorAtual + 1);
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
         try {
+            setErroLogin('');
             const userCredential = await signInWithEmailAndPassword(auth, email, senha);
             const user = userCredential.user;
             console.log(user);
@@ -23,16 +31,16 @@ function Login() {
             console.error("Erro ao logar:", errorCode);
             
             if (errorCode === 'auth/invalid-credential') {
-                alert("E-mail ou senha incorretos.");
+                mostrarErro("E-mail ou senha incorretos.");
             } else {
-                alert("Ocorreu um erro ao tentar entrar. Tente novamente.");
+                mostrarErro("Ocorreu um erro ao tentar entrar. Tente novamente.");
             }
         }
     };
 
     return (
         <>
-            <div className='pagina-login' onKeyDown={(e) => e.key === 'Enter' && handleLogin()}>
+            <div className='pagina-login' onKeyDown={(e) => e.key === 'Enter' && handleLogin(e)}>
                 <div className='lado-roxo'>
                     <Link to='/' />
                     <img src={LogoMetade} className='icone-login' alt="Ícone de login" />
@@ -74,7 +82,12 @@ function Login() {
                             type="email" 
                             placeholder='Digite seu e-mail' 
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            className={erroLogin ? 'input-login-erro' : ''}
+                            aria-invalid={erroLogin ? 'true' : 'false'}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                setErroLogin('');
+                            }}
                         />
                     </div>
 
@@ -84,8 +97,25 @@ function Login() {
                             type="password" 
                             placeholder='Digite sua senha' 
                             value={senha}
-                            onChange={(e) => setSenha(e.target.value)}
+                            className={erroLogin ? 'input-login-erro' : ''}
+                            aria-invalid={erroLogin ? 'true' : 'false'}
+                            aria-describedby={erroLogin ? 'erro-login' : undefined}
+                            onChange={(e) => {
+                                setSenha(e.target.value);
+                                setErroLogin('');
+                            }}
                         />
+                        {erroLogin && (
+                            <div
+                                key={animacaoErro}
+                                id="erro-login"
+                                className="mensagem-login-erro"
+                                role="alert"
+                            >
+                                <span aria-hidden="true">!</span>
+                                {erroLogin}
+                            </div>
+                        )}
                         <Link to="/esqueci-senha" className='esqueci'>
                             Esqueci minha senha
                         </Link>

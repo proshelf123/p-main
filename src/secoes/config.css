@@ -1,0 +1,494 @@
+/* src/secoes/configuracoes.css */
+
+.configuracoes-container {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Título ── */
+.cfg-titulo {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 32px;
+}
+
+/* ── Cards de configuração ── */
+.cfg-card {
+  background: var(--branco);
+  border: 0.5px solid var(--borda);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.cfg-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d9d3f3;
+}
+
+/* ── Header do card (ícone + título) ── */
+.cfg-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cfg-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.cfg-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 4px;
+}
+
+.cfg-header p {
+  font-size: 13px;
+  color: var(--texto-sec);
+}
+
+/* ── Opções/Linhas de configuração ── */
+.cfg-opcao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--borda);
+}
+
+.cfg-opcao:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cfg-opcao label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+/* ── Toggle Switch ── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: all 0.3s ease;
+  border-radius: 26px;
+  display: flex;
+  align-items: center;
+  padding: 0 3px;
+}
+
+.toggle-label::before {
+  content: '';
+  height: 22px;
+  width: 22px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  position: absolute;
+}
+
+.toggle-switch input:checked + .toggle-label {
+  background-color: var(--roxo);
+}
+
+.toggle-switch input:checked + .toggle-label::before {
+  transform: translateX(22px);
+}
+
+/* ── Grupo de botões (tamanho de fonte) ── */
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-size {
+  padding: 8px 16px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texto-sec);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-size:hover {
+  border-color: var(--roxo);
+  color: var(--roxo);
+}
+
+.btn-size.ativo {
+  background: var(--roxo);
+  border-color: var(--roxo);
+  color: white;
+  font-weight: 600;
+}
+
+/* ── Botões de ação ── */
+.cfg-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.cfg-btn:last-of-type {
+  margin-bottom: 0;
+}
+
+.cfg-btn-primario {
+  background: var(--roxo);
+  color: white;
+}
+
+.cfg-btn-primario:hover {
+  background: #5a2f85;
+}
+
+.cfg-btn-secundario {
+  background: transparent;
+  border: 1.5px solid var(--borda);
+  color: var(--texto);
+}
+
+.cfg-btn-secundario:hover {
+  background: var(--roxo-claro);
+  border-color: var(--roxo);
+  color: var(--roxo);
+}
+
+.cfg-btn-perigo {
+  background: transparent;
+  border: 1.5px solid #e74c3c;
+  color: #c0392b;
+}
+
+.cfg-btn-perigo:hover {
+  background: #fdf0ef;
+  border-color: #c0392b;
+}
+
+/* ── Footer ── */
+.cfg-footer {
+  text-align: center;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 0.5px solid var(--borda);
+}
+
+.cfg-footer p {
+  font-size: 12px;
+  color: var(--texto-sec);
+  margin-bottom: 4px;
+}
+
+.cfg-footer span {
+  font-size: 11px;
+  color: #999;
+}
+
+/* ── Mensagem de feedback ── */
+.msg-feedback {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9998;
+  max-width: 400px;
+}
+
+.msg-sucesso {
+  background: #4CAF50;
+  color: white;
+}
+
+.msg-erro {
+  background: #e74c3c;
+  color: white;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: var(--branco);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 24px;
+}
+
+/* ── Formulário ── */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--texto);
+  background: var(--branco);
+  transition: all 0.15s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--roxo);
+  box-shadow: 0 0 0 3px var(--roxo-claro);
+}
+
+.form-group input:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* ── Botões do modal ── */
+.modal-acoes {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-modal {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-modal:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-modal-confirmar {
+  background: var(--roxo);
+  color: white;
+}
+
+.btn-modal-confirmar:hover:not(:disabled) {
+  background: #5a2f85;
+}
+
+.btn-modal-cancelar {
+  background: var(--roxo-claro);
+  color: var(--roxo);
+}
+
+.btn-modal-cancelar:hover:not(:disabled) {
+  background: #d9d3f3;
+}
+
+/* ── Tamanhos de Fonte Globais (sem transform) ── */
+/* Usa CSS variables para escalar todos os font-sizes */
+
+:root {
+  --font-size-base: 1;
+}
+
+/* Pequeno: reduz 12% */
+:root.font-size-pequeno {
+  --font-size-base: 0.88;
+}
+
+/* Médio: tamanho normal (padrão) */
+:root.font-size-medio {
+  --font-size-base: 1;
+}
+
+/* Grande: aumenta 12% */
+:root.font-size-grande {
+  --font-size-base: 1.12;
+}
+
+/* Aplicar escala em elementos com fonte */
+h1 { font-size: calc(22px * var(--font-size-base)); }
+h2 { font-size: calc(18px * var(--font-size-base)); }
+h3 { font-size: calc(16px * var(--font-size-base)); }
+h4 { font-size: calc(14px * var(--font-size-base)); }
+
+p { font-size: calc(14px * var(--font-size-base)); }
+span { font-size: calc(14px * var(--font-size-base)); }
+button { font-size: calc(14px * var(--font-size-base)); }
+input { font-size: calc(14px * var(--font-size-base)); }
+label { font-size: calc(14px * var(--font-size-base)); }
+a { font-size: calc(14px * var(--font-size-base)); }
+
+.nav-link { font-size: calc(14px * var(--font-size-base)); }
+.card-titulo { font-size: calc(14px * var(--font-size-base)); }
+.bv-texto h2 { font-size: calc(16px * var(--font-size-base)); }
+.bv-texto p { font-size: calc(12px * var(--font-size-base)); }
+.dropdown-item { font-size: calc(14px * var(--font-size-base)); }
+.modal-content h3 { font-size: calc(18px * var(--font-size-base)); }
+
+/* ── Dark Mode ── */
+:root.dark-mode {
+  --bg: #1a1a1a;
+  --branco: #2a2a2a;
+  --texto: #f5f5f5;
+  --texto-sec: #b0b0b0;
+  --borda: #3a3a3a;
+}
+
+:root.dark-mode .cfg-card {
+  background: var(--branco);
+  border-color: var(--borda);
+}
+
+:root.dark-mode .form-group input {
+  background: #1a1a1a;
+  border-color: var(--borda);
+  color: var(--texto);
+}
+
+:root.dark-mode .form-group input:focus {
+  border-color: #9966cc;
+  box-shadow: 0 0 0 3px rgba(153, 102, 204, 0.2);
+}
+
+:root.dark-mode .btn-size {
+  background: transparent;
+  border-color: var(--borda);
+  color: var(--texto-sec);
+}
+
+:root.dark-mode .btn-size:hover {
+  border-color: #9966cc;
+  color: #9966cc;
+}
+
+:root.dark-mode .btn-size.ativo {
+  background: #9966cc;
+  border-color: #9966cc;
+  color: white;
+}
+
+:root.dark-mode .modal-content {
+  background: var(--branco);
+  color: var(--texto);
+}
+
+:root.dark-mode .btn-modal-cancelar {
+  background: rgba(153, 102, 204, 0.2);
+  color: #9966cc;
+}
+
+/* ── Responsivo ── */
+@media (max-width: 768px) {
+  .cfg-titulo {
+    font-size: 22px;
+  }
+
+  .cfg-card {
+    padding: 16px;
+  }
+
+  .cfg-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .btn-group {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-size {
+    width: 100%;
+  }
+
+  .modal-content {
+    max-width: 95%;
+    padding: 20px;
+  }
+}
