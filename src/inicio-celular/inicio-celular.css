@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+/* ══════════════════════════════════════════
+   INICIO MOBILE — layout exclusivo mobile
+   ══════════════════════════════════════════ */
+
+:root {
+  --im-roxo:        #6F3B9D;
+  --im-roxo-escuro: #331C48;
+  --im-laranja:     #FF9D00;
+  --im-cheddar:     #F38100;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Wrapper principal ── */
+.im-wrapper {
+  position: relative;     /* troca fixed por relative */
+  inset: 0;
+  width: 100%;
+  height: 100dvh;         /* mantém altura total da tela */
+  background-color: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Fundo com padrão de ícones educacionais (SVG inline via CSS) ── */
+.im-bg-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;        /* ou 'contain' dependendo da imagem */
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+
+/* ── Círculos laranjas (canto inferior esquerdo, igual ao design) ── */
+.im-circulo-laranja {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background-color: var(--im-cheddar);
+  border-radius: 50%;
+  bottom: 100px;
+  left: -60px;
+  z-index: 1;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.2);
+}
+
+.im-circulo-amarelo {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  background-color: var(--im-laranja);
+  border-radius: 50%;
+  bottom: 60px;
+  left: 60px;
+  z-index: 1;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.2);
+}
+
+/* ── Conteúdo principal ── */
+.im-main {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 32px 160px;
+  gap: 40px;
+}
+
+/* ── Título ── */
+.im-titulo {
+  font-size: 38px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+  line-height: 1.25;
+  user-select: none;
+}
+
+/* ── "inteligente" roxo com barras animadas ── */
+.im-inteligente {
+  color: var(--im-roxo);
+  display: inline-block;    /* troca de inline para inline-block */
+  position: relative;
+  white-space: nowrap;      /* adiciona isso */
+}
+
+.im-com-barra {
+  position: relative;
+  display: inline-block;
+}
+
+.im-sem-barra {
+  position: relative;
+  display: inline-block;
+}
+
+.im-barra-animada {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: 100%;
+  height: 4px;
+  background: var(--im-laranja);
+  transform-origin: left;
+  border-radius: 2px;
+  display: block;
+}
+
+/* ── Botão ── */
+.im-botao {
+  background-color: var(--im-roxo);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  border: none;
+  border-radius: 999px;
+  padding: 18px 56px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 16px rgba(111, 59, 157, 0.35);
+}
+
+/* ── Footer ── */
+.im-footer {
+  position: relative;
+  z-index: 2;
+  background-color: var(--im-roxo-escuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  width: 100%;
+}
+
+.im-logo-footer {
+  height: 36px;
+  width: auto;
+  user-select: none;
+  filter: brightness(0) invert(1); /* garante logo branca no fundo escuro */
+}
+
+/* ── 768px: tablet — só o que muda no tablet ── */
+@media screen and (max-width: 768px) {
+      body {
+    overflow: hidden;
+    height: 100dvh;
+  }
+  
+
+  .im-circulo-laranja,
+  .im-circulo-amarelo {
+    display: none;
+  }
+
+  .im-titulo {
+    font-size: 38px;
+    line-height: 1.5;
+    white-space: normal;    /* remove o nowrap */
+    text-align: center;
+    width: 100%;
+  }
+
+  .im-botao {
+    font-size: 22px;
+    padding: 8px 66px;
+  }
+}
+/* ── 425px: mobile médio — reativa os círculos e reposiciona ── */
+@media screen and (max-width: 425px) {
+  .im-circulo-laranja {
+    display: block;
+    bottom: 320px;
+    left: -60px;
+  }
+
+  .im-circulo-amarelo {
+    display: block;
+    bottom: 280px;
+    left: 60px;
+  }
+}
+
+/* ── 375px: iPhone SE/padrão ── */
+@media screen and (max-width: 375px) {
+  .im-circulo-laranja {
+    bottom: 320px;
+    left: -60px;
+  }
+
+  .im-circulo-amarelo {
+    bottom: 280px;
+    left: 60px;
+  }
+}
+
+/* ── 359px: telas muito pequenas ── */
+@media screen and (max-width: 359px) {
+  .im-titulo {
+    font-size: 30px;
+  }
+
+  .im-botao {
+    font-size: 18px;
+    padding: 14px 40px;
+  }
+
+  .im-circulo-laranja {
+    bottom: 320px;
+    left: -60px;
+  }
+
+  .im-circulo-amarelo {
+    bottom: 300px;
+    left: 60px;
+  }
+}

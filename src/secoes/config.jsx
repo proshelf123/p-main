@@ -7,11 +7,10 @@ import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 
 import { auth } from '../firebase'
 // Se atualizarConfigUser não existir, comente a linha acima e descomente:
 // import { atualizarConfigUser } from '../firebase/estrutura'
-import { Bell, Lock, LogOut, Moon, Moon as MoonIcon } from 'lucide-react'
+import { Bell, Lock, MoonIcon } from 'lucide-react'
 
-function Configuracoes({ uid, professor }) {
+function Configuracoes({ uid }) {
   const [darkMode, setDarkMode] = useState(false)
-  const [fontSize, setFontSize] = useState('Médio')
   const [notificacoes, setNotificacoes] = useState(true)
   const [loading, setLoading] = useState(false)
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' })
@@ -23,24 +22,12 @@ function Configuracoes({ uid, professor }) {
   // ── Carregar configurações do usuário ──
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true'
-    const savedFontSize = localStorage.getItem('fontSize') || 'Médio'
     const savedNotificacoes = localStorage.getItem('notificacoes') !== 'false'
     
     setDarkMode(savedDarkMode)
-    setFontSize(savedFontSize)
     setNotificacoes(savedNotificacoes)
     
     if (savedDarkMode) document.documentElement.classList.add('dark-mode')
-    
-    // Aplicar tamanho de fonte salvo
-    document.documentElement.classList.remove('font-size-pequeno', 'font-size-medio', 'font-size-grande')
-    if (savedFontSize === 'Pequeno') {
-      document.documentElement.classList.add('font-size-pequeno')
-    } else if (savedFontSize === 'Médio') {
-      document.documentElement.classList.add('font-size-medio')
-    } else if (savedFontSize === 'Grande') {
-      document.documentElement.classList.add('font-size-grande')
-    }
   }, [])
 
   // ── Limpar mensagem após 3 segundos ──
@@ -61,24 +48,6 @@ function Configuracoes({ uid, professor }) {
       document.documentElement.classList.add('dark-mode')
     } else {
       document.documentElement.classList.remove('dark-mode')
-    }
-  }
-
-  // ── Mudar tamanho da fonte ──
-  const handleFontSize = (size) => {
-    setFontSize(size)
-    localStorage.setItem('fontSize', size)
-    
-    // Remove todas as classes de tamanho anteriores
-    document.documentElement.classList.remove('font-size-pequeno', 'font-size-medio', 'font-size-grande')
-    
-    // Adiciona a classe correta
-    if (size === 'Pequeno') {
-      document.documentElement.classList.add('font-size-pequeno')
-    } else if (size === 'Médio') {
-      document.documentElement.classList.add('font-size-medio')
-    } else if (size === 'Grande') {
-      document.documentElement.classList.add('font-size-grande')
     }
   }
 
@@ -144,7 +113,6 @@ function Configuracoes({ uid, professor }) {
     
     setLoading(true)
     try {
-      // Implementar revogação de sessão no Firebase
       await auth.signOut()
       setMensagem({ tipo: 'sucesso', texto: 'Desconectado de todos os dispositivos!' })
       setTimeout(() => window.location.href = '/login', 2000)
@@ -202,22 +170,6 @@ function Configuracoes({ uid, professor }) {
               id='dark-toggle'
             />
             <label htmlFor='dark-toggle' className='toggle-label' />
-          </div>
-        </div>
-
-        {/* Font Size */}
-        <div className='cfg-opcao'>
-          <label>Tamanho da Fonte</label>
-          <div className='btn-group'>
-            {['Pequeno', 'Médio', 'Grande'].map(size => (
-              <button
-                key={size}
-                className={`btn-size ${fontSize === size ? 'ativo' : ''}`}
-                onClick={() => handleFontSize(size)}
-              >
-                {size}
-              </button>
-            ))}
           </div>
         </div>
       </motion.div>

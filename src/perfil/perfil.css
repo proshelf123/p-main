@@ -191,3 +191,7 @@
   .perfil-linha-2  { grid-template-columns: 1fr; }
   .perfil-overlay  { align-items: flex-end; }
 }
+/* ── Extra 768px (tablet) ── */
+@media (max-width: 768px) {
+  .perfil-modal { max-width: 94vw; }
+}

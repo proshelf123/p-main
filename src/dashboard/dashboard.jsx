@@ -9,7 +9,7 @@ import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
 import { buscarPerfil } from '../firebase/estrutura'
 import Logo from '../assets/Group 32 (2).png'
-import { CircleUserRound, UserRound, Settings, LogOut, Upload, Users } from 'lucide-react'
+import { CircleUserRound, UserRound, Settings, LogOut, Upload, Users, Menu, X } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
@@ -41,6 +41,7 @@ function Dashboard() {
   const [eventos, setEventos]       = useState([])          // passe os dados reais aqui
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const [perfilAberto, setPerfilAberto]     = useState(false)
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false)
   const dropdownRef = useRef(null)
 
   const eCoordenador = professor?.role === 'coordenador'
@@ -110,14 +111,64 @@ function Dashboard() {
   return (
     <div className='dash-wrapper'>
 
+      {/* ── Overlay + Gaveta mobile ── */}
+      <div
+        className={`nav-mobile-overlay ${menuMobileAberto ? 'aberto' : ''}`}
+        onClick={() => setMenuMobileAberto(false)}
+      />
+      <div className={`nav-mobile-drawer ${menuMobileAberto ? 'aberto' : ''}`}>
+        <span className='nav-mobile-secao-label'>Menu</span>
+        <button
+          className={`nav-link ${secaoAtiva === 'Início' ? 'ativo' : ''}`}
+          onClick={() => { setSecaoAtiva('Início'); setMenuMobileAberto(false) }}
+        >
+          Home
+        </button>
+        {secoesNav.map(s => (
+          <button
+            key={s}
+            className={`nav-link ${secaoAtiva === s ? 'ativo' : ''}`}
+            onClick={() => { setSecaoAtiva(s); setMenuMobileAberto(false) }}
+          >
+            {s}
+          </button>
+        ))}
+        {eCoordenador && (
+          <>
+            <div className='nav-divisor' />
+            <span className='nav-mobile-secao-label'>Coordenador</span>
+            {SECOES_COORDENADOR.map(s => (
+              <button
+                key={s}
+                className={`nav-link nav-link-coord ${secaoAtiva === s ? 'ativo' : ''}`}
+                onClick={() => { setSecaoAtiva(s); setMenuMobileAberto(false) }}
+              >
+                {s === 'Upload Horário' && <Upload size={14} />}
+                {s === 'Professores'    && <Users size={14} />}
+                {s}
+              </button>
+            ))}
+          </>
+        )}
+      </div>
+
       {/* ── Header ── */}
       <header className='cabecalho-dashboard'>
 
         {/* Logo */}
         <div className='cabecalho-logo'>
-          <img src={Logo} id='logo' alt='ProShelf' />
-          <img src={LogoDarkMode} id='logo-dark' alt='ProShelf' className='logo-escuro' />
+          <img src={Logo} alt='ProShelf' className='logo-claro' />
+          <img src={LogoDarkMode} alt='ProShelf' className='logo-escuro' />
         </div>
+
+        {/* Hambúrguer (só mobile) */}
+        <button
+          className='nav-hamburger'
+          onClick={() => setMenuMobileAberto(v => !v)}
+          aria-label='Abrir menu'
+        >
+          {menuMobileAberto ? <X size={22} /> : <Menu size={22} />}
+        </button>
 
         <nav>
           <ul className='lista-nav'>

@@ -19,4 +19,4 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, 'firestoreproshelf');       // Firestore (banco de dados)
 export const storage = getStorage(app);    // Storage (arquivos)
-export const functions = getFunctions(app);
+export const functions = getFunctions(app, 'us-central1');

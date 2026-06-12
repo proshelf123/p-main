@@ -141,3 +141,18 @@
 .registro-info strong {
   color: #6F3B9D;
 }
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVIDADE registro.css — desktop-first
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .pagina-registro { padding: 16px; }
+  .registro-card   { padding: 24px 20px; }
+  .registro-titulo { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+  .registro-card   { padding: 20px 16px; border-radius: 12px; }
+  .registro-titulo { font-size: 18px; }
+  .registro-subtitulo { font-size: 12px; }
+}

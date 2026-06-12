@@ -64,25 +64,26 @@ function Inicio() {
         transition={{ duration: 0.2, ease: "easeOut" }}
         style={{ cursor: "pointer" }}
     >
-       <Link to="/cadastrar-escola" style={{textDecoration:"none",}}>  <motion.a
-            href="#"
-            variants={container}
-            initial="hidden"
-            animate="visible"
-            style={{
-                textDecoration: "none",
-                color: "black",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                userSelect: "none"
-            }}>
-            {text.split("").map((char, index) => (
-                <motion.span key={index} variants={letter}>
-                    {char === " " ? "\u00A0" : char}
-                </motion.span>
-            ))}
-        </motion.a> </Link>
+<Link to="/cadastrar-escola" style={{textDecoration:"none"}}>
+  <motion.span
+    variants={container}
+    initial="hidden"
+    animate="visible"
+    style={{
+      textDecoration: "none",
+      color: "black",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      userSelect: "none"
+    }}>
+    {text.split("").map((char, index) => (
+      <motion.span key={index} variants={letter}>
+        {char === " " ? "\u00A0" : char}
+      </motion.span>
+    ))}
+  </motion.span>
+</Link>
 
         <motion.div
             initial={{ opacity: 0, x: -10, scale: 0.8 }}
@@ -98,8 +99,9 @@ function Inicio() {
         transition={{ duration: 0.2, ease: "easeOut" }}
         style={{ cursor: "pointer" }}
     >
-        <motion.a
-            href="#"
+      <Link to="/login" style={{textDecoration:"none"}}>
+        <motion.span
+            href=""
             variants={container}
             initial="hidden"
             animate="visible"
@@ -109,14 +111,15 @@ function Inicio() {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                userSelect:"none"
+                userSelect:"none",
             }}>
             {text1.split("").map((char, index) => (
                 <motion.span key={index} variants={letter}>
                     {char === " " ? "\u00A0" : char}
                 </motion.span>
             ))}
-        </motion.a>
+        </motion.span>
+</Link>
 
         <motion.div
             initial={{ opacity: 0, x: -10, scale: 0.8 }}
@@ -188,7 +191,7 @@ function Inicio() {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 1.3 }} className='botao-entrar'> <Link to="/login" style={{textDecoration:"none", color:"white", userSelect:"none"}}>Entrar</Link> </motion.button>
+      whileTap={{ scale: 1.3 }} className='botao-entrar'> <Link to="/login" style={{textDecoration:"none", color:"white", userSelect:"none", fontSize:"50px"}}>Entrar</Link> </motion.button>
 </div> 
   </section>
 </div>

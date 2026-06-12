@@ -134,37 +134,6 @@
   transform: translateX(22px);
 }
 
-/* ── Grupo de botões (tamanho de fonte) ── */
-.btn-group {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-size {
-  padding: 8px 16px;
-  border: 1px solid var(--borda);
-  background: var(--branco);
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--texto-sec);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: 'Poppins', sans-serif;
-}
-
-.btn-size:hover {
-  border-color: var(--roxo);
-  color: var(--roxo);
-}
-
-.btn-size.ativo {
-  background: var(--roxo);
-  border-color: var(--roxo);
-  color: white;
-  font-weight: 600;
-}
-
 /* ── Botões de ação ── */
 .cfg-btn {
   display: block;
@@ -368,48 +337,6 @@
   background: #d9d3f3;
 }
 
-/* ── Tamanhos de Fonte Globais (sem transform) ── */
-/* Usa CSS variables para escalar todos os font-sizes */
-
-:root {
-  --font-size-base: 1;
-}
-
-/* Pequeno: reduz 12% */
-:root.font-size-pequeno {
-  --font-size-base: 0.88;
-}
-
-/* Médio: tamanho normal (padrão) */
-:root.font-size-medio {
-  --font-size-base: 1;
-}
-
-/* Grande: aumenta 12% */
-:root.font-size-grande {
-  --font-size-base: 1.12;
-}
-
-/* Aplicar escala em elementos com fonte */
-h1 { font-size: calc(22px * var(--font-size-base)); }
-h2 { font-size: calc(18px * var(--font-size-base)); }
-h3 { font-size: calc(16px * var(--font-size-base)); }
-h4 { font-size: calc(14px * var(--font-size-base)); }
-
-p { font-size: calc(14px * var(--font-size-base)); }
-span { font-size: calc(14px * var(--font-size-base)); }
-button { font-size: calc(14px * var(--font-size-base)); }
-input { font-size: calc(14px * var(--font-size-base)); }
-label { font-size: calc(14px * var(--font-size-base)); }
-a { font-size: calc(14px * var(--font-size-base)); }
-
-.nav-link { font-size: calc(14px * var(--font-size-base)); }
-.card-titulo { font-size: calc(14px * var(--font-size-base)); }
-.bv-texto h2 { font-size: calc(16px * var(--font-size-base)); }
-.bv-texto p { font-size: calc(12px * var(--font-size-base)); }
-.dropdown-item { font-size: calc(14px * var(--font-size-base)); }
-.modal-content h3 { font-size: calc(18px * var(--font-size-base)); }
-
 /* ── Dark Mode ── */
 :root.dark-mode {
   --bg: #1a1a1a;
@@ -433,23 +360,6 @@ a { font-size: calc(14px * var(--font-size-base)); }
 :root.dark-mode .form-group input:focus {
   border-color: #9966cc;
   box-shadow: 0 0 0 3px rgba(153, 102, 204, 0.2);
-}
-
-:root.dark-mode .btn-size {
-  background: transparent;
-  border-color: var(--borda);
-  color: var(--texto-sec);
-}
-
-:root.dark-mode .btn-size:hover {
-  border-color: #9966cc;
-  color: #9966cc;
-}
-
-:root.dark-mode .btn-size.ativo {
-  background: #9966cc;
-  border-color: #9966cc;
-  color: white;
 }
 
 :root.dark-mode .modal-content {
@@ -478,17 +388,24 @@ a { font-size: calc(14px * var(--font-size-base)); }
     text-align: center;
   }
 
-  .btn-group {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .btn-size {
-    width: 100%;
-  }
-
   .modal-content {
     max-width: 95%;
     padding: 20px;
   }
+}
+
+/* ── Responsivo adicional (1024px + 480px) ── */
+@media (max-width: 1024px) {
+  .cfg-card    { padding: 20px; }
+  .cfg-titulo  { font-size: 24px; }
+}
+
+@media (max-width: 480px) {
+  .cfg-titulo     { font-size: 20px; margin-bottom: 20px; }
+  .cfg-card       { padding: 14px 12px; }
+  .cfg-opcao      { flex-wrap: wrap; gap: 8px; }
+  .cfg-opcao label { font-size: 13px; }
+  .modal-content  { padding: 16px; border-radius: 10px; }
+  .modal-acoes    { flex-direction: column; }
+  .btn-modal      { width: 100%; }
 }

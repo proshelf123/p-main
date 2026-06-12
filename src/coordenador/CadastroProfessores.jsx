@@ -5,8 +5,8 @@
 
 import { useState, useEffect } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
-import { getFunctions, httpsCallable } from 'firebase/functions'
-import { db } from '../firebase'
+import { httpsCallable } from 'firebase/functions'
+import { functions, db } from '../firebase'
 import './coordenador.css'
 import { Trash2 } from 'lucide-react';
 
@@ -49,8 +49,6 @@ export default function CadastroProfessores() {
     setErro('')
 
     try {
-      // Chama a Cloud Function — não desloga o coordenador!
-      const functions = getFunctions(undefined, 'us-central1')
       const criarProfessor = httpsCallable(functions, 'criarProfessor')
 
       await criarProfessor({
@@ -76,7 +74,6 @@ export default function CadastroProfessores() {
     if (!confirm('Remover este professor? Isso apaga a conta de acesso dele.')) return
 
     try {
-      const functions = getFunctions(undefined, 'us-central1')
       const deletarProfessor = httpsCallable(functions, 'deletarProfessor')
       await deletarProfessor({ email })
       await carregarProfessores()

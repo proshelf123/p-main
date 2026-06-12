@@ -12,6 +12,7 @@
 
 * {
     box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
 }
 
 body {
@@ -19,6 +20,28 @@ body {
     padding: 0;
     font-family: 'Poppins', sans-serif;
     height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ── Proteção: garante que font-size do dashboard não vaze aqui ── */
+.cabecalho *,
+.pagina *,
+#menu *,
+#menu1 * {
+    --font-size-base: 1 !important;
+}
+
+/* ── Restaura font-size explícito em cada elemento afetado ── */
+#menu,
+#menu1 {
+    font-size: 100px;
+}
+
+#menu span,
+#menu1 span,
+#menu a,
+#menu1 a {
+    font-size: inherit !important;
 }
 
 
@@ -27,14 +50,12 @@ body {
     height: 100px;
     margin-left: 30px;
     user-select: none;
-
 }
 
 #logo-mobile {
     display: none;
     position: absolute;
     user-select: none;
-
 }
 
 .cabecalho {
@@ -46,7 +67,6 @@ body {
     height: 100px;
     box-shadow: 0px 7px 6px rgba(0, 0, 0, 0.2);
     z-index: 1;
-
 }
 
 #ul {
@@ -65,7 +85,7 @@ body {
     align-items: center;
     justify-content: center;
     list-style: none;
-    font-size: 24px; 
+    font-size: 25px; 
     white-space: nowrap; 
 }
 
@@ -76,7 +96,6 @@ body {
     width: 35px;
     margin-left: 10px;
     user-select: none;
-
 }
 
 #porta-icone-mobile {
@@ -93,10 +112,11 @@ body {
 }
 
 .pagina {
-    position: relative;
-    width: 100%;
-    height: calc(100vh - 100px); 
-    overflow: clip;
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 100px);
+  overflow: clip;          /* já existe, mantém */
+  overflow-x: hidden;      /* adiciona isso explicitamente */
 }
 
 .container-circulos {
@@ -114,7 +134,7 @@ body {
     background-color: var(--cor-cheddar);
     border-radius: 50%;
     position: absolute;
-    left: 550px;   /* em vez de margin-left: 500px */
+    left: 550px;
     top: 70px;
     box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
 }
@@ -126,7 +146,7 @@ body {
     border-radius: 50%;
     position: absolute;
     left: 150px;
-    top: 230px;    /* sobrepõe o laranja por cima */
+    top: 230px;
     box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
 }
 
@@ -139,18 +159,18 @@ body {
     width: auto;
     z-index: 2;
     user-select: none;
-
 }
 
 .textos {
-    position: absolute;
-    right: 80px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    z-index: 3;
+  position: absolute;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  z-index: 3;
+  max-width: 50%;          /* adiciona isso */
 }
 
 .texto-direita {
@@ -193,11 +213,13 @@ body {
 .com-barra {
     position: relative;
     display: inline-block;
+    font-size: 68px;
 }
 
 .sem-barra {
     position: relative;
     display: inline-block;
+    font-size: 68px;
 }
 
 .barra-animada {
@@ -219,135 +241,133 @@ body {
     } 
 
     .container-circulos {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
 
-.circulo-laranja {
-    width: 300px;
-    height: 300px;
-    background-color: var(--cor-cheddar);
-    border-radius: 50%;
-    position: absolute;
-    left: 250px;   /* em vez de margin-left: 500px */
-    top: 60px;
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-}
+    .circulo-laranja {
+        width: 300px;
+        height: 300px;
+        background-color: var(--cor-cheddar);
+        border-radius: 50%;
+        position: absolute;
+        left: 250px;
+        top: 60px;
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
+    }
 
-.circulo-amarelo {
-    width: 400px;
-    height: 400px;
-    background-color: var(--cor-laranja-normal);
-    border-radius: 50%;
-    position: absolute;
-    left: 50px;
-    top: 160px;    /* sobrepõe o laranja por cima */
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-}
+    .circulo-amarelo {
+        width: 400px;
+        height: 400px;
+        background-color: var(--cor-laranja-normal);
+        border-radius: 50%;
+        position: absolute;
+        left: 50px;
+        top: 160px;
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
+    }
 
-.mariana {
-    position: absolute;
-    top: 10px;
-    left: 40px;
-    width: 400px;
-    height: 650px;
-}
+    .mariana {
+        position: absolute;
+        top: 10px;
+        left: 40px;
+        width: 400px;
+        height: 650px;
+    }
  
-#ul {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    list-style: none;
-    gap: 20px;
-    padding: 0;
-    margin: 0;
-    flex-wrap: nowrap; 
-}
+    #ul {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        list-style: none;
+        gap: 20px;
+        padding: 0;
+        margin: 0;
+        flex-wrap: nowrap; 
+    }
 
-#menu, #menu1 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    list-style: none;
-    font-size: 20px; 
-    white-space: nowrap; 
-}
+    #menu, #menu1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        list-style: none;
+        font-size: 20px; 
+        white-space: nowrap; 
+    }
 
-.textos {
-    position: absolute;
-    right: 30px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    z-index: 3;
-}
+    .textos {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        z-index: 3;
+    }
 
-.texto-direita {
-    margin: 0;
-}
+    .texto-direita {
+        margin: 0;
+    }
 
-#tamanho-fonte {
-    font-size: 40px;
-    font-weight: 500;
-    text-align: center;
-    margin: 0;
-}
+    #tamanho-fonte {
+        font-size: 40px;
+        font-weight: 500;
+        text-align: center;
+        margin: 0;
+    }
 
-#do-professor {
-    font-size: 0px;
-    font-weight: 500;
-    text-align: right;
-    margin: -10px 0 40px 0;
-}
+    #do-professor {
+        font-size: 0px;
+        font-weight: 500;
+        text-align: right;
+        margin: -10px 0 40px 0;
+    }
 
-.botao-entrar {
-    overflow: visible;
-    padding: 12px 60px;
-    border-radius: 999px;
-    border: none;
-    background-color: var(--cor-roxa-normal);
-    color: #fff;
-    cursor: pointer;
-    font-size: 20px;
-    font-weight: bolder;
-    text-decoration: none;
-}
+    .botao-entrar {
+        overflow: visible;
+        padding: 12px 60px;
+        border-radius: 999px;
+        border: none;
+        background-color: var(--cor-roxa-normal);
+        color: #fff;
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: bolder;
+        text-decoration: none;
+    }
 
-#inteligente {
-    color: var(--cor-roxa-normal);
-    display: inline-block; 
-    position: relative;
-}
+    #inteligente {
+        color: var(--cor-roxa-normal);
+        display: inline-block; 
+        position: relative;
+    }
 
-.com-barra {
-    position: relative;
-    display: inline-block;
-}
+    .com-barra {
+        position: relative;
+        display: inline-block;
+    }
 
-.sem-barra {
-    position: relative;
-    display: inline-block;
-}
+    .sem-barra {
+        position: relative;
+        display: inline-block;
+    }
 
-.barra-animada {
-    position: absolute;
-    left: 0;
-    bottom: 9px;
-    width: 100%;
-    height: 3px;
-    background: #FF9D00;
-    transform-origin: left;
-    border-radius: 2px;
-    display: block;
-}
-
-
+    .barra-animada {
+        position: absolute;
+        left: 0;
+        bottom: 9px;
+        width: 100%;
+        height: 3px;
+        background: #FF9D00;
+        transform-origin: left;
+        border-radius: 2px;
+        display: block;
+    }
 }
 
 @media screen and (max-width: 1440px) {
@@ -356,136 +376,240 @@ body {
         margin-bottom: 0;
     }
 
+    .container-circulos {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
 
+    .circulo-laranja {
+        width: 400px;
+        height: 400px;
+        background-color: var(--cor-cheddar);
+        border-radius: 50%;
+        position: absolute;
+        left: 250px;
+        top: 60px;
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
+    }
 
-.container-circulos {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
+    .circulo-amarelo {
+        width: 550px;
+        height: 550px;
+        background-color: var(--cor-laranja-normal);
+        border-radius: 50%;
+        position: absolute;
+        left: 50px;
+        top: 230px;
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
+    }
 
-.circulo-laranja {
-    width: 400px;
-    height: 400px;
-    background-color: var(--cor-cheddar);
-    border-radius: 50%;
-    position: absolute;
-    left: 250px;   /* em vez de margin-left: 500px */
-    top: 60px;
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-}
-
-.circulo-amarelo {
-    width: 550px;
-    height: 550px;
-    background-color: var(--cor-laranja-normal);
-    border-radius: 50%;
-    position: absolute;
-    left: 50px;
-    top: 230px;    /* sobrepõe o laranja por cima */
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-}
-
-.mariana {
-    position: absolute;
-    top: 60px;
-    left: 40px;
-    width: 550px;
-    height: 750px;
-}
+    .mariana {
+        position: absolute;
+        top: 60px;
+        left: 40px;
+        width: 550px;
+        height: 750px;
+    }
  
-#ul {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    list-style: none;
-    gap: 20px;
-    padding: 0;
-    margin: 0;
-    flex-wrap: nowrap; 
-}
+    #ul {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        list-style: none;
+        gap: 20px;
+        padding: 0;
+        margin: 0;
+        flex-wrap: nowrap; 
+    }
 
-#menu, #menu1 {
+    #menu, #menu1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        list-style: none;
+        font-size: 25px; 
+        white-space: nowrap; 
+    }
+
+    .textos {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        z-index: 3;
+    }
+
+    .texto-direita {
+        margin: 0;
+    }
+
+    #tamanho-fonte {
+        font-size: 55px;
+        font-weight: 500;
+        text-align: center;
+        margin: 0;
+    }
+
+    #do-professor {
+        font-size: 55px;
+        font-weight: 500;
+        text-align: right;
+        margin: -10px 0 40px 0;
+    }
+
+    .botao-entrar {
+        overflow: visible;
+        padding: 12px 80px;
+        border-radius: 999px;
+        border: none;
+        background-color: var(--cor-roxa-normal);
+        color: #fff;
+        cursor: pointer;
+        font-size: 30px;
+        font-weight: bolder;
+        text-decoration: none;
+    }
+
+    #inteligente {
+        color: var(--cor-roxa-normal);
+        display: inline-block; 
+        position: relative;
+    }
+
+    .com-barra {
+        position: relative;
+        display: inline-block;
+    }
+
+    .sem-barra {
+        position: relative;
+        display: inline-block;
+    }
+
+    .barra-animada {
+        position: absolute;
+        left: 0;
+        bottom: 9px;
+        width: 100%;
+        height: 5px;
+        background: #FF9D00;
+        transform-origin: left;
+        border-radius: 2px;
+        display: block;
+    }
+}
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVIDADE inicio.css — desktop-first
+   Breakpoints adicionais: 768px (tablet), 480px (mobile)
+   ══════════════════════════════════════════════════════════════ */
+
+@media screen and (max-width: 768px) {
+  .cabecalho {
+    height: 70px;
+    padding: 0 16px;
+  }
+
+  #logo { display: none; }
+  #logo-mobile {
+    display: block;
+    width: 130px;
+    height: auto;
+    position: static;
+    margin-left: 8px;
+  }
+
+  #ul { gap: 12px; }
+  #menu, #menu1 { font-size: 15px; }
+
+  #porta-icone { display: none; }
+  #porta-icone-mobile {
     display: flex;
     align-items: center;
     justify-content: center;
-    list-style: none;
-    font-size: 25px; 
-    white-space: nowrap; 
+    width: 28px;
+    margin-left: 8px;
+  }
+
+  .texto-mobile  { display: block; }
+  .texto-desktop { display: none; }
+
+  .pagina { height: calc(100vh - 70px); }
+
+  .circulo-laranja {
+    width: 220px; height: 220px;
+    left: auto; right: -40px;
+    top: 20px;
+  }
+  .circulo-amarelo {
+    width: 280px; height: 280px;
+    left: auto; right: -80px;
+    top: 130px;
+  }
+
+  .mariana {
+    left: -30px;
+    bottom: -20px;
+    width: auto;
+    max-height: 75%;
+  }
+
+  .textos {
+    right: 16px;
+    top: 40%;
+  }
+
+  #tamanho-fonte { font-size: 30px; }
+  #do-professor  { font-size: 28px; margin: -8px 0 24px 0; }
+
+  .botao-entrar {
+    padding: 12px 40px;
+    font-size: 20px;
+  }
+
+  .com-barra, .sem-barra { font-size: 30px; }
+  .barra-animada { bottom: 6px; height: 3px; }
 }
 
-.textos {
-    position: absolute;
-    right: 30px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    z-index: 3;
-}
+@media screen and (max-width: 480px) {
+  .cabecalho { height: 60px; padding: 0 12px; }
+  .pagina { height: calc(100vh - 60px); }
 
-.texto-direita {
-    margin: 0;
-}
+  #ul { gap: 8px; }
+  #menu, #menu1 { font-size: 13px; }
 
-#tamanho-fonte {
-    font-size: 55px;
-    font-weight: 500;
-    text-align: center;
-    margin: 0;
-}
+  .circulo-laranja {
+    width: 160px; height: 160px;
+    right: -30px; top: 10px;
+  }
+  .circulo-amarelo {
+    width: 210px; height: 210px;
+    right: -60px; top: 110px;
+  }
 
-#do-professor {
-    font-size: 55px;
-    font-weight: 500;
-    text-align: right;
-    margin: -10px 0 40px 0;
-}
+  .mariana {
+    max-height: 65%;
+    left: -20px;
+  }
 
-.botao-entrar {
-    overflow: visible;
-    padding: 12px 80px;
-    border-radius: 999px;
-    border: none;
-    background-color: var(--cor-roxa-normal);
-    color: #fff;
-    cursor: pointer;
-    font-size: 30px;
-    font-weight: bolder;
-    text-decoration: none;
-}
+  .textos {
+    right: 12px;
+    top: 36%;
+  }
 
-#inteligente {
-    color: var(--cor-roxa-normal);
-    display: inline-block; 
-    position: relative;
-}
+  #tamanho-fonte { font-size: 24px; }
+  #do-professor  { font-size: 22px; margin: -6px 0 18px 0; }
 
-.com-barra {
-    position: relative;
-    display: inline-block;
-}
+  .botao-entrar {
+    padding: 10px 28px;
+    font-size: 16px;
+  }
 
-.sem-barra {
-    position: relative;
-    display: inline-block;
-}
-
-.barra-animada {
-    position: absolute;
-    left: 0;
-    bottom: 9px;
-    width: 100%;
-    height: 5px;
-    background: #FF9D00;
-    transform-origin: left;
-    border-radius: 2px;
-    display: block;
-}
-
-
+  .com-barra, .sem-barra { font-size: 24px; }
 }

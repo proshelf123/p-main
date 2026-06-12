@@ -361,3 +361,44 @@
   padding: 1.25rem 0;
   margin: 0;
 }
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVIDADE Bem-vindo.css — desktop-first
+   ══════════════════════════════════════════════════════════════ */
+
+
+@media (max-width: 768px) {
+  .bv-wrapper   { padding: 1.5rem 0; }
+  .bv-header    { margin-bottom: 1.5rem; padding-bottom: 1rem; }
+  .bv-saudacao  { font-size: 1.5rem; }
+  .bv-subtitulo { font-size: 0.82rem; }
+
+  /* Chips ficam embaixo do título */
+  .bv-header   { flex-direction: column; align-items: flex-start; }
+  .bv-chips    { margin-top: 0; flex-wrap: wrap; }
+  .bv-chip     { font-size: 0.72rem; padding: 4px 10px; }
+
+  /* Grid já vira 1 coluna pelo @media (max-width: 820px) existente */
+  .bv-corpo    { gap: 1.25rem; }
+
+  /* Cards de cronograma */
+  .bv-crono-disciplina { font-size: 0.85rem; }
+  .bv-crono-meta       { font-size: 0.7rem; }
+
+  /* Aside fica depois do conteúdo principal */
+  .bv-aside    { gap: 0.75rem; }
+  .bv-card-aside { padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .bv-wrapper   { padding: 1rem 0; }
+  .bv-saudacao  { font-size: 1.3rem; }
+
+  .bv-card-crono { border-radius: 10px; }
+  .bv-crono-body { padding: 0.6rem 0.75rem; }
+
+  .bv-cal-dia   { height: 24px; font-size: 0.72rem; }
+
+  .bv-evento-item { gap: 0.5rem; }
+  .bv-evento-dia  { font-size: 0.9rem; }
+  .bv-evento-titulo { font-size: 0.8rem; }
+}

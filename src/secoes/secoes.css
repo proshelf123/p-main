@@ -620,3 +620,102 @@ select.perfil-input option:checked {
 .secao-vazia {
   text-align: center; color: var(--texto-sec); font-size: 13px; padding: 24px 0;
 }
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVIDADE secoes.css — desktop-first
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* ── Cronogramas ── */
+  .dia-seletor { gap: 4px; }
+  .dia-btn { padding: 4px 10px; font-size: 11px; }
+
+  .aula-linha { flex-wrap: wrap; gap: 6px; padding: 8px; }
+  .aula-sala  { min-width: auto; }
+
+  /* ── Turmas ── */
+  .turma-tabs { gap: 6px; }
+  .turma-tab-pill { padding: 6px 14px; font-size: 12px; }
+  .turma-card-pill { padding: 12px 14px; border-radius: 30px; }
+
+  .registro-pill { padding: 10px 14px; border-radius: 30px; }
+
+  /* ── Modal ── */
+  .modal {
+    max-width: 95vw;
+    padding: 20px 16px;
+    border-radius: 12px;
+    max-height: 92vh;
+    overflow-y: auto !important;
+  }
+  .modal-overlay { padding: 16px; }
+  .modal-titulo { font-size: 14px; }
+
+  /* ── Arquivos ── */
+  .btn-upload { font-size: 12px; padding: 10px; }
+
+  /* ── Calendário ── */
+  .cal-grid { gap: 3px; }
+  .cal-dia { font-size: 11px; padding: 4px 5px; border-radius: 8px; }
+  .cal-dia-label { font-size: 9px; padding: 4px 0; }
+
+  /* ── Botões de ação ── */
+  .perfil-salvar, .btn-cancelar { font-size: 13px; padding: 10px; }
+
+  /* ── Dropdown ── */
+  .dropdown-menu { max-height: 200px; }
+}
+
+@media (max-width: 480px) {
+  /* Cronogramas — linha de aula vira coluna */
+  .aula-linha { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .aula-turma { margin-left: 0; }
+  .aula-sala  { text-align: left; }
+
+  /* Turmas */
+  .turma-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .turma-tab-pill { flex-shrink: 0; }
+
+  /* Modal ocupa tela inteira em mobile pequeno */
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 88vh;
+    overflow-y: auto !important;
+  }
+
+  /* Calendário mini */
+  .cal-dia { font-size: 10px; padding: 3px 4px; }
+
+  /* Registro */
+  .registro-pill { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── Arquivos container (substitui inline style) ── */
+.arquivos-container {
+  min-height: 100vh;
+  background: #F8F9FB;
+  padding: 32px 40px;
+}
+
+@media (max-width: 768px) {
+  .arquivos-container { padding: 20px 16px; }
+}
+
+@media (max-width: 480px) {
+  .arquivos-container { padding: 16px 12px; }
+}
+
+/* ── Calendário: grid 2 colunas do modal ── */
+.cal-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .cal-form-grid-2 { grid-template-columns: 1fr; }
+}

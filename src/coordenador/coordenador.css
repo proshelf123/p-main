@@ -180,3 +180,21 @@ main, .pagina-conteudo {
   font-size: 11px;
   color: #388e3c;
 }
+
+
+@media (max-width: 768px) {
+  .upload-container {
+    padding: 20px 16px;
+    max-width: 100%;
+  }
+  .upload-area   { padding: 24px 16px; }
+  .upload-titulo { font-size: 16px; }
+  .upload-stats  { gap: 12px; flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .upload-container { padding: 16px 12px; border-radius: 10px; }
+  .upload-area      { padding: 20px 12px; }
+  .upload-titulo    { font-size: 15px; }
+  .upload-stat strong { font-size: 16px; }
+}
