@@ -9,6 +9,9 @@ import { httpsCallable } from 'firebase/functions'
 import { functions, db } from '../firebase'
 import './coordenador.css'
 import { Trash2 } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
+import { CircleCheckBig } from 'lucide-react';
+
 
 const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
 
@@ -127,7 +130,7 @@ export default function CadastroProfessores() {
             </button>
           </div>
           <span style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
-            💡 O professor pode trocar a senha depois em Configurações
+            O professor pode trocar a senha depois em Configurações
           </span>
         </div>
 
@@ -140,15 +143,15 @@ export default function CadastroProfessores() {
             style={{ textTransform: 'uppercase' }}
           />
           <span style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
-            📄 Copie o nome exatamente como aparece no PDF do horário
+            Copie o nome exatamente como aparece no PDF do horário
           </span>
         </div>
 
-        {erro && <div className='upload-erro'>⚠️ {erro}</div>}
+        {erro && <div className='upload-erro'><TriangleAlert size={25}/> {erro}</div>}
 
         {salvo && (
           <div className='upload-sucesso'>
-            ✅ Professor cadastrado! Ele já pode fazer login com o e-mail e senha definidos.
+            <CircleCheckBig /> Professor cadastrado! Ele já pode fazer login com o e-mail e senha definidos.
           </div>
         )}
 

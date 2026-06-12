@@ -3,19 +3,102 @@ import { buscarEventos, criarEvento, deletarEvento } from '../firebase/estrutura
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
 import CustomDatePicker from './dropdown-calendario'
-import { Trash2 } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB']
 
 const COR_TIPO = {
-  reuniao:   { bg: '#EEEDFE', cor: '#6F3B9D', label: 'Reunião' },
-  feriado:   { bg: '#e8f5e9', cor: '#1b5e20', label: 'Feriado' },
-  passeio:   { bg: '#fce4ec', cor: '#880e4f', label: 'Passeio' },
-  avaliacao: { bg: '#fff3e0', cor: '#e65100', label: 'Avaliação' },
+  evento:    { bg: '#e6fbed', cor: '#0BDB23', label: 'Evento'},
+  reuniao:   { bg: '#EEEDFE', cor: '#188AF5', label: 'Reunião' },
+  feriado:   { bg: '#e8f5e9', cor: '#FF6A00', label: 'Feriado' },
+  passeio:   { bg: '#fce4ec', cor: '#ED235C', label: 'Passeio' },
 }
 
 const FORM_INICIAL = { titulo: '', data: '', tipo: 'reuniao', descricao: '' }
+
+// ── Modal de confirmação customizado para Eventos ──────────────────────────
+function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
+  const tipo = COR_TIPO[evento?.tipo] || COR_TIPO.reuniao
+
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={onCancelar} />
+      <div className='modal-confirmar'>
+        {/* Ícone */}
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
+        </div>
+
+        {/* Texto */}
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover evento?
+        </h3>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Você está prestes a remover o evento
+        </p>
+
+        {/* Card do evento */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 14px', borderRadius: 12,
+          background: tipo.bg, margin: '0 0 6px',
+          animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: tipo.cor, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: tipo.cor }}>{evento?.titulo}</div>
+            <div style={{ fontSize: 11, color: tipo.cor, opacity: 0.7 }}>
+              {evento?.data ? evento.data.split('-').reverse().join('/') : ''} · {tipo.label}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: '#999', margin: '0 0 20px', textAlign: 'center' }}>
+          Esta ação não poderá ser desfeita.
+        </p>
+
+        {/* Botões */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: '1px solid #e0e0e0', background: '#fff',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              color: '#555', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Sim, remover
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
 
 export default function Calendario({ uid }) {
   const hoje = new Date()
@@ -29,6 +112,7 @@ export default function Calendario({ uid }) {
   const [erro, setErro] = useState('')
   const [diaSelecionado, setDiaSelecionado] = useState(null)
   const [dropdownAberto, setDropdownAberto] = useState(null)
+  const [confirmarDelete, setConfirmarDelete] = useState(null) // Novo estado para o alerta
 
   useEffect(() => {
     if (!uid) return
@@ -85,10 +169,19 @@ export default function Calendario({ uid }) {
     }
   }
 
-  async function handleDeletar(id) {
-    if (!window.confirm('Remover este evento?')) return
+  // Função para abrir o alerta
+  function handleDeletar(evento, e) {
+    if (e) e.stopPropagation()
+    setConfirmarDelete(evento)
+  }
+
+  // Função para realmente excluir
+  async function executarDelete() {
+    if (!confirmarDelete) return
+    const id = confirmarDelete.id
     await deletarEvento(uid, id)
     setEventos(prev => prev.filter(e => e.id !== id))
+    setConfirmarDelete(null)
   }
 
   const total = diasDoMes(mes, ano)
@@ -185,7 +278,7 @@ export default function Calendario({ uid }) {
                   <div key={ev.id} className='cal-evento' style={{ borderLeftColor: tipo.cor }}>
                     <div className='cal-evento-nome'>{ev.titulo}</div>
                     <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                    <button className='arquivo-acao' onClick={() => handleDeletar(ev.id)} title='Remover'><Trash2 size={16} /></button>
+                    <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
                   </div>
                 )
               })
@@ -224,7 +317,7 @@ export default function Calendario({ uid }) {
                 <div className='cal-evento-data'>{formatarData(ev.data)}</div>
                 <div className='cal-evento-nome'>{ev.titulo}</div>
                 <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                <button className='arquivo-acao' onClick={(e) => { e.stopPropagation(); handleDeletar(ev.id) }} title='Remover'><Trash2 size={16} /></button>
+                <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
               </div>
             )
           })
@@ -291,6 +384,15 @@ export default function Calendario({ uid }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal de confirmação de delete ── */}
+      {confirmarDelete && (
+        <ModalConfirmarEvento
+          evento={confirmarDelete}
+          onConfirmar={executarDelete}
+          onCancelar={() => setConfirmarDelete(null)}
+        />
       )}
 
     </div>

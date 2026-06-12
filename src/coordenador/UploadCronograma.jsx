@@ -1,59 +1,25 @@
 // src/coordenador/UploadCronograma.jsx
-//
-// Tela exclusiva do coordenador para fazer upload do PDF de horários.
-// Usa a Claude API para ler o PDF e extrair as aulas de cada professor,
-// depois salva tudo no Firestore separado por nome de professor.
-//
-// Como usar no dashboard.jsx (só para coordenadores):
-//   import UploadCronograma from '../coordenador/UploadCronograma'
-//   {professor?.role === 'coordenador' && <UploadCronograma />}
 
 import { useState } from 'react'
-import { collection, setDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../firebase'
+import { collection, setDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
+import { db, functions } from '../firebase'
 import './coordenador.css'
+import { FileDown } from 'lucide-react';
+import { CircleCheckBig } from 'lucide-react';
+import { CloudUpload } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 
-// ─────────────────────────────────────────────────────────
-//  Prompt que instrui o Claude a extrair o cronograma do PDF
-// ─────────────────────────────────────────────────────────
-const PROMPT_EXTRACAO = `Você recebeu um PDF de horário escolar. Extraia todas as aulas e retorne um JSON válido, sem texto adicional, sem markdown, sem \`\`\`json.
 
-O JSON deve ter este formato exato:
-{
-  "professores": {
-    "NOME DO PROFESSOR": [
-      {
-        "dia": "SEG",
-        "ordem": 1,
-        "periodo": "Matutino",
-        "disciplina": "NOME DA DISCIPLINA",
-        "turma": "NOME DA TURMA",
-        "sala": ""
-      }
-    ]
-  }
-}
-
-Regras importantes:
-- O nome do professor deve ser em MAIÚSCULAS, exatamente como aparece no PDF
-- "dia" deve ser: DOM, SEG, TER, QUA, QUI, SEX ou SAB
-- "ordem" é a posição da aula no dia (1, 2, 3, 4, 5, 6, 7)
-- "periodo" deve ser: Matutino, Vespertino ou Noturno
-- "disciplina" é a sigla ou nome da matéria (ex: MAT, FIS, QUI, BIO...)
-- "turma" é o nome da turma (ex: 1 RH, 2 MARKETING, 1 ELETRÔNICA...)
-- "sala" pode ser vazio se não estiver no PDF
-- Inclua TODOS os professores e TODAS as aulas encontradas
-- Retorne APENAS o JSON, nada mais`
-
-// Dias e horários para calcular a ordem das aulas
-const HORARIOS_MANHA = ['7:00', '7:50', '8:40', '9:50', '10:40', '11:30', '12:20']
+const PERIODOS = ['Matutino', 'Vespertino', 'Noturno']
 
 export default function UploadCronograma() {
-  const [arquivo, setArquivo] = useState(null)
+  const [arquivo, setArquivo]       = useState(null)
+  const [periodo, setPeriodo]       = useState('Matutino')
   const [processando, setProcessando] = useState(false)
-  const [progresso, setProgresso] = useState('')
-  const [resultado, setResultado] = useState(null)
-  const [erro, setErro] = useState(null)
+  const [progresso, setProgresso]   = useState('')
+  const [resultado, setResultado]   = useState(null)
+  const [erro, setErro]             = useState(null)
 
   function handleArquivo(e) {
     const file = e.target.files[0]
@@ -66,40 +32,6 @@ export default function UploadCronograma() {
     setResultado(null)
   }
 
-  async function handleProcessar() {
-    if (!arquivo) return
-    setProcessando(true)
-    setErro(null)
-    setResultado(null)
-
-    try {
-      // 1. Converte o PDF para base64
-      setProgresso('Lendo o PDF...')
-      const base64 = await pdfParaBase64(arquivo)
-
-      // 2. Envia para a Claude API
-      setProgresso('Claude está lendo o horário...')
-      const cronograma = await extrairCronogramaComClaude(base64)
-
-      // 3. Salva no Firestore por professor
-      setProgresso('Salvando no Firebase...')
-      const total = await salvarNoFirestore(cronograma)
-
-      setResultado({
-        professores: Object.keys(cronograma.professores).length,
-        aulas: total,
-      })
-      setProgresso('')
-    } catch (err) {
-      console.error(err)
-      setErro('Erro ao processar: ' + err.message)
-      setProgresso('')
-    }
-
-    setProcessando(false)
-  }
-
-  // Converte arquivo PDF para base64
   function pdfParaBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -109,86 +41,66 @@ export default function UploadCronograma() {
     })
   }
 
-  // Usa a Claude API para extrair o cronograma do PDF
-  async function extrairCronogramaComClaude(base64) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: base64,
-                },
-              },
-              {
-                type: 'text',
-                text: PROMPT_EXTRACAO,
-              },
-            ],
-          },
-        ],
-      }),
-    })
-
-    if (!response.ok) {
-      const err = await response.json()
-      throw new Error(err.error?.message || 'Erro na Claude API')
-    }
-
-    const data = await response.json()
-    const texto = data.content
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('')
-
-    // Remove possíveis ```json ``` que o modelo possa ter incluído
-    const limpo = texto.replace(/```json|```/g, '').trim()
+  async function handleProcessar() {
+    if (!arquivo) return
+    setProcessando(true)
+    setErro(null)
+    setResultado(null)
 
     try {
-      return JSON.parse(limpo)
-    } catch {
-      throw new Error('Claude retornou um formato inesperado. Tente novamente.')
+      setProgresso('Lendo o PDF...')
+      const pdfBase64 = await pdfParaBase64(arquivo)
+
+      setProgresso('Gemini está analisando o horário...')
+      const processarHorario = httpsCallable(functions, 'processarHorario', { timeout: 120000 })
+      const response = await processarHorario({ pdfBase64, periodo })
+
+      const { cronograma } = response.data
+      if (!cronograma?.turmas) {
+        throw new Error('Formato de resposta inesperado.')
+      }
+
+      setProgresso('Salvando no Firebase...')
+      const total = await salvarNoFirestore(cronograma.turmas)
+
+      setResultado({
+        turmas: Object.keys(cronograma.turmas).length,
+        aulas: total,
+      })
+      setProgresso('')
+
+    } catch (err) {
+      console.error(err)
+      setErro('Erro: ' + (err.message || 'Tente novamente.'))
+      setProgresso('')
     }
+
+    setProcessando(false)
   }
 
-  // Salva as aulas de cada professor no Firestore
-  // Estrutura: cronogramas_escola/{nomeProfessor}/aulas/{aulaId}
-  async function salvarNoFirestore(cronograma) {
+  async function salvarNoFirestore(turmas) {
     let totalAulas = 0
+    const batch = writeBatch(db)
 
-    for (const [nomeProfessor, aulas] of Object.entries(cronograma.professores)) {
+    for (const [nomeTurma, aulas] of Object.entries(turmas)) {
       if (!aulas || aulas.length === 0) continue
-
-      // Salva cada aula como documento separado
-      for (let i = 0; i < aulas.length; i++) {
-        const aula = aulas[i]
-        const aulaId = `${aula.dia}_${aula.ordem}_${aula.periodo}`
-
-        await setDoc(
-          doc(db, 'cronogramas_escola', nomeProfessor, 'aulas', aulaId),
-          {
-            dia: aula.dia || '',
-            ordem: aula.ordem || 1,
-            periodo: aula.periodo || 'Matutino',
-            disciplina: aula.disciplina || '',
-            turma: aula.turma || '',
-            sala: aula.sala || '',
-            atualizadoEm: serverTimestamp(),
-          }
-        )
+      for (const aula of aulas) {
+        const aulaId = `${aula.dia}_${aula.ordem}_${periodo}`
+        const ref = doc(db, 'cronogramas_escola', nomeTurma, 'aulas', aulaId)
+        batch.set(ref, {
+          dia:        aula.dia || '',
+          ordem:      aula.ordem || 1,
+          periodo:    aula.periodo || periodo,
+          disciplina: aula.disciplina || '',
+          professor:  aula.professor || '',
+          turma:      nomeTurma,
+          atualizadoEm: serverTimestamp(),
+        })
         totalAulas++
       }
     }
 
+    await batch.commit()
     return totalAulas
   }
 
@@ -198,9 +110,31 @@ export default function UploadCronograma() {
         <span className='upload-badge'>Coordenador</span>
         <h2 className='upload-titulo'>Upload de Horário</h2>
         <p className='upload-desc'>
-          Envie o PDF do horário geral e a IA vai extrair automaticamente
-          as aulas de cada professor.
+          Envie o PDF do horário e a IA vai extrair automaticamente
+          as aulas de cada turma.
         </p>
+      </div>
+
+      {/* Seletor de período */}
+      <div className='perfil-grupo' style={{ marginBottom: 12 }}>
+        <label className='perfil-label'>Período do horário</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {PERIODOS.map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriodo(p)}
+              style={{
+                padding: '8px 16px', borderRadius: 20, fontSize: 13,
+                border: '1.5px solid', cursor: 'pointer', fontFamily: 'Poppins, sans-serif',
+                background: periodo === p ? 'var(--roxo)' : 'white',
+                color: periodo === p ? 'white' : 'var(--roxo)',
+                borderColor: 'var(--roxo)',
+              }}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Área de upload */}
@@ -214,7 +148,7 @@ export default function UploadCronograma() {
         />
         {arquivo ? (
           <>
-            <span className='upload-icone'>📄</span>
+            <span className='upload-icone'><FileDown /></span>
             <span className='upload-nome'>{arquivo.name}</span>
             <span className='upload-tamanho'>
               {(arquivo.size / 1024 / 1024).toFixed(1)} MB
@@ -222,7 +156,7 @@ export default function UploadCronograma() {
           </>
         ) : (
           <>
-            <span className='upload-icone'>⬆️</span>
+            <span className='upload-icone'><CloudUpload /></span>
             <span className='upload-texto'>Clique para selecionar o PDF</span>
             <span className='upload-subtexto'>Somente arquivos .pdf</span>
           </>
@@ -247,19 +181,17 @@ export default function UploadCronograma() {
 
       {/* Erro */}
       {erro && (
-        <div className='upload-erro'>
-          ⚠️ {erro}
-        </div>
+        <div className='upload-erro'><TriangleAlert /> {erro}</div>
       )}
 
       {/* Sucesso */}
       {resultado && (
         <div className='upload-sucesso'>
-          <span>✅ Horário salvo com sucesso!</span>
+          <span><CircleCheckBig /> Horário salvo com sucesso!</span>
           <div className='upload-stats'>
             <div className='upload-stat'>
-              <strong>{resultado.professores}</strong>
-              <span>professores</span>
+              <strong>{resultado.turmas}</strong>
+              <span>turmas</span>
             </div>
             <div className='upload-stat'>
               <strong>{resultado.aulas}</strong>

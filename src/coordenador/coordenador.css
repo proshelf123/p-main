@@ -146,6 +146,9 @@ main, .pagina-conteudo {
   padding: 10px 14px;
   font-size: 13px;
   color: #c0392b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ── Sucesso ── */

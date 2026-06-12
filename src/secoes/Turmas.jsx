@@ -7,9 +7,17 @@ import { Trash2, X, AlertTriangle } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
 
 const COR_DISCIPLINA = {
-  'Matemática': { ativo: '#ED235C', bg: '#FCE4EC', cor: '#880e4f' },
-  'Física':     { ativo: '#188AF5', bg: '#e3f2fd', cor: '#0d47a1' },
-  'Química':    { ativo: '#0BDB23', bg: '#e8f5e9', cor: '#1b5e20' },
+  'Matemática': { ativo: '#FF0000', bg: '#fff0f0', cor: '#b30000' },
+  'Física':     { ativo: '#188AF5', bg: '#e3f0fe', cor: '#0a5eaa' },
+  'Química':    { ativo: '#FFE100', bg: '#fffbe0 ', cor: '#8a7200' },
+  'Biologia':    { ativo: '#0BDB23', bg: '#e6fbed ', cor: '#057d19' },
+  'História':    { ativo: '#AA6803', bg: '#f5ece0 ', cor: '#7a4b02' },
+  'Geografia':    { ativo: '#006500', bg: '#e0f0e0 ', cor: '#004500' },
+  'Português':    { ativo: '#00D5ED', bg: '#e0fafd ', cor: '#007f8f' },
+  'Artes':    { ativo: '#FF00AA', bg: '#ffe8f6 ', cor: '#a80070' },
+  'Filosofia':    { ativo: '#760507', bg: '#f2e5e6 ', cor: '#520305' },
+  'Inglês':    { ativo: '#2F00FF', bg: '#eaebff ', cor: '#1e00b3' },
+  'Educação Física':    { ativo: '#FF6A00', bg: '#fff0e5 ', cor: '#b34900' },
 }
 
 const COR_TIPO = {

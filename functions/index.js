@@ -4,6 +4,14 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https')
 const { initializeApp } = require('firebase-admin/app')
 const { getAuth } = require('firebase-admin/auth')
 const { getFirestore, FieldValue } = require('firebase-admin/firestore')
+const resultado = await response.json()
+const texto = resultado.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+// ADICIONE ISSO TEMPORARIAMENTE
+console.log('Resposta Gemini:', texto.substring(0, 500))
+console.log('Status response:', response.status)
+
+const limpo = texto.replace(/```json|```/g, '').trim()
 
 initializeApp()
 
@@ -24,7 +32,6 @@ exports.criarProfessor = onCall(async (request) => {
   }
 
   const coordSnap = await db.collection('users').doc(auth.uid).get()
-
   if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
     throw new HttpsError('permission-denied', 'Apenas coordenadores podem cadastrar professores.')
   }
@@ -117,26 +124,28 @@ exports.deletarProfessor = onCall(async (request) => {
 // ─────────────────────────────────────────────────────────
 //  Processar horário com Gemini
 // ─────────────────────────────────────────────────────────
-exports.processarHorario = onCall(async (request) => {
-  const { auth, data } = request
+exports.processarHorario = onCall(
+  { secrets: ['GEMINI_API_KEY'] },
+  async (request) => {
+    const { auth, data } = request
 
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Você precisa estar logado.')
-  }
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'Você precisa estar logado.')
+    }
 
-  const coordSnap = await db.collection('users').doc(auth.uid).get()
-  if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
-    throw new HttpsError('permission-denied', 'Apenas coordenadores podem processar horários.')
-  }
+    const coordSnap = await db.collection('users').doc(auth.uid).get()
+    if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
+      throw new HttpsError('permission-denied', 'Apenas coordenadores podem processar horários.')
+    }
 
-  const { pdfBase64, periodo } = data
-  if (!pdfBase64 || !periodo) {
-    throw new HttpsError('invalid-argument', 'PDF e período são obrigatórios.')
-  }
+    const { pdfBase64, periodo } = data
+    if (!pdfBase64 || !periodo) {
+      throw new HttpsError('invalid-argument', 'PDF e período são obrigatórios.')
+    }
 
-  const GEMINI_KEY = process.env.GEMINI_API_KEY
+    const GEMINI_KEY = process.env.GEMINI_API_KEY
 
-  const prompt = `Você recebeu um PDF de horário escolar. Extraia todas as aulas e retorne um JSON válido, sem texto adicional, sem markdown, sem \`\`\`json.
+    const prompt = `Você recebeu um PDF de horário escolar. Extraia todas as aulas e retorne um JSON válido, sem texto adicional, sem markdown, sem \`\`\`json.
 O JSON deve ter este formato exato:
 {
   "turmas": {
@@ -160,35 +169,36 @@ Regras:
 - Inclua TODAS as turmas e TODAS as aulas
 - Retorne APENAS o JSON`
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                inline_data: {
-                  mime_type: 'application/pdf',
-                  data: pdfBase64
-                }
-              },
-              { text: prompt }
-            ]
-          }]
-        })
-      }
-    )
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                {
+                  inline_data: {
+                    mime_type: 'application/pdf',
+                    data: pdfBase64
+                  }
+                },
+                { text: prompt }
+              ]
+            }]
+          })
+        }
+      )
 
-    const result = await response.json()
-    const texto = result.candidates?.[0]?.content?.parts?.[0]?.text || ''
-    const limpo = texto.replace(/```json|```/g, '').trim()
+      const result = await response.json()
+      const texto = result.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      const limpo = texto.replace(/```json|```/g, '').trim()
 
-    return { sucesso: true, cronograma: JSON.parse(limpo) }
+      return { sucesso: true, cronograma: JSON.parse(limpo) }
 
-  } catch (error) {
-    throw new HttpsError('internal', 'Erro ao processar PDF: ' + error.message)
+    } catch (error) {
+      throw new HttpsError('internal', 'Erro ao processar PDF: ' + error.message)
+    }
   }
-})
+)
