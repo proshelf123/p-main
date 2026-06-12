@@ -38,9 +38,10 @@ export default function Calendario({ uid }) {
   function diasDoMes(m, a)         { return new Date(a, m + 1, 0).getDate() }
   function primeiroDiaSemana(m, a) { return new Date(a, m, 1).getDay() }
 
-  function temEvento(dia) {
+  function eventosDoDia(dia) {
+    if (!dia) return []
     const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
-    return eventos.some(e => e.data === dataStr)
+    return eventos.filter(e => e.data === dataStr)
   }
 
   function eventosDoMes() {
@@ -48,12 +49,6 @@ export default function Calendario({ uid }) {
     return eventos
       .filter(e => e.data?.startsWith(prefixo))
       .sort((a, b) => a.data.localeCompare(b.data))
-  }
-
-  function eventosDoDia(dia) {
-    if (!dia) return []
-    const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
-    return eventos.filter(e => e.data === dataStr)
   }
 
   function formatarData(dataStr) {
@@ -65,7 +60,7 @@ export default function Calendario({ uid }) {
   function abrirModal(dia = null) {
     setErro('')
     if (dia) {
-      const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+      const dataStr = `${ano}-${String(mes + 1).padStart(2, '00')}-${String(dia).padStart(2, '0')}`
       setForm({ ...FORM_INICIAL, data: dataStr })
     } else {
       setForm(FORM_INICIAL)
@@ -120,18 +115,14 @@ export default function Calendario({ uid }) {
           <button
             className='cal-nav-header'
             onClick={() => { if (mes === 0) { setMes(11); setAno(a => a - 1) } else setMes(m => m - 1) }}
-          >
-            ‹
-          </button>
+          >‹</button>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.2 }}>
             {MESES[mes]} {ano}
           </span>
           <button
             className='cal-nav-header'
             onClick={() => { if (mes === 11) { setMes(0); setAno(a => a + 1) } else setMes(m => m + 1) }}
-          >
-            ›
-          </button>
+          >›</button>
         </div>
 
         {/* Grade do calendário */}
@@ -141,17 +132,37 @@ export default function Calendario({ uid }) {
           ))}
           {celulas.map((dia, i) => {
             if (!dia) return <div key={i} className='cal-dia vazia' />
-            const isHoje     = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
-            const comEvento  = temEvento(dia)
+
+            const isHoje        = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
             const isSelecionado = dia === diaSelecionado
+            const evsDia        = eventosDoDia(dia)
+            const temEv         = evsDia.length > 0
+
             return (
               <div
                 key={isSelecionado ? `sel-${i}` : i}
-                className={`cal-dia ${isHoje ? 'hoje' : ''} ${comEvento ? 'tem-evento' : ''} ${isSelecionado ? 'selecionado' : ''}`}
+                className={`cal-dia ${isHoje ? 'hoje' : ''} ${temEv ? 'tem-evento' : ''} ${isSelecionado ? 'selecionado' : ''}`}
                 onClick={() => setDiaSelecionado(dia === diaSelecionado ? null : dia)}
                 style={{ cursor: 'pointer' }}
               >
-                {dia}
+                {/* Número do dia */}
+                <span className='cal-dia-num'>{dia}</span>
+
+                {/* Bolinhas coloridas — máx 3, sem texto */}
+                {temEv && (
+                  <div className='cal-dia-bolinhas'>
+                    {evsDia.slice(0, 3).map(ev => {
+                      const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
+                      return (
+                        <span
+                          key={ev.id}
+                          className='cal-ev-bolinha'
+                          style={{ background: tipo.cor }}
+                        />
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -160,8 +171,8 @@ export default function Calendario({ uid }) {
         {/* Eventos do dia selecionado */}
         {diaSelecionado && (
           <div style={{ marginTop: 12, borderTop: '1px solid #eee', paddingTop: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', marginRight: 10 }}>
+            <div style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>
                 {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
               </span>
             </div>

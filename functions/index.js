@@ -113,3 +113,82 @@ exports.deletarProfessor = onCall(async (request) => {
     throw new HttpsError('internal', error.message)
   }
 })
+
+// ─────────────────────────────────────────────────────────
+//  Processar horário com Gemini
+// ─────────────────────────────────────────────────────────
+exports.processarHorario = onCall(async (request) => {
+  const { auth, data } = request
+
+  if (!auth) {
+    throw new HttpsError('unauthenticated', 'Você precisa estar logado.')
+  }
+
+  const coordSnap = await db.collection('users').doc(auth.uid).get()
+  if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
+    throw new HttpsError('permission-denied', 'Apenas coordenadores podem processar horários.')
+  }
+
+  const { pdfBase64, periodo } = data
+  if (!pdfBase64 || !periodo) {
+    throw new HttpsError('invalid-argument', 'PDF e período são obrigatórios.')
+  }
+
+  const GEMINI_KEY = process.env.GEMINI_API_KEY
+
+  const prompt = `Você recebeu um PDF de horário escolar. Extraia todas as aulas e retorne um JSON válido, sem texto adicional, sem markdown, sem \`\`\`json.
+O JSON deve ter este formato exato:
+{
+  "turmas": {
+    "NOME DA TURMA": [
+      {
+        "dia": "SEG",
+        "ordem": 1,
+        "periodo": "${periodo}",
+        "disciplina": "SIGLA DA MATÉRIA",
+        "professor": "NOME DO PROFESSOR"
+      }
+    ]
+  }
+}
+Regras:
+- "dia": DOM, SEG, TER, QUA, QUI, SEX ou SAB
+- "ordem": posição da aula no dia (1 a 7)
+- "turma": exatamente como aparece no PDF (ex: 1 RH, 2 MARKETING)
+- "disciplina": sigla ou nome da matéria
+- "professor": nome em MAIÚSCULAS como aparece no PDF
+- Inclua TODAS as turmas e TODAS as aulas
+- Retorne APENAS o JSON`
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                inline_data: {
+                  mime_type: 'application/pdf',
+                  data: pdfBase64
+                }
+              },
+              { text: prompt }
+            ]
+          }]
+        })
+      }
+    )
+
+    const result = await response.json()
+    const texto = result.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const limpo = texto.replace(/```json|```/g, '').trim()
+
+    return { sucesso: true, cronograma: JSON.parse(limpo) }
+
+  } catch (error) {
+    throw new HttpsError('internal', 'Erro ao processar PDF: ' + error.message)
+  }
+})

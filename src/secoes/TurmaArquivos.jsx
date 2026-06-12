@@ -565,57 +565,58 @@ function Modal({ titulo, onClose, children }) {
           inset: 0,
           background: "#00000040",
           zIndex: 100,
-        }}
-      />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.22 }}
-        style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "#fff",
-          borderRadius: 16,
-          padding: 28,
-          width: "100%",
-          maxWidth: 440,
-          zIndex: 101,
-          boxShadow: "0 24px 60px #0003",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.22 }}
+          onClick={(e) => e.stopPropagation()}
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 20,
+            background: "#fff",
+            borderRadius: 16,
+            padding: 28,
+            width: "calc(100% - 40px)",
+            maxWidth: 440,
+            zIndex: 101,
+            boxShadow: "0 24px 60px #0003",
           }}
         >
-          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#1A1A2E", margin: 0 }}>
-            {titulo}
-          </h2>
-          <button
-            onClick={onClose}
+          <div
             style={{
-              background: "#F3F4F6",
-              border: "none",
-              borderRadius: 8,
-              width: 30,
-              height: 30,
-              cursor: "pointer",
-              fontSize: 16,
               display: "flex",
+              justifyContent: "space-between",
               alignItems: "center",
-              justifyContent: "center",
+              marginBottom: 20,
             }}
           >
-            ×
-          </button>
-        </div>
-        {children}
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: "#1A1A2E", margin: 0 }}>
+              {titulo}
+            </h2>
+            <button
+              onClick={onClose}
+              style={{
+                background: "#F3F4F6",
+                border: "none",
+                borderRadius: 8,
+                width: 30,
+                height: 30,
+                cursor: "pointer",
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ×
+            </button>
+          </div>
+          {children}
+        </motion.div>
       </motion.div>
     </>
   );
