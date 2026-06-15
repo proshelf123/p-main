@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
-import { buscarPerfil } from '../firebase/estrutura'
+import { buscarPerfil, buscarCronograma, buscarEventos } from '../firebase/estrutura'
 import Logo from '../assets/Group 32 (2).png'
 import { CircleUserRound, UserRound, Settings, LogOut, Upload, Users, Menu, X } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
@@ -46,22 +46,24 @@ function Dashboard() {
 
   const eCoordenador = professor?.role === 'coordenador'
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) { navigate('/login'); return }
-      setUid(user.uid)
-      const dados = await buscarPerfil(user.uid)
-      setProfessor(dados)
+// No seu useEffect do dashboard.jsx:
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) { navigate('/login'); return }
+    setUid(user.uid)
+    const dados = await buscarPerfil(user.uid)
+    setProfessor(dados)
 
-      // ── Carregar cronogramas e eventos do professor ──
-      // Substitua pelas suas funções reais de busca no Firestore, por ex.:
-      // const listaC = await buscarCronogramasProfessor(user.uid)
-      // setCronogramas(listaC)
-      // const listaE = await buscarEventosCalendario(user.uid)
-      // setEventos(listaE)
-    })
-    return () => unsubscribe()
-  }, [])
+    // ── Carregar cronogramas e eventos do professor ──
+    // Substitua pelas suas funções reais de busca no Firestore, por ex.:
+    const listaC = await buscarCronograma(user.uid)
+    setCronogramas(listaC)
+
+    const listaE = await buscarEventos(user.uid)
+    setEventos(listaE)
+  })
+  return () => unsubscribe()
+}, [])
 
   useEffect(() => {
     function handleClickFora(e) {

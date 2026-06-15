@@ -125,11 +125,21 @@
 .arquivo-acao:hover { opacity: 1; }
 
 .btn-upload {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  width: 100%; margin-top: 12px; padding: 10px;
-  border-radius: 8px; border: 1px dashed var(--roxo-medio);
-  background: none; color: var(--roxo); font-size: 13px;
-  font-family: 'Poppins', sans-serif; cursor: pointer; transition: background .15s;
+  display: flex;
+  align-items: center; 
+  justify-content: center; 
+  gap: 10px;
+  width: 50%; 
+  margin-top: 12px; 
+  padding: 10px;
+  border-radius: 8px; 
+  border: 1px dashed var(--roxo-medio);
+  background: none; 
+  color: var(--roxo); 
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif; 
+  cursor: pointer; 
+  transition: background .15s;
 }
 .btn-upload:hover { background: var(--roxo-claro); }
 

@@ -410,8 +410,8 @@ body {
     .mariana {
         position: absolute;
         top: 60px;
-        left: 40px;
-        width: 550px;
+        left: 50px;
+        width: 450px;
         height: 750px;
     }
  
@@ -434,7 +434,6 @@ body {
         font-size: 25px; 
         white-space: nowrap; 
     }
-
     .textos {
         position: absolute;
         right: 30px;
@@ -451,30 +450,22 @@ body {
     }
 
     #tamanho-fonte {
-        font-size: 55px;
-        font-weight: 500;
-        text-align: center;
-        margin: 0;
-    }
-
-    #do-professor {
-        font-size: 55px;
+        font-size: 45px;
         font-weight: 500;
         text-align: right;
-        margin: -10px 0 40px 0;
+        margin: 0 0 10px 0;
     }
-
     .botao-entrar {
         overflow: visible;
-        padding: 12px 80px;
+        padding: 10px 50px;
         border-radius: 999px;
         border: none;
         background-color: var(--cor-roxa-normal);
         color: #fff;
         cursor: pointer;
-        font-size: 30px;
         font-weight: bolder;
         text-decoration: none;
+        margin-top: 30px;
     }
 
     #inteligente {
@@ -486,11 +477,13 @@ body {
     .com-barra {
         position: relative;
         display: inline-block;
+        font-size: 45px;
     }
 
     .sem-barra {
         position: relative;
         display: inline-block;
+        font-size: 45px;
     }
 
     .barra-animada {

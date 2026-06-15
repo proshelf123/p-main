@@ -159,30 +159,28 @@ function Inicio() {
 
 <section className='textos'> 
 <div className='texto-direita'>
-    <h1 id='tamanho-fonte'> A estante{" "}
-      
-<span id='inteligente'>
-    <span className='com-barra'>inteli
+  <h1 id='tamanho-fonte'>
+    A estante{" "}
+    <span id='inteligente'>
+      <span className='com-barra'>inteli
         <motion.span
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
           className='barra-animada'/>
-
-    </span><span className='sem-barra'>g</span>
-    
-  <span className='com-barra'>ente
+      </span>
+      <span className='sem-barra'>g</span>
+      <span className='com-barra'>ente
         <motion.span
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.8 }}
           className='barra-animada'/>
-    </span>
-</span>
-      <br />
-    </h1>   
+      </span>
+    </span>{" "}
+    do professor
+  </h1>
 </div>
-<p id='do-professor'>do professor</p>         
 
 <div className='entrar'> 
     <motion.button

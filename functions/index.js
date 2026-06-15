@@ -4,14 +4,6 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https')
 const { initializeApp } = require('firebase-admin/app')
 const { getAuth } = require('firebase-admin/auth')
 const { getFirestore, FieldValue } = require('firebase-admin/firestore')
-const resultado = await response.json()
-const texto = resultado.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-// ADICIONE ISSO TEMPORARIAMENTE
-console.log('Resposta Gemini:', texto.substring(0, 500))
-console.log('Status response:', response.status)
-
-const limpo = texto.replace(/```json|```/g, '').trim()
 
 initializeApp()
 
@@ -171,7 +163,7 @@ Regras:
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -193,7 +185,15 @@ Regras:
 
       const result = await response.json()
       const texto = result.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+      console.log('Status Gemini:', response.status)
+      console.log('Resposta Gemini:', texto.substring(0, 300))
+
       const limpo = texto.replace(/```json|```/g, '').trim()
+
+      if (!limpo) {
+        throw new Error('Gemini retornou resposta vazia. Verifique a chave da API.')
+      }
 
       return { sucesso: true, cronograma: JSON.parse(limpo) }
 

@@ -13,7 +13,9 @@ const MESES = [
 ]
 
 function hoje() {
-  return new Date()
+  const d = new Date()
+  d.setHours(0, 0, 0, 0) // Garante que a comparação seja feita apenas por dia
+  return d
 }
 
 function saudacao(nome) {
