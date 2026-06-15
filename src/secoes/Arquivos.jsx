@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Trash2, X } from 'lucide-react'
+import { X, AlertTriangle } from 'lucide-react'
 import TurmaArquivos from './TurmaArquivos'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
@@ -111,8 +111,6 @@ function ModalNovaTurma({ onClose, onSalvar }) {
   return (
     <div className='modal-overlay' onClick={onClose}>
       <div className='modal' onClick={e => e.stopPropagation()}>
-
-        {/* Cabeçalho */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
             <h3 className='modal-titulo' style={{ margin: 0 }}>Nova turma</h3>
@@ -120,15 +118,11 @@ function ModalNovaTurma({ onClose, onSalvar }) {
               Preencha as informações da turma a ser adicionada.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}
-          >
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
             <X size={20} />
           </button>
         </div>
 
-        {/* Ano + Período lado a lado */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <DropdownComPortal
             label='Ano'
@@ -150,7 +144,6 @@ function ModalNovaTurma({ onClose, onSalvar }) {
           />
         </div>
 
-        {/* Nome do curso */}
         <div className='perfil-grupo'>
           <label className='perfil-label'>Nome do Curso</label>
           <input
@@ -162,7 +155,6 @@ function ModalNovaTurma({ onClose, onSalvar }) {
           />
         </div>
 
-        {/* Modular */}
         <div
           className='perfil-grupo'
           style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}
@@ -180,7 +172,6 @@ function ModalNovaTurma({ onClose, onSalvar }) {
           <span style={{ fontSize: 13, color: 'var(--texto)', fontWeight: 500 }}>Turma Modular</span>
         </div>
 
-        {/* Prévia */}
         {form.curso.trim() && (
           <div style={{
             background: '#F5F3FF', borderRadius: 8, padding: '9px 12px',
@@ -203,17 +194,103 @@ function ModalNovaTurma({ onClose, onSalvar }) {
   )
 }
 
+// ─── Modal Confirmar Exclusão (Seu Estilo Customizado) ───────────────────────
+function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCancelar }) {
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={onCancelar} />
+      <div className='modal-confirmar'>
+        {/* Ícone Animado */}
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
+        </div>
+
+        {/* Texto */}
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover turma?
+        </h3>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Você está prestes a remover a turma
+        </p>
+
+        {/* Card Dinâmico da Turma */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 14px', borderRadius: 12,
+          background: corPeriodo + '15', margin: '0 0 6px',
+          animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: corPeriodo, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A2E' }}>{nomeTurma}</div>
+            <div style={{ fontSize: 11, color: '#6B7280' }}>{nomePeriodo}</div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: '#999', margin: '0 0 20px', textAlign: 'center' }}>
+          Todos os dados vinculados a ela deixarão de aparecer nesta listagem.
+        </p>
+
+        {/* Botões de Ação */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: '1px solid #e0e0e0', background: '#fff',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              color: '#555', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Sim, remover
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function Arquivos() {
   const [isCoordenador, setIsCoordenador] = useState(false)
-  const [turmaSelecionada, setTurmaSelecionada]   = useState(null)
-  const [periodoSelecionado, setPeriodoSelecionado] = useState(null)
   const [modalAberto, setModalAberto]               = useState(false)
+  const [confirmarDelete, setConfirmarDelete]       = useState(null) // { nomeTurma, nomePeriodo, corPeriodo }
 
-  // Inicializa o estado buscando do localStorage se existir, caso contrário usa a constante estática
+  // Inicializa e sincroniza a listagem com o localStorage
   const [listaPeriodos, setListaPeriodos] = useState(() => {
     const dadosSalvos = localStorage.getItem('listaPeriodos')
     return dadosSalvos ? JSON.parse(dadosSalvos) : periodos
+  })
+
+  // Inicializa seleções com localStorage para persistência pós-refresh
+  const [turmaSelecionada, setTurmaSelecionada] = useState(() => {
+    return localStorage.getItem('turmaSelecionada') || null
+  })
+  const [nomePeriodoSelecionado, setNomePeriodoSelecionado] = useState(() => {
+    return localStorage.getItem('nomePeriodoSelecionado') || null
   })
 
   useEffect(() => {
@@ -225,10 +302,26 @@ export default function Arquivos() {
     return () => unsubscribe()
   }, [])
 
-  // Efeito para persistir as alterações na lista de períodos sempre que ela mudar
+  // Efeitos colaterais de persistência (localStorage)
   useEffect(() => {
     localStorage.setItem('listaPeriodos', JSON.stringify(listaPeriodos))
   }, [listaPeriodos])
+
+  useEffect(() => {
+    if (turmaSelecionada) {
+      localStorage.setItem('turmaSelecionada', turmaSelecionada)
+    } else {
+      localStorage.removeItem('turmaSelecionada')
+    }
+  }, [turmaSelecionada])
+
+  useEffect(() => {
+    if (nomePeriodoSelecionado) {
+      localStorage.setItem('nomePeriodoSelecionado', nomePeriodoSelecionado)
+    } else {
+      localStorage.removeItem('nomePeriodoSelecionado')
+    }
+  }, [nomePeriodoSelecionado])
 
   function handleAdicionarTurma(nomeTurma, nomePeriodo) {
     setListaPeriodos(prev =>
@@ -240,27 +333,28 @@ export default function Arquivos() {
     )
   }
 
-  function handleExcluirTurma(nomeTurma, nomePeriodo) {
-    const confirmar = window.confirm(`Deseja realmente excluir a turma "${nomeTurma}"?`)
-    if (!confirmar) return
-
+  function executarDelete() {
+    if (!confirmarDelete) return
     setListaPeriodos(prev =>
       prev.map(p =>
-        p.nome === nomePeriodo
-          ? { ...p, turmas: p.turmas.filter(t => t !== nomeTurma) }
+        p.nome === confirmarDelete.nomePeriodo
+          ? { ...p, turmas: p.turmas.filter(t => t !== confirmarDelete.nomeTurma) }
           : p
       )
     )
+    setConfirmarDelete(null)
   }
 
-  if (turmaSelecionada) {
+  const periodoObjetoAtivo = listaPeriodos.find(p => p.nome === nomePeriodoSelecionado)
+
+  if (turmaSelecionada && periodoObjetoAtivo) {
     return (
       <TurmaArquivos
         turma={turmaSelecionada}
-        periodo={periodoSelecionado}
+        periodo={periodoObjetoAtivo}
         onVoltar={() => {
           setTurmaSelecionada(null)
-          setPeriodoSelecionado(null)
+          setNomePeriodoSelecionado(null)
         }}
       />
     )
@@ -274,6 +368,17 @@ export default function Arquivos() {
         <ModalNovaTurma
           onClose={() => setModalAberto(false)}
           onSalvar={handleAdicionarTurma}
+        />
+      )}
+
+      {/* Modal Confirmar Exclusão Customizado */}
+      {confirmarDelete && (
+        <ModalConfirmar
+          nomeTurma={confirmarDelete.nomeTurma}
+          nomePeriodo={confirmarDelete.nomePeriodo}
+          corPeriodo={confirmarDelete.corPeriodo}
+          onConfirmar={executarDelete}
+          onCancelar={() => setConfirmarDelete(null)}
         />
       )}
 
@@ -293,7 +398,6 @@ export default function Arquivos() {
           </p>
         </div>
 
-        {/* Botão visível apenas para coordenador */}
         {isCoordenador && (
           <button
             className='btn-upload'
@@ -314,7 +418,6 @@ export default function Arquivos() {
           transition={{ duration: 0.4, delay: pi * 0.1 }}
           style={{ marginBottom: 40 }}
         >
-          {/* Cabeçalho do período */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             marginBottom: 16, paddingBottom: 10,
@@ -353,10 +456,10 @@ export default function Arquivos() {
                 turma={turma}
                 periodo={periodo}
                 isCoordenador={isCoordenador}
-                onExcluir={() => handleExcluirTurma(turma, periodo.nome)}
+                onExcluir={() => setConfirmarDelete({ nomeTurma: turma, nomePeriodo: periodo.nome, corPeriodo: periodo.cor })}
                 onClick={() => {
                   setTurmaSelecionada(turma)
-                  setPeriodoSelecionado(periodo)
+                  setNomePeriodoSelecionado(periodo.nome)
                 }}
               />
             ))}
@@ -397,12 +500,11 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
           {nomeCurso}
         </p>
 
-        {/* Botão de Excluir visível apenas para coordenadores */}
         {isCoordenador && (
           <button
             title="Excluir turma"
             onClick={(e) => {
-              e.stopPropagation() // Impede que o clique abra a rota/seção da turma
+              e.stopPropagation() // Impede a abertura acidental da tela de arquivos ao clicar em apagar
               onExcluir()
             }}
             style={{
@@ -423,7 +525,7 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FEE2E2')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
-            <Trash2 size={16} />
+            <X size={16} />
           </button>
         )}
       </div>
