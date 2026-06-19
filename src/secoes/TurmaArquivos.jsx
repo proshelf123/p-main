@@ -342,7 +342,7 @@ export default function TurmaArquivos({ turma, periodo, onVoltar }) {
                               cursor: "pointer",
                             }}
                           >
-                            🗑
+                            x
                           </button>
                         )}
                       </div>

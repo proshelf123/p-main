@@ -3,7 +3,7 @@ import { buscarTurmas, criarTurma, deletarTurma,
   buscarRegistros, criarRegistroAula, deletarRegistro, buscarProfessores
 } from '../firebase/estrutura'
 import './secoes.css'
-import { Trash2, X, AlertTriangle } from 'lucide-react'
+import { Trash2, AlertTriangle } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
 
 const COR_DISCIPLINA = {
@@ -326,7 +326,7 @@ export default function Turmas({ uid }) {
                   <p style={{ fontSize: 15, color: '#888', margin: 0 }}>{turmaAberta.disciplina} · {turmaAberta.nome}</p>
                 </div>
                 <button onClick={() => setPainelRegistro(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
-                  <X size={20} />
+                  <Trash2 size={20} />
                 </button>
               </div>
 

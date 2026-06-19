@@ -178,7 +178,7 @@ function Inicio() {
           className='barra-animada'/>
       </span>
     </span>{" "}
-    do professor
+    <span id="do-professor"> do professor </span>
   </h1>
 </div>
 

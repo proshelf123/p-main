@@ -1,204 +1,178 @@
-// functions/index.js
-
 const { onCall, HttpsError } = require('firebase-functions/v2/https')
-const { initializeApp } = require('firebase-admin/app')
-const { getAuth } = require('firebase-admin/auth')
-const { getFirestore, FieldValue } = require('firebase-admin/firestore')
+const { defineSecret } = require('firebase-functions/params')
+const { GoogleGenerativeAI } = require('@google/generative-ai')
+const { initializeApp, getApps } = require('firebase-admin/app')
+const { getFirestore, writeBatch, doc, serverTimestamp } = require('firebase-admin/firestore')
+const pdfParse = require('pdf-parse')
 
-initializeApp()
+if (!getApps().length) initializeApp()
 
-const db = getFirestore('firestoreproshelf')
+const GEMINI_KEY = defineSecret('GEMINI_API_KEY')
 
-function sanitizarEmail(email) {
-  return email.toLowerCase().replace(/[@.]/g, '_')
+async function chamarGeminiComRetry(model, prompt, tentativas = 3) {
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      const result = await model.generateContent(prompt)
+      return result.response.text()
+    } catch (err) {
+      const ehOverload = err.message?.includes('503') || err.message?.includes('overloaded')
+      if (ehOverload && i < tentativas - 1) {
+        console.log(`Tentativa ${i + 1} falhou (503). Aguardando 3s...`)
+        await new Promise(r => setTimeout(r, 3000))
+        continue
+      }
+      throw err
+    }
+  }
 }
 
-// ─────────────────────────────────────────────────────────
-//  Criar professor
-// ─────────────────────────────────────────────────────────
-exports.criarProfessor = onCall(async (request) => {
-  const { auth, data } = request
+// Agrupa as aulas por professor a partir do JSON de turmas
+function agruparPorProfessor(turmas, periodo) {
+  const porProfessor = {}
 
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Você precisa estar logado.')
-  }
+  for (const [nomeTurma, aulas] of Object.entries(turmas)) {
+    if (!aulas || aulas.length === 0) continue
+    for (const aula of aulas) {
+      const nomePDF = (aula.professor || '').trim().toUpperCase()
+      if (!nomePDF) continue // ignora aulas sem professor
 
-  const coordSnap = await db.collection('users').doc(auth.uid).get()
-  if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
-    throw new HttpsError('permission-denied', 'Apenas coordenadores podem cadastrar professores.')
-  }
-
-  const { nome, email, senha, nomePDF } = data
-
-  if (!nome || !email || !senha || !nomePDF) {
-    throw new HttpsError('invalid-argument', 'Preencha todos os campos.')
-  }
-  if (senha.length < 6) {
-    throw new HttpsError('invalid-argument', 'A senha deve ter pelo menos 6 caracteres.')
-  }
-
-  try {
-    const authAdmin = getAuth()
-    const novoUsuario = await authAdmin.createUser({
-      email: email.toLowerCase(),
-      password: senha,
-      displayName: nome,
-    })
-
-    await db.collection('users').doc(novoUsuario.uid).set({
-      nome,
-      nomeUsuario: '',
-      instituicao: '',
-      modalidade: 'Presencial',
-      email: email.toLowerCase(),
-      role: 'professor',
-      criadoEm: FieldValue.serverTimestamp(),
-    })
-
-    const emailId = sanitizarEmail(email)
-    await db.collection('professores_escola').doc(emailId).set({
-      email: email.toLowerCase(),
-      nomePDF: nomePDF.toUpperCase().trim(),
-      criadoEm: FieldValue.serverTimestamp(),
-    })
-
-    return { sucesso: true, mensagem: `Professor ${nome} cadastrado com sucesso!` }
-
-  } catch (error) {
-    if (error.code === 'auth/email-already-exists') {
-      throw new HttpsError('already-exists', 'Este e-mail já possui uma conta cadastrada.')
+      if (!porProfessor[nomePDF]) porProfessor[nomePDF] = []
+      porProfessor[nomePDF].push({
+        dia:        aula.dia || '',
+        ordem:      aula.ordem || 1,
+        periodo:    aula.periodo || periodo,
+        disciplina: aula.disciplina || '',
+        professor:  nomePDF,
+        turma:      nomeTurma,
+      })
     }
-    throw new HttpsError('internal', 'Erro ao cadastrar: ' + error.message)
-  }
-})
-
-// ─────────────────────────────────────────────────────────
-//  Deletar professor
-// ─────────────────────────────────────────────────────────
-exports.deletarProfessor = onCall(async (request) => {
-  const { auth, data } = request
-
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Não autenticado.')
   }
 
-  const coordSnap = await db.collection('users').doc(auth.uid).get()
-  if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
-    throw new HttpsError('permission-denied', 'Apenas coordenadores podem remover professores.')
-  }
+  return porProfessor
+}
 
-  const { email } = data
-  if (!email) {
-    throw new HttpsError('invalid-argument', 'E-mail não informado.')
-  }
+async function salvarNoFirestore(turmas, periodo) {
+  const db = getFirestore()
+  const batch = writeBatch(db)
+  let totalAulas = 0
 
-  try {
-    const authAdmin = getAuth()
-    const usuario = await authAdmin.getUserByEmail(email)
-    await authAdmin.deleteUser(usuario.uid)
-    await db.collection('users').doc(usuario.uid).delete()
+  const porProfessor = agruparPorProfessor(turmas, periodo)
 
-    const emailId = sanitizarEmail(email)
-    await db.collection('professores_escola').doc(emailId).delete()
-
-    return { sucesso: true, mensagem: 'Professor removido com sucesso.' }
-
-  } catch (error) {
-    if (error.code === 'auth/user-not-found') {
-      const emailId = sanitizarEmail(email)
-      await db.collection('professores_escola').doc(emailId).delete()
-      return { sucesso: true, mensagem: 'Vínculo removido.' }
+  for (const [nomePDF, aulas] of Object.entries(porProfessor)) {
+    for (const aula of aulas) {
+      const aulaId = `${aula.dia}_${aula.ordem}_${aula.turma}_${periodo}`
+      const ref = doc(db, 'cronogramas_escola', nomePDF, 'aulas', aulaId)
+      batch.set(ref, {
+        ...aula,
+        atualizadoEm: serverTimestamp(),
+      })
+      totalAulas++
     }
-    throw new HttpsError('internal', error.message)
   }
-})
 
-// ─────────────────────────────────────────────────────────
-//  Processar horário com Gemini
-// ─────────────────────────────────────────────────────────
+  await batch.commit()
+  return { totalAulas, totalProfessores: Object.keys(porProfessor).length }
+}
+
 exports.processarHorario = onCall(
-  { secrets: ['GEMINI_API_KEY'] },
+  {
+    secrets: [GEMINI_KEY],
+    timeoutSeconds: 120,
+    memory: '512MiB',
+    region: 'us-central1',
+  },
   async (request) => {
-    const { auth, data } = request
+    const { pdfBase64, periodo } = request.data
 
-    if (!auth) {
-      throw new HttpsError('unauthenticated', 'Você precisa estar logado.')
-    }
-
-    const coordSnap = await db.collection('users').doc(auth.uid).get()
-    if (!coordSnap.exists || coordSnap.data().role !== 'coordenador') {
-      throw new HttpsError('permission-denied', 'Apenas coordenadores podem processar horários.')
-    }
-
-    const { pdfBase64, periodo } = data
     if (!pdfBase64 || !periodo) {
-      throw new HttpsError('invalid-argument', 'PDF e período são obrigatórios.')
+      throw new HttpsError('invalid-argument', 'pdfBase64 e periodo são obrigatórios.')
     }
 
-    const GEMINI_KEY = process.env.GEMINI_API_KEY
+    // 1. Decodifica o PDF e extrai o texto
+    let textoPdf
+    try {
+      const buffer = Buffer.from(pdfBase64, 'base64')
+      const parsed = await pdfParse(buffer)
+      textoPdf = parsed.text
+    } catch (err) {
+      throw new HttpsError('internal', 'Falha ao ler o PDF: ' + err.message)
+    }
 
-    const prompt = `Você recebeu um PDF de horário escolar. Extraia todas as aulas e retorne um JSON válido, sem texto adicional, sem markdown, sem \`\`\`json.
-O JSON deve ter este formato exato:
+    if (!textoPdf || textoPdf.trim().length < 50) {
+      throw new HttpsError('invalid-argument', 'O PDF não contém texto legível.')
+    }
+
+    // 2. Monta o prompt
+    const prompt = `
+Você é um sistema de extração de dados escolares.
+Analise o horário escolar abaixo e extraia as aulas de cada turma.
+O período é: ${periodo}.
+
+Retorne SOMENTE um JSON válido, sem markdown, sem explicações, no formato:
 {
   "turmas": {
-    "NOME DA TURMA": [
+    "NOME_DA_TURMA": [
       {
-        "dia": "SEG",
+        "dia": "Segunda",
         "ordem": 1,
-        "periodo": "${periodo}",
-        "disciplina": "SIGLA DA MATÉRIA",
-        "professor": "NOME DO PROFESSOR"
+        "disciplina": "Matemática",
+        "professor": "NOME_EXATO_DO_PROFESSOR",
+        "periodo": "${periodo}"
       }
     ]
   }
 }
+
 Regras:
-- "dia": DOM, SEG, TER, QUA, QUI, SEX ou SAB
-- "ordem": posição da aula no dia (1 a 7)
-- "turma": exatamente como aparece no PDF (ex: 1 RH, 2 MARKETING)
-- "disciplina": sigla ou nome da matéria
-- "professor": nome em MAIÚSCULAS como aparece no PDF
-- Inclua TODAS as turmas e TODAS as aulas
-- Retorne APENAS o JSON`
+- "dia" deve ser: Segunda, Terça, Quarta, Quinta, Sexta
+- "ordem" é o número da aula no dia (1, 2, 3...)
+- "turma" é o nome da turma (ex: "1A", "2B", "3C")
+- "professor" deve ser o nome exato como aparece no PDF, em letras maiúsculas
+- Se não houver professor identificado, use string vazia ""
+- Inclua todas as turmas encontradas no horário
 
+Horário:
+${textoPdf}
+`
+
+    // 3. Chama o Gemini
+    const genAI = new GoogleGenerativeAI(GEMINI_KEY.value())
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.1-flash-lite',
+      generationConfig: { temperature: 0.1 },
+    })
+
+    let respostaTexto
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                {
-                  inline_data: {
-                    mime_type: 'application/pdf',
-                    data: pdfBase64
-                  }
-                },
-                { text: prompt }
-              ]
-            }]
-          })
-        }
-      )
+      respostaTexto = await chamarGeminiComRetry(model, prompt)
+    } catch (err) {
+      throw new HttpsError('internal', 'Erro ao chamar o Gemini: ' + err.message)
+    }
 
-      const result = await response.json()
-      const texto = result.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    // 4. Parse do JSON
+    let cronograma
+    try {
+      const limpo = respostaTexto
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .trim()
+      cronograma = JSON.parse(limpo)
+    } catch (err) {
+      console.error('Resposta bruta do Gemini:', respostaTexto)
+      throw new HttpsError('internal', 'Gemini retornou JSON inválido.')
+    }
 
-      console.log('Status Gemini:', response.status)
-      console.log('Resposta Gemini:', texto.substring(0, 300))
+    if (!cronograma?.turmas) {
+      throw new HttpsError('internal', 'Estrutura de cronograma inválida.')
+    }
 
-      const limpo = texto.replace(/```json|```/g, '').trim()
+    // 5. Salva no Firestore agrupado por professor
+    const { totalAulas, totalProfessores } = await salvarNoFirestore(cronograma.turmas, periodo)
 
-      if (!limpo) {
-        throw new Error('Gemini retornou resposta vazia. Verifique a chave da API.')
-      }
-
-      return { sucesso: true, cronograma: JSON.parse(limpo) }
-
-    } catch (error) {
-      throw new HttpsError('internal', 'Erro ao processar PDF: ' + error.message)
+    return {
+      cronograma,
+      totalAulas,
+      totalProfessores,
     }
   }
 )
