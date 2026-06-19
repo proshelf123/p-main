@@ -11,6 +11,7 @@ import './coordenador.css'
 import { Trash2 } from 'lucide-react';
 import { TriangleAlert } from 'lucide-react';
 import { CircleCheckBig } from 'lucide-react';
+import { criarNotificacao } from '../notificacoes/notificacoes'
 
 
 const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
@@ -60,6 +61,21 @@ export default function CadastroProfessores() {
         senha:   form.senha,
         nomePDF: form.nomePDF,
       })
+
+      if (resultadoId?.data?.uid) {
+  try {
+    await criarNotificacao({
+      titulo: "Bem-vindo ao ProShelf!",
+      mensagem: `Olá ${form.nome}, sua conta de acesso foi criada com sucesso pelo coordenador.`,
+      tipo: "aviso", // Vai renderizar o emoji 📢
+      link: "/perfil",
+      destinatarioUids: [resultadoId.data.uid], // UID do professor recém-criado
+      criadoPorNome: "Coordenação"
+    })
+  } catch (notifErr) {
+    console.error("Erro ao enviar notificação de boas-vindas:", notifErr)
+  }
+}
 
       setForm(FORM_INICIAL)
       setSalvo(true)

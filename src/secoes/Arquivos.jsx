@@ -7,6 +7,7 @@ import { auth } from '../firebase'
 import { buscarPerfil } from '../firebase/estrutura'
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
+import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
 
 const periodos = [
   {
@@ -323,7 +324,7 @@ export default function Arquivos() {
     }
   }, [nomePeriodoSelecionado])
 
-  function handleAdicionarTurma(nomeTurma, nomePeriodo) {
+  async function handleAdicionarTurma(nomeTurma, nomePeriodo) {
     setListaPeriodos(prev =>
       prev.map(p =>
         p.nome === nomePeriodo
@@ -331,6 +332,20 @@ export default function Arquivos() {
           : p
       )
     )
+
+    try {
+      await criarNotificacaoPorRole({
+        role: 'professor',
+        titulo: 'Nova turma criada',
+        mensagem: `A turma ${nomeTurma} (${nomePeriodo}) foi adicionada.`,
+        tipo: 'turma',
+        link: '/turmas',
+        criadoPorUid: auth.currentUser?.uid,
+        criadoPorNome: auth.currentUser?.displayName,
+      })
+    } catch (err) {
+      console.error('Erro ao notificar professores sobre nova turma:', err)
+    }
   }
 
   function executarDelete() {

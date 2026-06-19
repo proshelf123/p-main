@@ -5,6 +5,7 @@ import { buscarTurmas, criarTurma, deletarTurma,
 import './secoes.css'
 import { Trash2, AlertTriangle } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
+import { criarNotificacao } from "../notificacoes/notificacoes";
 
 const COR_DISCIPLINA = {
   'Matemática': { ativo: '#FF0000', bg: '#fff0f0', cor: '#b30000' },
@@ -165,6 +166,20 @@ export default function Turmas({ uid }) {
     setSalvando(true)
     try {
       await criarTurma(uid, formTurma)
+      if (formTurma.professorId) {
+    try {
+      await criarNotificacao({
+        titulo: "Nova Turma Vinculada",
+        mensagem: `Você foi associado à turma "${formTurma.nome}" no período ${formTurma.periodo}.`,
+        tipo: "turma", // Renderiza o emoji 🏫 conforme seu ICONES_TIPO
+        link: "/turmas", // Direciona o professor para o painel de turmas dele
+        destinatarioUids: [formTurma.professorId], // UID direto do professor associado
+        criadoPorNome: "Coordenação"
+      })
+    } catch (notifErr) {
+      console.error("Erro ao enviar notificação de vínculo de turma:", notifErr)
+    }
+  }
       await carregarTurmas()
       setModalTurma(false)
       setFormTurma(FORM_TURMA_INICIAL)

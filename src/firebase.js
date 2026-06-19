@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
@@ -17,6 +17,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app, 'firestoreproshelf');       // Firestore (banco de dados)
+
+// initializeFirestore (em vez de getFirestore) permite ligar o long-polling
+// automático, que evita que ad blockers / extensões de privacidade derrubem
+// o canal de Write do Firestore (erro ERR_BLOCKED_BY_CLIENT).
+export const db = initializeFirestore(
+  app,
+  {
+    experimentalAutoDetectLongPolling: true,
+  },
+  'firestoreproshelf'
+);
+
 export const storage = getStorage(app);    // Storage (arquivos)
 export const functions = getFunctions(app, 'us-central1');

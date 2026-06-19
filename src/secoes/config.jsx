@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
 import { auth } from '../firebase'
-// Se atualizarConfigUser não existir, comente a linha acima e descomente:
-// import { atualizarConfigUser } from '../firebase/estrutura'
+import { atualizarConfigUser } from '../firebase/estrutura'
 import { Bell, Lock, MoonIcon } from 'lucide-react'
 
 function Configuracoes({ uid }) {
@@ -60,8 +59,9 @@ function Configuracoes({ uid }) {
       await atualizarConfigUser(uid, { notificacoes: ativo })
       setMensagem({ tipo: 'sucesso', texto: 'Notificações atualizadas!' })
     } catch (erro) {
-      setMensagem({ tipo: 'erro', texto: 'Erro ao atualizar notificações' })
-    }
+  console.error('Erro real:', erro)
+  setMensagem({ tipo: 'erro', texto: 'Erro ao atualizar notificações' })
+}
   }
 
   // ── Alterar Senha ──

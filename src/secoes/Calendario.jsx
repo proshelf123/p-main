@@ -17,6 +17,30 @@ const COR_TIPO = {
 
 const FORM_INICIAL = { titulo: '', data: '', tipo: 'reuniao', descricao: '' }
 
+import { criarNotificacaoPorRole } from "../notificacoes/notificacoes";
+
+async function handleSalvarEvento(dadosEvento, usuarioLogado) {
+  try {
+    // 1. Salva o evento no calendário (sua lógica atual)
+    await criarEvento(usuarioLogado.uid, dadosEvento);
+
+    // 2. Dispara a notificação para todos os professores
+    await criarNotificacaoPorRole({
+      role: "professor",
+      titulo: "Novo Evento no Calendário",
+      mensagem: `O coordenador adicionou: "${dadosEvento.titulo}"`,
+      tipo: "calendario", // vai renderizar o emoji 📅 conforme seu ICONES_TIPO
+      link: "/calendario", // rota para onde o professor vai ao clicar
+      criadoPorUid: usuarioLogado.uid,
+      criadoPorNome: usuarioLogado.nome
+    });
+
+    console.log("Evento criado e professores notificados!");
+  } catch (error) {
+    console.error("Erro:", error);
+  }
+}
+
 // ── Modal de confirmação customizado para Eventos ──────────────────────────
 function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
   const tipo = COR_TIPO[evento?.tipo] || COR_TIPO.reuniao

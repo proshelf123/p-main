@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https')
 const { defineSecret } = require('firebase-functions/params')
-const { GoogleGenerativeAI } = require('@google/generative-ai')
+const { GoogleGenAI } = require('@google/genai')
 const { initializeApp, getApps } = require('firebase-admin/app')
 const { getFirestore, writeBatch, doc, serverTimestamp } = require('firebase-admin/firestore')
 const pdfParse = require('pdf-parse')
@@ -9,11 +9,15 @@ if (!getApps().length) initializeApp()
 
 const GEMINI_KEY = defineSecret('GEMINI_API_KEY')
 
-async function chamarGeminiComRetry(model, prompt, tentativas = 3) {
+async function chamarGeminiComRetry(ai, prompt, tentativas = 3) {
   for (let i = 0; i < tentativas; i++) {
     try {
-      const result = await model.generateContent(prompt)
-      return result.response.text()
+      const result = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: prompt,
+        config: { temperature: 0.1 },
+      })
+      return result.text
     } catch (err) {
       const ehOverload = err.message?.includes('503') || err.message?.includes('overloaded')
       if (ehOverload && i < tentativas - 1) {
@@ -136,15 +140,11 @@ ${textoPdf}
 `
 
     // 3. Chama o Gemini
-    const genAI = new GoogleGenerativeAI(GEMINI_KEY.value())
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.1-flash-lite',
-      generationConfig: { temperature: 0.1 },
-    })
+    const ai = new GoogleGenAI({ apiKey: GEMINI_KEY.value() })
 
     let respostaTexto
     try {
-      respostaTexto = await chamarGeminiComRetry(model, prompt)
+      respostaTexto = await chamarGeminiComRetry(ai, prompt)
     } catch (err) {
       throw new HttpsError('internal', 'Erro ao chamar o Gemini: ' + err.message)
     }

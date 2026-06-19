@@ -1,0 +1,140 @@
+/* NotificationBell.css */
+.notif-bell-btn {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  transition: background 0.2s ease;
+}
+
+.notif-bell-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--laranja);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+.notif-dropdown {
+  position: fixed;
+  width: 340px;
+  max-height: 420px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ajuste o seletor abaixo para a classe de dark mode real do projeto,
+   se não for ".dark-mode" */
+.dark-mode .notif-dropdown {
+  background: #1e1e1e;
+  color: #f1f1f1;
+}
+
+.notif-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark-mode .notif-dropdown-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notif-marcar-lidas {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--roxo);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.notif-lista {
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.notif-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.dark-mode .notif-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notif-item-nao-lida {
+  background: rgba(124, 58, 237, 0.06); /* tom leve de --roxo */
+}
+
+.notif-item-icone {
+  font-size: 18px;
+}
+
+.notif-item-conteudo strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.notif-item-conteudo p {
+  font-size: 12px;
+  opacity: 0.75;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--laranja);
+}
+
+.notif-vazio {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.6;
+}

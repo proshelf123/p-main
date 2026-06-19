@@ -9,6 +9,7 @@ import { FileDown } from 'lucide-react';
 import { CircleCheckBig } from 'lucide-react';
 import { CloudUpload } from 'lucide-react';
 import { TriangleAlert } from 'lucide-react';
+import { criarNotificacaoPorRole } from '../notificacoes/notificacoes'
 
 
 const PERIODOS = ['Matutino', 'Vespertino', 'Noturno']
@@ -22,7 +23,7 @@ export default function UploadCronograma() {
   const [erro, setErro]             = useState(null)
 
   function handleArquivo(e) {
-    const file = e.target.files[0]
+    const file = e.target.files[0]    
     if (!file || file.type !== 'application/pdf') {
       setErro('Por favor, selecione um arquivo PDF.')
       return
@@ -62,6 +63,20 @@ export default function UploadCronograma() {
 
       setProgresso('Salvando no Firebase...')
       const total = await salvarNoFirestore(cronograma.turmas)
+
+      try {
+      await criarNotificacaoPorRole({
+      role: "professor",
+      titulo: "Novo Horário Disponível",
+      mensagem: `O cronograma do período ${periodo} foi atualizado pela coordenação.`,
+      tipo: "horario", // Vai renderizar o emoji 🗓️ conforme seu ICONES_TIPO
+      link: "/cronograma", // Ajuste para a rota correspondente do professor
+      criadoPorUid: "coordenacao", // Ou passe o UID do coordenador logado se tiver
+      criadoPorNome: "Coordenação"
+    })
+  }   catch (notifErr) {
+    console.error("Erro ao enviar notificação de horário:", notifErr)
+}
 
       setResultado({
         turmas: Object.keys(cronograma.turmas).length,
