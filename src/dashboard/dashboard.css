@@ -440,6 +440,54 @@ body > *:not(.dash-wrapper) {
 }
 .nav-mobile-drawer.aberto { transform: translateX(0); }
 
+/* Tema escuro: superfícies e estados com contraste consistente */
+:root.dark-mode body {
+  background: var(--bg);
+  color: var(--texto);
+}
+
+:root.dark-mode .cabecalho-dashboard {
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.32);
+}
+
+:root.dark-mode .card,
+:root.dark-mode .boas-vindas,
+:root.dark-mode .dropdown,
+:root.dark-mode .nav-mobile-drawer {
+  color: var(--texto);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+:root.dark-mode .nav-link:hover,
+:root.dark-mode .perfil-btn:hover,
+:root.dark-mode .dropdown-item:hover,
+:root.dark-mode .nav-hamburger:hover {
+  background: var(--roxo-claro);
+  color: #dfc5f5;
+}
+
+:root.dark-mode .dropdown-nome {
+  color: var(--texto-sec);
+}
+
+:root.dark-mode .dropdown-item.sair {
+  color: #ff9b9b;
+}
+
+:root.dark-mode .dropdown-item.sair:hover {
+  background: #3b2025;
+  color: #ffb4b4;
+}
+
+:root.dark-mode .nav-link-coord {
+  color: #ffc56f !important;
+}
+
+:root.dark-mode .nav-link-coord:hover {
+  background: #3a2c18 !important;
+  color: #ffd28f !important;
+}
+
 .nav-mobile-drawer .nav-link {
   width: 100%;
   justify-content: flex-start;

@@ -399,6 +399,142 @@ select.perfil-input option:checked { background: var(--roxo); color: #fff; }
 /* ── Arquivos container ── */
 .arquivos-container { min-height: 100vh; background: #F8F9FB; padding: 32px 40px; }
 
+/* Tema escuro */
+:root.dark-mode .modal,
+:root.dark-mode .modal-confirmar,
+:root.dark-mode .dropdown-menu,
+:root.dark-mode .dropdown-trigger,
+:root.dark-mode .perfil-input {
+  background: var(--branco) !important;
+  color: var(--texto) !important;
+  border-color: var(--borda) !important;
+}
+
+:root.dark-mode .modal,
+:root.dark-mode .modal-confirmar {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+:root.dark-mode .modal-titulo,
+:root.dark-mode .card h2,
+:root.dark-mode .card h3 {
+  color: var(--texto) !important;
+}
+
+:root.dark-mode .perfil-input::placeholder {
+  color: #929ba9;
+  opacity: 1;
+}
+
+:root.dark-mode .perfil-input:focus,
+:root.dark-mode .dropdown-trigger:focus {
+  border-color: #a87bd0 !important;
+  box-shadow: 0 0 0 3px rgba(168, 123, 208, 0.2);
+}
+
+:root.dark-mode .dropdown-item {
+  background: var(--branco) !important;
+  color: var(--texto) !important;
+}
+
+:root.dark-mode .dropdown-item:hover {
+  background: var(--roxo-claro) !important;
+  color: #ead9f8 !important;
+}
+
+:root.dark-mode .dropdown-item:active {
+  background: #74479c !important;
+  color: #fff !important;
+}
+
+:root.dark-mode .cal-dia {
+  background: #242936;
+  color: var(--texto);
+}
+
+:root.dark-mode .cal-dia:hover:not(.vazia) {
+  background: #383046;
+}
+
+:root.dark-mode .cal-dia.hoje {
+  background: #2d2738;
+  color: #d9b9f3;
+}
+
+:root.dark-mode .cal-dia.selecionado,
+:root.dark-mode .cal-dia.hoje.selecionado {
+  background: #74479c;
+  color: #fff;
+}
+
+:root.dark-mode .cal-dia-label {
+  background: #5d4c70;
+}
+
+:root.dark-mode .cal-evento,
+:root.dark-mode .arquivo-normal {
+  background: #222732;
+}
+
+:root.dark-mode .arquivo-normal:hover {
+  background: #30283b;
+}
+
+:root.dark-mode .arquivos-container {
+  background: var(--bg);
+}
+
+:root.dark-mode select.perfil-input option {
+  background: var(--branco);
+  color: var(--texto);
+}
+
+:root.dark-mode .btn-cancelar {
+  color: var(--texto-sec);
+  border-color: var(--borda);
+}
+
+:root.dark-mode .modal-confirmar > h3,
+:root.dark-mode .modal-confirmar > p {
+  color: var(--texto) !important;
+}
+
+:root.dark-mode .modal-confirmar > p { color: var(--texto-sec) !important; }
+
+:root.dark-mode .modal-confirmar > div:last-child > button:first-child {
+  background: #242936 !important;
+  border-color: var(--borda) !important;
+  color: var(--texto) !important;
+}
+
+:root.dark-mode .registro-modal,
+:root.dark-mode .date-picker-popup,
+:root.dark-mode .turma-arquivos-modal,
+:root.dark-mode .turma-arquivo-card,
+:root.dark-mode .solicitacao-item {
+  background: var(--branco) !important;
+  color: var(--texto) !important;
+  border-color: var(--borda) !important;
+}
+
+:root.dark-mode .turma-arquivos-modal input,
+:root.dark-mode .turma-arquivos-modal textarea {
+  background: #12151c;
+  border-color: var(--borda) !important;
+  color: var(--texto);
+}
+
+:root.dark-mode .turma-arquivos-pagina {
+  background: var(--branco) !important;
+  color: var(--texto);
+  border-color: var(--borda) !important;
+}
+
+:root.dark-mode .arquivo-turma-item {
+  background: #12151c !important;
+  border-color: var(--borda) !important;
+}
+
 /* ── Calendário: grid 2 colunas do modal ── */
 .cal-form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 

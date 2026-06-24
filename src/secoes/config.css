@@ -339,11 +339,15 @@
 
 /* ── Dark Mode ── */
 :root.dark-mode {
-  --bg: #1a1a1a;
-  --branco: #2a2a2a;
-  --texto: #f5f5f5;
-  --texto-sec: #b0b0b0;
-  --borda: #3a3a3a;
+  color-scheme: dark;
+  --bg: #0f1117;
+  --branco: #1a1e27;
+  --texto: #f3f5f8;
+  --texto-sec: #c0c7d2;
+  --borda: #3a4250;
+  --roxo: #8957b5;
+  --roxo-claro: #30243e;
+  --roxo-medio: #9a84b0;
 }
 
 :root.dark-mode .cfg-card {
@@ -352,7 +356,7 @@
 }
 
 :root.dark-mode .form-group input {
-  background: #1a1a1a;
+  background: #12151c;
   border-color: var(--borda);
   color: var(--texto);
 }
@@ -368,8 +372,22 @@
 }
 
 :root.dark-mode .btn-modal-cancelar {
-  background: rgba(153, 102, 204, 0.2);
-  color: #9966cc;
+  background: var(--roxo-claro);
+  color: #d7b8f2;
+}
+
+:root.dark-mode .form-group input:disabled {
+  background: #242936;
+  color: #9ca5b3;
+}
+
+:root.dark-mode .cfg-card:hover {
+  border-color: #68517e;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+:root.dark-mode .cfg-footer span {
+  color: #aeb6c2;
 }
 
 /* ── Responsivo ── */

@@ -7,8 +7,15 @@ import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 
 import { auth } from '../firebase'
 import { atualizarConfigUser } from '../firebase/estrutura'
 import { Bell, Lock, MoonIcon } from 'lucide-react'
+import {
+  aplicarTemaEscuro,
+  buscarTemaLocal,
+  removerTemaLegado,
+  removerTemaVisual,
+  salvarTemaLocal,
+} from '../tema'
 
-function Configuracoes({ uid }) {
+function Configuracoes({ uid, professor }) {
   const [darkMode, setDarkMode] = useState(false)
   const [notificacoes, setNotificacoes] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -20,14 +27,15 @@ function Configuracoes({ uid }) {
 
   // ── Carregar configurações do usuário ──
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true'
+    const savedDarkMode = buscarTemaLocal(uid)
+      ?? (typeof professor?.darkMode === 'boolean' ? professor.darkMode : false)
     const savedNotificacoes = localStorage.getItem('notificacoes') !== 'false'
     
     setDarkMode(savedDarkMode)
     setNotificacoes(savedNotificacoes)
     
-    if (savedDarkMode) document.documentElement.classList.add('dark-mode')
-  }, [])
+    aplicarTemaEscuro(savedDarkMode)
+  }, [uid, professor?.darkMode])
 
   // ── Limpar mensagem após 3 segundos ──
   useEffect(() => {
@@ -40,13 +48,22 @@ function Configuracoes({ uid }) {
   }, [mensagem.texto])
 
   // ── Toggle Dark Mode ──
-  const handleDarkMode = (ativo) => {
+  const handleDarkMode = async (ativo) => {
+    const valorAnterior = darkMode
     setDarkMode(ativo)
-    localStorage.setItem('darkMode', ativo)
-    if (ativo) {
-      document.documentElement.classList.add('dark-mode')
-    } else {
-      document.documentElement.classList.remove('dark-mode')
+    aplicarTemaEscuro(ativo)
+    salvarTemaLocal(uid, ativo)
+    removerTemaLegado()
+
+    try {
+      await atualizarConfigUser(uid, { darkMode: ativo })
+      setMensagem({ tipo: 'sucesso', texto: 'Aparência atualizada!' })
+    } catch (erro) {
+      console.error('Erro ao salvar preferência de tema:', erro)
+      setDarkMode(valorAnterior)
+      aplicarTemaEscuro(valorAnterior)
+      salvarTemaLocal(uid, valorAnterior)
+      setMensagem({ tipo: 'erro', texto: 'Erro ao salvar a aparência' })
     }
   }
 
@@ -112,11 +129,14 @@ function Configuracoes({ uid }) {
     if (!window.confirm('Deslogar de todos os dispositivos? Você será desconectado.')) return
     
     setLoading(true)
+    removerTemaVisual()
+    removerTemaLegado()
     try {
       await auth.signOut()
       setMensagem({ tipo: 'sucesso', texto: 'Desconectado de todos os dispositivos!' })
       setTimeout(() => window.location.href = '/login', 2000)
     } catch (erro) {
+      aplicarTemaEscuro(darkMode)
       setMensagem({ tipo: 'erro', texto: 'Erro ao deslogar: ' + erro.message })
     } finally {
       setLoading(false)
@@ -228,7 +248,7 @@ function Configuracoes({ uid }) {
         <button className='cfg-btn cfg-btn-secundario' onClick={handleDeslogarDispositivos}>
           Deslogar de todos os dispositivos
         </button>
-        <button className='cfg-btn cfg-btn-perigo'>
+        <button className='cfg-btn cfg-btn-perigo' onClick={handleDeslogarDispositivos}>
           Sair da conta
         </button>
       </motion.div>

@@ -9,6 +9,8 @@ import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
 import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
 
+const MotionDiv = motion.div
+
 const periodos = [
   {
     nome: 'Período Matutino',
@@ -115,11 +117,11 @@ function ModalNovaTurma({ onClose, onSalvar }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
             <h3 className='modal-titulo' style={{ margin: 0 }}>Nova turma</h3>
-            <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+            <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '4px 0 0' }}>
               Preencha as informações da turma a ser adicionada.
             </p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--texto-sec)', padding: 4 }}>
             <X size={20} />
           </button>
         </div>
@@ -164,7 +166,7 @@ function ModalNovaTurma({ onClose, onSalvar }) {
           <div style={{
             width: 18, height: 18, borderRadius: 5, flexShrink: 0,
             border: `2px solid ${form.modular ? 'var(--roxo)' : '#D1D5DB'}`,
-            background: form.modular ? 'var(--roxo)' : '#fff',
+            background: form.modular ? 'var(--roxo)' : 'var(--branco)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.18s',
           }}>
@@ -175,7 +177,7 @@ function ModalNovaTurma({ onClose, onSalvar }) {
 
         {form.curso.trim() && (
           <div style={{
-            background: '#F5F3FF', borderRadius: 8, padding: '9px 12px',
+            background: 'var(--roxo-claro)', borderRadius: 8, padding: '9px 12px',
             fontSize: 13, color: 'var(--roxo)', fontWeight: 600, marginBottom: 4,
           }}>
             Prévia: {form.ano} {form.curso.trim()}{form.modular ? ' - Modular' : ''}
@@ -213,10 +215,10 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
         </div>
 
         {/* Texto */}
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Remover turma?
         </h3>
-        <p style={{ fontSize: 13, color: '#666', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
           Você está prestes a remover a turma
         </p>
 
@@ -234,7 +236,7 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: '#999', margin: '0 0 20px', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
           Todos os dados vinculados a ela deixarão de aparecer nesta listagem.
         </p>
 
@@ -244,9 +246,9 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
             onClick={onCancelar}
             style={{
               flex: 1, padding: '11px', borderRadius: 10,
-              border: '1px solid #e0e0e0', background: '#fff',
+              border: '1px solid var(--borda)', background: 'var(--branco)',
               fontSize: 13, fontFamily: "'Poppins', sans-serif",
-              color: '#555', cursor: 'pointer',
+              color: 'var(--texto)', cursor: 'pointer',
               transition: 'all .15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
@@ -275,8 +277,8 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
-export default function Arquivos() {
-  const [isCoordenador, setIsCoordenador] = useState(false)
+export default function Arquivos({ uid, professor }) {
+  const [perfilCarregado, setPerfilCarregado] = useState(null)
   const [modalAberto, setModalAberto]               = useState(false)
   const [confirmarDelete, setConfirmarDelete]       = useState(null) // { nomeTurma, nomePeriodo, corPeriodo }
 
@@ -294,14 +296,21 @@ export default function Arquivos() {
     return localStorage.getItem('nomePeriodoSelecionado') || null
   })
 
+  const perfilAtual = professor
+    ? { ...professor, uid: uid || professor.uid || professor.id }
+    : perfilCarregado
+  const isCoordenador = perfilAtual?.role === 'coordenador'
+
   useEffect(() => {
+    if (professor) return
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return
       const perfil = await buscarPerfil(user.uid)
-      setIsCoordenador(perfil?.role === 'coordenador')
+      const perfilComUid = perfil ? { ...perfil, uid: user.uid } : null
+      setPerfilCarregado(perfilComUid)
     })
     return () => unsubscribe()
-  }, [])
+  }, [professor, uid])
 
   // Efeitos colaterais de persistência (localStorage)
   useEffect(() => {
@@ -367,6 +376,10 @@ export default function Arquivos() {
       <TurmaArquivos
         turma={turmaSelecionada}
         periodo={periodoObjetoAtivo}
+        turmaId={`${nomePeriodoSelecionado} - ${turmaSelecionada}`}
+        titulo={turmaSelecionada}
+        perfil={perfilAtual}
+        uid={uid}
         onVoltar={() => {
           setTurmaSelecionada(null)
           setNomePeriodoSelecionado(null)
@@ -376,7 +389,7 @@ export default function Arquivos() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FB', padding: '32px 40px' }}>
+    <div className='arquivos-container' style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px 40px' }}>
 
       {/* Modal Nova Turma */}
       {modalAberto && (
@@ -398,17 +411,17 @@ export default function Arquivos() {
       )}
 
       {/* Cabeçalho */}
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}
       >
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1A1A2E', marginBottom: 4 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--texto)', marginBottom: 4 }}>
             Arquivos
           </h1>
-          <p style={{ color: '#6B7280', fontSize: 14, margin: 0 }}>
+          <p style={{ color: 'var(--texto-sec)', fontSize: 14, margin: 0 }}>
             Selecione uma turma para acessar ou solicitar arquivos
           </p>
         </div>
@@ -422,11 +435,11 @@ export default function Arquivos() {
             + Nova turma
           </button>
         )}
-      </motion.div>
+      </MotionDiv>
 
       {/* Períodos */}
       {listaPeriodos.map((periodo, pi) => (
-        <motion.div
+        <MotionDiv
           key={periodo.nome}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -455,7 +468,7 @@ export default function Arquivos() {
           </div>
 
           {/* Grid de cards */}
-          <motion.div
+          <MotionDiv
             variants={containerVariants}
             initial='hidden'
             animate='show'
@@ -478,8 +491,8 @@ export default function Arquivos() {
                 }}
               />
             ))}
-          </motion.div>
-        </motion.div>
+          </MotionDiv>
+        </MotionDiv>
       ))}
     </div>
   )
@@ -494,12 +507,12 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
   const nomeCurso = match ? match[2] : turma
 
   return (
-    <motion.div
+    <MotionDiv
       variants={cardVariants}
       onHoverStart={() => setHover(true)}
       onHoverEnd={() => setHover(false)}
       style={{
-        background: '#fff', borderRadius: 14,
+        background: 'var(--branco)', borderRadius: 14,
         padding: '18px 18px 14px', cursor: 'pointer',
         transition: 'all 0.22s ease',
         display: 'flex', flexDirection: 'column', gap: 20,
@@ -511,7 +524,7 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
         <span style={{ fontSize: 20, fontWeight: 800, color: periodo.cor, lineHeight: 1 }}>
           {numero}
         </span>
-        <p style={{ fontSize: 17, fontWeight: 600, color: '#1A1A2E', margin: 0, flexGrow: 1, paddingRight: isCoordenador ? 24 : 0 }}>
+        <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--texto)', margin: 0, flexGrow: 1, paddingRight: isCoordenador ? 24 : 0 }}>
           {nomeCurso}
         </p>
 
@@ -556,6 +569,6 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
       >
         Acessar arquivos →
       </button>
-    </motion.div>
+    </MotionDiv>
   )
 }

@@ -1,4 +1,4 @@
-import { StrictMode, useState, useEffect } from 'react'
+import { StrictMode, useState, useEffect, useLayoutEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Route, BrowserRouter, Routes, useLocation } from "react-router"
 import { AnimatePresence } from 'framer-motion'
@@ -11,6 +11,7 @@ import CadastrarEscola from './cadastrar-escola/cadastrar-escola'
 import Registro from './registro/registro'
 import PrimeiroAcesso from './primeiro-acesso/primeiro-acesso'
 import InicioCelular from './inicio-celular/inicio-celular'
+import { removerTemaVisual } from './tema'
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -21,6 +22,10 @@ function AnimatedRoutes() {
     window.addEventListener('resize', handle);
     return () => window.removeEventListener('resize', handle);
   }, []);
+
+  useLayoutEffect(() => {
+    if (location.pathname !== '/dashboard') removerTemaVisual()
+  }, [location.pathname])
 
   return (
     <AnimatePresence mode="wait">

@@ -34,7 +34,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
         className={`dropdown-trigger ${dropdownAberto === id ? 'aberto' : ''}`}
         onClick={handleClickButton}
         style={{
-          background: 'white',
+          background: 'var(--branco)',
           border: '1px solid var(--borda)',
           borderRadius: '8px',
           padding: '9px 12px',
@@ -65,7 +65,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
             top: posicao.top,
             left: posicao.left,
             width: posicao.width,
-            background: '#fff',
+            background: 'var(--branco)',
             border: '1px solid var(--roxo)',
             borderRadius: '8px',
             zIndex: 999999,
@@ -85,7 +85,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
                 width: '100%',
                 padding: '12px 14px',
                 border: 'none',
-                background: valor === opt ? 'var(--roxo)' : 'white',
+                background: valor === opt ? 'var(--roxo)' : 'var(--branco)',
                 color: valor === opt ? 'white' : 'var(--texto)',
                 fontSize: '13px',
                 fontFamily: "'Poppins', sans-serif",
@@ -100,7 +100,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
                 if (valor !== opt) e.target.style.backgroundColor = '#F1EDF4'
               }}
               onMouseLeave={(e) => {
-                if (valor !== opt) e.target.style.backgroundColor = 'white'
+                if (valor !== opt) e.target.style.backgroundColor = 'var(--branco)'
               }}
             >
               {valor === opt && <span style={{ marginRight: '8px' }}>✓</span>}

@@ -7,7 +7,15 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
-import { buscarPerfil, buscarCronograma, buscarEventos } from '../firebase/estrutura'
+import { buscarPerfil, buscarCronograma, buscarEventos, atualizarConfigUser } from '../firebase/estrutura'
+import {
+  aplicarTemaEscuro,
+  buscarTemaLegado,
+  buscarTemaLocal,
+  removerTemaLegado,
+  removerTemaVisual,
+  salvarTemaLocal,
+} from '../tema'
 import Logo from '../assets/Group 32 (2).png'
 import { CircleUserRound, UserRound, Settings, LogOut, Upload, Users, Menu, X } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
@@ -23,6 +31,8 @@ import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 // ── Importações exclusivas do coordenador ──
 import UploadCronograma from '../coordenador/UploadCronograma'
 import CadastroProfessores from '../coordenador/CadastroProfessores'
+
+const MotionDiv = motion.div
 
 // Seções visíveis para todos os professores
 // 'Início' é a tela de boas-vindas — não aparece no nav como botão extra,
@@ -49,10 +59,35 @@ function Dashboard() {
 // No seu useEffect do dashboard.jsx:
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (!user) { navigate('/login'); return }
+    if (!user) {
+      removerTemaVisual()
+      navigate('/login')
+      return
+    }
     setUid(user.uid)
     const dados = await buscarPerfil(user.uid)
     setProfessor(dados)
+
+    let temaEscuro = typeof dados?.darkMode === 'boolean'
+      ? dados.darkMode
+      : buscarTemaLocal(user.uid)
+
+    const precisaMigrarTema = temaEscuro === null
+    if (precisaMigrarTema) {
+      temaEscuro = buscarTemaLegado() ?? false
+    }
+
+    salvarTemaLocal(user.uid, temaEscuro)
+    removerTemaLegado()
+    aplicarTemaEscuro(temaEscuro)
+
+    if (precisaMigrarTema) {
+      try {
+        await atualizarConfigUser(user.uid, { darkMode: temaEscuro })
+      } catch (erro) {
+        console.error('Erro ao migrar preferência de tema:', erro)
+      }
+    }
 
     // ── Carregar cronogramas e eventos do professor ──
     // Substitua pelas suas funções reais de busca no Firestore, por ex.:
@@ -76,8 +111,16 @@ useEffect(() => {
   }, [])
 
   async function handleSair() {
-    await signOut(auth)
-    navigate('/login')
+    const temaAnterior = document.documentElement.classList.contains('dark-mode')
+    removerTemaVisual()
+    removerTemaLegado()
+    try {
+      await signOut(auth)
+      navigate('/login')
+    } catch (erro) {
+      aplicarTemaEscuro(temaAnterior)
+      console.error('Erro ao sair da conta:', erro)
+    }
   }
 
   function renderSecao() {
@@ -97,7 +140,7 @@ useEffect(() => {
         )
       case 'Cronogramas':    return <Cronogramas uid={uid} professor={professor} />
       case 'Turmas':         return <Turmas uid={uid} />
-      case 'Arquivos':       return <Arquivos uid={uid} />
+      case 'Arquivos':       return <Arquivos uid={uid} professor={professor} />
       case 'Calendário':     return <Calendario uid={uid} />
       case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />  // ← NOVO CASE
       // ── Seções exclusivas do coordenador ──
@@ -229,7 +272,7 @@ useEffect(() => {
 
           <AnimatePresence>
             {dropdownAberto && (
-              <motion.div
+              <MotionDiv
                 className='dropdown'
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -257,7 +300,7 @@ useEffect(() => {
                 <button className='dropdown-item sair' onClick={handleSair}>
                   <LogOut size={15} /> Sair da conta
                 </button>
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
         </div>
@@ -266,7 +309,7 @@ useEffect(() => {
       {/* ── Conteúdo da seção ── */}
       <main className='dash-conteudo'>
         <AnimatePresence mode='wait'>
-          <motion.div
+          <MotionDiv
             key={secaoAtiva}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -274,7 +317,7 @@ useEffect(() => {
             transition={{ duration: 0.18 }}
           >
             {uid && renderSecao()}
-          </motion.div>
+          </MotionDiv>
         </AnimatePresence>
       </main>
 

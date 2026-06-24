@@ -141,7 +141,7 @@ export default function UploadCronograma() {
               style={{
                 padding: '8px 16px', borderRadius: 20, fontSize: 13,
                 border: '1.5px solid', cursor: 'pointer', fontFamily: 'Poppins, sans-serif',
-                background: periodo === p ? 'var(--roxo)' : 'white',
+                background: periodo === p ? 'var(--roxo)' : 'var(--branco)',
                 color: periodo === p ? 'white' : 'var(--roxo)',
                 borderColor: 'var(--roxo)',
               }}

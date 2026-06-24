@@ -361,6 +361,43 @@
   padding: 1.25rem 0;
   margin: 0;
 }
+
+/* Tema escuro */
+:root.dark-mode .bv-header { border-color: var(--borda); }
+:root.dark-mode .bv-saudacao,
+:root.dark-mode .bv-secao-titulo,
+:root.dark-mode .bv-secao-titulo h2,
+:root.dark-mode .bv-crono-disciplina,
+:root.dark-mode .bv-cal-titulo,
+:root.dark-mode .bv-cal-dia,
+:root.dark-mode .bv-evento-titulo { color: var(--texto); }
+
+:root.dark-mode .bv-subtitulo,
+:root.dark-mode .bv-crono-meta,
+:root.dark-mode .bv-cal-nav,
+:root.dark-mode .bv-cal-grid-header span,
+:root.dark-mode .bv-evento-desc,
+:root.dark-mode .bv-vazio { color: var(--texto-sec); }
+
+:root.dark-mode .bv-card-crono,
+:root.dark-mode .bv-card-aside {
+  background: var(--branco);
+  border-color: var(--borda);
+}
+
+:root.dark-mode .bv-chip,
+:root.dark-mode .bv-cal-dia.tem-evento:not(.hoje),
+:root.dark-mode .bv-evento-data {
+  background: var(--roxo-claro);
+  border-color: #59416d;
+  color: #d8b9f1;
+}
+
+:root.dark-mode .bv-link,
+:root.dark-mode .bv-evento-dia,
+:root.dark-mode .bv-evento-mes { color: #cba5eb; }
+
+:root.dark-mode .bv-cal-nav:hover { background: var(--roxo-claro); }
 /* ══════════════════════════════════════════════════════════════
    RESPONSIVIDADE Bem-vindo.css — desktop-first
    ══════════════════════════════════════════════════════════════ */

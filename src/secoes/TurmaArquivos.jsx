@@ -1,7 +1,7 @@
 // src/components/TurmaArquivos.jsx
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FileText, FileSpreadsheet, File, FolderOpen, Send, CheckCircle, Trash2 } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen, Send, CheckCircle, Trash2, Upload } from "lucide-react";
 import { 
   criarSolicitacaoArquivo, 
   escutarSolicitacoes, 
@@ -10,46 +10,71 @@ import {
   deletarArquivoAprovado
 } from "../firebase/estrutura";
 
-export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
+export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp, perfil, uid, onClose, onVoltar, turma, periodo }) {
+  const idTurma = turmaIdProp || [periodo?.nome, turma].filter(Boolean).join(" - ");
+  const tituloTurma = tituloProp || turma || "Arquivos da turma";
+  const handleVoltar = onVoltar || onClose;
   // Se o perfil não vier carregado por parâmetro, assume papel padrão por segurança
   const isCoordenador = perfil?.role === "coordenador";
   const usuarioFormatado = {
-    uid: perfil?.uid || "user_id_temp",
-    nome: perfil?.nome || "Utilizador Conectado"
+    uid: perfil?.uid || perfil?.id || uid || "user_id_temp",
+    nome: perfil?.nome || perfil?.displayName || "Usuário Conectado"
   };
 
   const [arquivos, setArquivos] = useState([]);
   const [solicitacoes, setSolicitacoes] = useState([]);
   
   const [modalSolicitarAberto, setModalSolicitarAberto] = useState(false);
-  const [novaSolicitacao, setNovaSolicitacao] = useState({ nome: "", descricao: "" });
+  const [novaSolicitacao, setNovaSolicitacao] = useState({ nome: "", descricao: "", arquivo: null });
+  const [erroSolicitacao, setErroSolicitacao] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   // Sincronização em tempo real com as duas coleções do Firestore
   useEffect(() => {
-    if (!turmaId) return;
+    if (!idTurma) return;
 
-    const unsubArquivos = escutarArquivosDaTurma(turmaId, (dados) => setArquivos(dados));
-    const unsubSolicitacoes = escutarSolicitacoes(turmaId, (dados) => setSolicitacoes(dados));
+    const unsubArquivos = escutarArquivosDaTurma(idTurma, (dados) => setArquivos(dados));
+    const unsubSolicitacoes = escutarSolicitacoes(idTurma, (dados) => setSolicitacoes(dados));
 
     return () => {
       unsubArquivos();
       unsubSolicitacoes();
     };
-  }, [turmaId]);
+  }, [idTurma]);
+
+  function formatarTamanho(bytes) {
+    if (!bytes) return "--- KB";
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function getMensagemErroEnvio(err) {
+    if (err?.code === "storage/unauthorized") {
+      return "O Firebase Storage bloqueou o envio. Publique as regras de Storage do projeto e tente novamente.";
+    }
+    if (err?.code === "storage/canceled") return "O envio do arquivo foi cancelado.";
+    if (err?.code === "storage/quota-exceeded") return "O limite de armazenamento do Firebase foi atingido.";
+    return err?.message || "Não foi possível enviar o arquivo. Tente novamente.";
+  }
 
   // Handler: Professor pede arquivo para a Coordenação
   async function handleEnviarSolicitacao(e) {
     e.preventDefault();
-    if (!novaSolicitacao.nome.trim()) return;
+    const nome = novaSolicitacao.nome.trim() || novaSolicitacao.arquivo?.name || "";
+    if (!nome || !novaSolicitacao.arquivo) {
+      setErroSolicitacao("Selecione um arquivo para enviar à coordenação.");
+      return;
+    }
 
     setEnviando(true);
+    setErroSolicitacao("");
     try {
-      await criarSolicitacaoArquivo(turmaId, novaSolicitacao, usuarioFormatado);
-      setNovaSolicitacao({ nome: "", descricao: "" });
+      await criarSolicitacaoArquivo(idTurma, { ...novaSolicitacao, nome }, usuarioFormatado);
+      setNovaSolicitacao({ nome: "", descricao: "", arquivo: null });
       setModalSolicitarAberto(false);
     } catch (err) {
       console.error("Erro ao submeter pedido:", err);
+      setErroSolicitacao(getMensagemErroEnvio(err));
     } finally {
       setEnviando(false);
     }
@@ -57,13 +82,16 @@ export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
 
   // Handler: Coordenador aprova o pedido e anexa as propriedades
   async function handleAprovar(solicitacao) {
-    const mockMetaArquivo = {
-      tipo: solicitacao.nome.split('.').pop().toLowerCase() || "pdf",
-      tamanho: `${Math.floor(Math.random() * 400) + 50} KB`
+    const metaArquivo = {
+      tipo: solicitacao.arquivoTipo || solicitacao.nome.split(".").pop().toLowerCase() || "arquivo",
+      tamanho: formatarTamanho(solicitacao.arquivoTamanho),
+      url: solicitacao.arquivoUrl || "",
+      arquivoNome: solicitacao.arquivoNome || solicitacao.nome,
+      storagePath: solicitacao.arquivoStoragePath || ""
     };
 
     try {
-      await aprovarEAdicionarArquivo(solicitacao, mockMetaArquivo, usuarioFormatado);
+      await aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuarioFormatado);
     } catch (err) {
       console.error("Erro ao validar aprovação:", err);
     }
@@ -76,12 +104,23 @@ export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
   }
 
   return (
-    <div style={{ fontFamily: "'Poppins', sans-serif" }}>
+    <div className="turma-arquivos-pagina" style={{ fontFamily: "'Poppins', sans-serif", background: "var(--branco)", color: "var(--texto)", border: "1px solid var(--borda)", borderRadius: 14, padding: 24 }}>
       {/* Header Interno */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1e1b4b", margin: 0 }}>{titulo}</h2>
-          <p style={{ fontSize: 13, color: "#6b7280", margin: "2px 0 0 0" }}>Documentos e solicitações da turma</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {handleVoltar && (
+            <button
+              className="btn-voltar"
+              onClick={handleVoltar}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px" }}
+            >
+              <ArrowLeft size={14} /> Voltar
+            </button>
+          )}
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--texto)", margin: 0 }}>{tituloTurma}</h2>
+            <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "2px 0 0 0" }}>Documentos e solicitações da turma</p>
+          </div>
         </div>
         
         {!isCoordenador && (
@@ -107,18 +146,24 @@ export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
             Arquivos da Turma ({arquivos.length})
           </h3>
           {arquivos.length === 0 ? (
-            <div style={{ border: "2px dashed #e5e7eb", borderRadius: 12, padding: "32px 16px", textAlign: "center", color: "#9ca3af" }}>
+            <div style={{ border: "2px dashed var(--borda)", borderRadius: 12, padding: "32px 16px", textAlign: "center", color: "var(--texto-sec)" }}>
               <FolderOpen size={32} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
               <p style={{ fontSize: 13, margin: 0 }}>Nenhum documento disponível nesta pasta.</p>
             </div>
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
               {arquivos.map((arq) => (
-                <div key={arq.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "#f9fafb", borderRadius: 10, border: "0.5px solid #e5e7eb" }}>
+                <div key={arq.id} className="arquivo-turma-item" style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "var(--bg)", borderRadius: 10, border: "0.5px solid var(--borda)" }}>
                   {getIconeArquivo(arq.tipo)}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1f2937" }}>{arq.nome}</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Tamanho: {arq.tamanho} • Por: {arq.enviadoPor}</div>
+                    {arq.url ? (
+                      <a href={arq.url} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "var(--texto)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {arq.nome} <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--texto)" }}>{arq.nome}</div>
+                    )}
+                    <div style={{ fontSize: 11, color: "var(--texto-sec)" }}>Tamanho: {arq.tamanho} • Por: {arq.enviadoPor}</div>
                   </div>
                   {isCoordenador && (
                     <button onClick={() => deletarArquivoAprovado(arq.id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", opacity: 0.7 }}>
@@ -137,17 +182,25 @@ export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
             Fila de Pedidos à Coordenação
           </h3>
           {solicitacoes.length === 0 ? (
-            <p style={{ fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>Nenhum pedido efetuado até ao momento.</p>
+            <p style={{ fontSize: 12, color: "var(--texto-sec)", fontStyle: "italic" }}>Nenhum pedido efetuado até ao momento.</p>
           ) : (
             <div style={{ display: "grid", gap: 8 }}>
               {solicitacoes.map((sol) => (
-                <div key={sol.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#fff", borderRadius: 8, border: "1px solid #f3f4f6" }}>
+                <div key={sol.id} className="solicitacao-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "var(--branco)", borderRadius: 8, border: "1px solid var(--borda)" }}>
                   <div>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, marginRight: 8, background: sol.status === "pendente" ? "#fef3c7" : "#d1fae5", color: sol.status === "pendente" ? "#d97706" : "#065f46" }}>
                       {sol.status.toUpperCase()}
                     </span>
-                    <strong style={{ fontSize: 13, color: "#374151" }}>{sol.nome}</strong>
-                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Pedido por: {sol.professorNome}</div>
+                    <strong style={{ fontSize: 13, color: "var(--texto)" }}>{sol.nome}</strong>
+                    <div style={{ fontSize: 11, color: "var(--texto-sec)", marginTop: 2 }}>Pedido por: {sol.professorNome}</div>
+                    {sol.descricao && (
+                      <div style={{ fontSize: 11, color: "var(--texto-sec)", marginTop: 2, maxWidth: 520 }}>{sol.descricao}</div>
+                    )}
+                    {sol.arquivoUrl && (
+                      <a href={sol.arquivoUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#6F3B9D", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, textDecoration: "none", fontWeight: 600 }}>
+                        Ver arquivo enviado <ExternalLink size={11} />
+                      </a>
+                    )}
                   </div>
 
                   {isCoordenador && sol.status === "pendente" && (
@@ -174,20 +227,39 @@ export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
       <AnimatePresence>
         {modalSolicitarAberto && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} style={{ background: "#fff", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
-              <h4 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "#1f2937" }}>Nova Solicitação</h4>
+            <div className="turma-arquivos-modal" style={{ background: "var(--branco)", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+              <h4 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "var(--texto)" }}>Nova Solicitação</h4>
               <form onSubmit={handleEnviarSolicitacao}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#4b5563", marginBottom: 6 }}>Nome Exato do Arquivo/Documento</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Nome Exato do Arquivo/Documento</label>
                 <input
                   type="text"
-                  required
                   placeholder="Ex: Ata_Reuniao_Abril.pdf"
                   value={novaSolicitacao.nome}
                   onChange={e => setNovaSolicitacao({ ...novaSolicitacao, nome: e.target.value })}
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 13, marginBottom: 16, outline: "none" }}
                 />
+
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Arquivo para análise</label>
+                <label style={{ width: "100%", padding: "12px", borderRadius: 8, border: "1.5px dashed #6F3B9D", fontSize: 13, marginBottom: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#6F3B9D", background: "var(--roxo-claro)" }}>
+                  <Upload size={16} />
+                  {novaSolicitacao.arquivo ? novaSolicitacao.arquivo.name : "Selecionar arquivo"}
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,image/*"
+                    onChange={e => {
+                      const arquivo = e.target.files?.[0] || null;
+                      setNovaSolicitacao(prev => ({
+                        ...prev,
+                        arquivo,
+                        nome: prev.nome || arquivo?.name || ""
+                      }));
+                      setErroSolicitacao("");
+                    }}
+                    style={{ display: "none" }}
+                  />
+                </label>
                 
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#4b5563", marginBottom: 6 }}>Justificação / Observações</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Justificação / Observações</label>
                 <textarea
                   placeholder="Explique à coordenação o motivo deste documento..."
                   value={novaSolicitacao.descricao}
@@ -195,14 +267,16 @@ export default function TurmaArquivos({ turmaId, titulo, perfil, onClose }) {
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 13, minHeight: 70, marginBottom: 20, outline: "none", resize: "none" }}
                 />
 
+                {erroSolicitacao && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 12px" }}>{erroSolicitacao}</p>}
+
                 <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                  <button type="button" onClick={() => setModalSolicitarAberto(false)} style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancelar</button>
+                  <button type="button" onClick={() => setModalSolicitarAberto(false)} style={{ padding: "8px 16px", background: "var(--roxo-claro)", border: "1px solid var(--borda)", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--texto)", cursor: "pointer" }}>Cancelar</button>
                   <button type="submit" disabled={enviando} style={{ padding: "8px 16px", background: "#6F3B9D", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                     {enviando ? "A enviar..." : "Enviar Pedido"}
                   </button>
                 </div>
               </form>
-            </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>

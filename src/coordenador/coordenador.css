@@ -201,3 +201,30 @@ main, .pagina-conteudo {
   .upload-titulo    { font-size: 15px; }
   .upload-stat strong { font-size: 16px; }
 }
+
+/* Tema escuro */
+:root.dark-mode .upload-container { color: var(--texto); }
+:root.dark-mode .upload-titulo { color: var(--texto); }
+:root.dark-mode .upload-desc,
+:root.dark-mode .upload-texto { color: var(--texto-sec); }
+:root.dark-mode .upload-subtexto { color: #9ca5b3; }
+:root.dark-mode .upload-badge,
+:root.dark-mode .upload-area,
+:root.dark-mode .upload-area.tem-arquivo {
+  background: var(--roxo-claro);
+  border-color: #765a8f;
+}
+:root.dark-mode .upload-nome { color: #e1c8f5; }
+:root.dark-mode .upload-tamanho { color: #c7a6e2; }
+:root.dark-mode .upload-btn:disabled { background: #4a505c; color: #c2c7cf; }
+
+:root.dark-mode .professor-card {
+  background: #12151c !important;
+  border-color: var(--borda) !important;
+  color: var(--texto);
+}
+
+:root.dark-mode .professor-card:hover {
+  background: #202530 !important;
+  border-color: #61506f !important;
+}

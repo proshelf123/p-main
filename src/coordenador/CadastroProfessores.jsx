@@ -140,12 +140,12 @@ export default function CadastroProfessores() {
             <button onClick={() => setMostrarSenha(v => !v)} style={{
               position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 11, color: '#888', fontFamily: 'Poppins, sans-serif',
+              fontSize: 11, color: 'var(--texto-sec)', fontFamily: 'Poppins, sans-serif',
             }}>
               {mostrarSenha ? 'Ocultar' : 'Mostrar'}
             </button>
           </div>
-          <span style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+          <span style={{ fontSize: 11, color: 'var(--texto-sec)', marginTop: 3 }}>
             O professor pode trocar a senha depois em Configurações
           </span>
         </div>
@@ -158,7 +158,7 @@ export default function CadastroProfessores() {
             placeholder='Ex: GETULIO, MARIA JOSÉ, ADILSON'
             style={{ textTransform: 'uppercase' }}
           />
-          <span style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+          <span style={{ fontSize: 11, color: 'var(--texto-sec)', marginTop: 3 }}>
             Copie o nome exatamente como aparece no PDF do horário
           </span>
         </div>
@@ -182,21 +182,21 @@ export default function CadastroProfessores() {
       </div>
 
       {loading ? (
-        <p style={{ fontSize: 13, color: '#999', fontFamily: 'Poppins, sans-serif' }}>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', fontFamily: 'Poppins, sans-serif' }}>
           Carregando...
         </p>
       ) : professores.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#999', fontFamily: 'Poppins, sans-serif', padding: '16px 0' }}>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', fontFamily: 'Poppins, sans-serif', padding: '16px 0' }}>
           Nenhum professor cadastrado ainda.
         </p>
       ) : (
         professores.map(p => (
-          <div key={p.id} style={{
+          <div key={p.id} className='professor-card' style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 12px', borderRadius: 8,
-            background: '#f8f7fc', marginBottom: 6,
+            background: 'var(--bg)', marginBottom: 6,
             fontFamily: 'Poppins, sans-serif',
-            border: '0.5px solid #e8e4f0',
+            border: '0.5px solid var(--borda)',
           }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
@@ -208,13 +208,13 @@ export default function CadastroProfessores() {
               {p.nomePDF?.charAt(0) || '?'}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>{p.nomePDF}</div>
-              <div style={{ fontSize: 11, color: '#888' }}>{p.email}</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--texto)' }}>{p.nomePDF}</div>
+              <div style={{ fontSize: 11, color: 'var(--texto-sec)' }}>{p.email}</div>
             </div>
             <button onClick={() => handleDeletar(p.email)}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 16, opacity: 0.4, transition: 'opacity .15s', padding: '2px 6px',
+                fontSize: 16, color: 'var(--texto-sec)', opacity: 0.55, transition: 'opacity .15s, background .15s', padding: '4px 7px', borderRadius: 6,
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = '1'}
               onMouseLeave={e => e.currentTarget.style.opacity = '0.4'}

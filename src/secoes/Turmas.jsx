@@ -3,7 +3,7 @@ import { buscarTurmas, criarTurma, deletarTurma,
   buscarRegistros, criarRegistroAula, deletarRegistro, buscarProfessores
 } from '../firebase/estrutura'
 import './secoes.css'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { Trash2, AlertTriangle, X } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
 import { criarNotificacao } from "../notificacoes/notificacoes";
 
@@ -56,10 +56,10 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
         </div>
 
         {/* Texto */}
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Remover turma?
         </h3>
-        <p style={{ fontSize: 13, color: '#666', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
           Você está prestes a remover a turma
         </p>
 
@@ -77,7 +77,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: '#999', margin: '0 0 20px', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
           Todos os registros de aula serão removidos permanentemente.
         </p>
 
@@ -87,9 +87,9 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
             onClick={onCancelar}
             style={{
               flex: 1, padding: '11px', borderRadius: 10,
-              border: '1px solid #e0e0e0', background: '#fff',
+              border: '1px solid var(--borda)', background: 'var(--branco)',
               fontSize: 13, fontFamily: "'Poppins', sans-serif",
-              color: '#555', cursor: 'pointer',
+              color: 'var(--texto)', cursor: 'pointer',
               transition: 'all .15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
@@ -228,7 +228,7 @@ export default function Turmas({ uid }) {
           className={`dropdown-trigger ${dropdownAberto === id ? 'aberto' : ''}`}
           onClick={() => setDropdownAberto(dropdownAberto === id ? null : id)}
           style={{
-            background: 'white', border: '1px solid var(--borda)', borderRadius: '8px',
+            background: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: '8px',
             padding: '9px 12px', fontSize: '13px', fontFamily: "'Poppins', sans-serif",
             color: 'var(--texto)', cursor: 'pointer', display: 'flex',
             justifyContent: 'space-between', alignItems: 'center', width: '100%',
@@ -244,7 +244,7 @@ export default function Turmas({ uid }) {
             {opcoes.map(opt => (
               <button key={opt} className='dropdown-item'
                 onClick={() => { onChange(opt); setDropdownAberto(null) }}
-                style={{ background: valor === opt ? 'var(--roxo)' : 'white', color: valor === opt ? 'white' : 'var(--texto)' }}>
+                style={{ background: valor === opt ? 'var(--roxo)' : 'var(--branco)', color: valor === opt ? 'white' : 'var(--texto)' }}>
                 {valor === opt && <span style={{ marginRight: 8 }}>✓</span>}
                 {opt}
               </button>
@@ -274,8 +274,8 @@ export default function Turmas({ uid }) {
               ← Voltar
             </button>
             <div className='registro-info'>
-              <div style={{ fontSize: 16, color: '#000000', fontWeight: 600 }}>{turmaAberta.disciplina}</div>
-              <div style={{ fontSize: 15, color: '#555' }}>{turmaAberta.nome}</div>
+              <div style={{ fontSize: 16, color: 'var(--texto)', fontWeight: 600 }}>{turmaAberta.disciplina}</div>
+              <div style={{ fontSize: 15, color: 'var(--texto-sec)' }}>{turmaAberta.nome}</div>
               {turmaAberta.professor && (
                 <div style={{ fontSize: 12, color: 'var(--roxo)', fontWeight: 500 }}>Prof(a): {turmaAberta.professor}</div>
               )}
@@ -285,7 +285,7 @@ export default function Turmas({ uid }) {
             {Object.entries(COR_TIPO).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: v.bg, flexShrink: 0 }} />
-                <span style={{ fontSize: 16, color: '#444', lineHeight: 1 }}>{v.label}</span>
+                <span style={{ fontSize: 16, color: 'var(--texto)', lineHeight: 1 }}>{v.label}</span>
               </div>
             ))}
           </div>
@@ -294,8 +294,8 @@ export default function Turmas({ uid }) {
         {/* Lista de registros */}
         {registros.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <p style={{ fontSize: 13, color: '#aaa', marginBottom: 16 }}>Nenhum registro ainda.</p>
-            <div style={{ fontSize: 12, color: '#bbb' }}>Adicione novos registros de aulas</div>
+            <p style={{ fontSize: 13, color: 'var(--texto-sec)', marginBottom: 16 }}>Nenhum registro ainda.</p>
+            <div style={{ fontSize: 12, color: 'var(--texto-sec)' }}>Adicione novos registros de aulas</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -315,8 +315,8 @@ export default function Turmas({ uid }) {
           </div>
         )}
 
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, color: '#aaa' }}>Adicione novos registros de aulas</span>
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--borda)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, color: 'var(--texto-sec)' }}>Adicione novos registros de aulas</span>
           <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => { setErroRegistro(''); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true) }}>
             + Novo registro
           </button>
@@ -326,22 +326,22 @@ export default function Turmas({ uid }) {
         {painelRegistro && (
           <>
             <div onClick={() => setPainelRegistro(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 1100, backdropFilter: 'blur(2px)' }} />
-            <div style={{
+            <div className='registro-modal' style={{
               position: 'fixed', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
               width: '100%', maxWidth: 480,
-              background: '#fff', borderRadius: 16, padding: 28,
+              background: 'var(--branco)', borderRadius: 16, padding: 28,
               zIndex: 1200, boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
               animation: 'painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both',
               display: 'flex', flexDirection: 'column', gap: 16
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 2px' }}>Novo registro de aula</h3>
-                  <p style={{ fontSize: 15, color: '#888', margin: 0 }}>{turmaAberta.disciplina} · {turmaAberta.nome}</p>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--texto)', margin: '0 0 2px' }}>Novo registro de aula</h3>
+                  <p style={{ fontSize: 15, color: 'var(--texto-sec)', margin: 0 }}>{turmaAberta.disciplina} · {turmaAberta.nome}</p>
                 </div>
                 <button onClick={() => setPainelRegistro(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
-                  <Trash2 size={20} />
+                  <X size={20} />
                 </button>
               </div>
 
@@ -367,7 +367,7 @@ export default function Turmas({ uid }) {
                   {Object.entries(COR_TIPO).map(([key, v]) => (
                     <label key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', marginLeft: 4 }}>
                       <input type='radio' name='tipo-registro' value={key} checked={formRegistro.tipo === key} onChange={() => setFormRegistro({ ...formRegistro, tipo: key })} style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }} />
-                      <span style={{ fontSize: 12, color: '#444' }}>{v.label}</span>
+                      <span style={{ fontSize: 12, color: 'var(--texto)' }}>{v.label}</span>
                     </label>
                   ))}
                 </div>
@@ -394,8 +394,8 @@ export default function Turmas({ uid }) {
   return (
     <div className='card'>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Turmas</h2>
-        <p style={{ fontSize: 14, color: '#666', margin: 0 }}>Disciplinas ministradas</p>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--texto)', margin: '0 0 4px' }}>Turmas</h2>
+        <p style={{ fontSize: 14, color: 'var(--texto-sec)', margin: 0 }}>Disciplinas ministradas</p>
       </div>
 
       {loading ? (
@@ -415,7 +415,7 @@ export default function Turmas({ uid }) {
               const ativa = disciplinaAtiva === d
               return (
                 <button key={d} className='turma-tab-pill'
-                  style={{ background: ativa ? c.ativo : '#F1EDF4', color: ativa ? '#fff' : '#555', borderColor: ativa ? c.ativo : 'transparent', transform: ativa ? 'scale(1.05)' : 'scale(1)' }}
+                  style={{ background: ativa ? c.ativo : 'var(--roxo-claro)', color: ativa ? '#fff' : 'var(--texto)', borderColor: ativa ? c.ativo : 'transparent', transform: ativa ? 'scale(1.05)' : 'scale(1)' }}
                   onClick={() => setDisciplinaAtiva(d)}>
                   {d}
                 </button>
@@ -428,7 +428,7 @@ export default function Turmas({ uid }) {
             </button>
           </div>
 
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', margin: '0 0 12px' }}>{disciplinaAtiva}</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--texto)', margin: '0 0 12px' }}>{disciplinaAtiva}</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {turmasFiltradas.map((t, idx) => {
@@ -513,13 +513,13 @@ export default function Turmas({ uid }) {
                           setFormTurma({ ...formTurma, professor: p.nome, professorId: p.id })
                           setMostrarSugestoes(false)
                         }}
-                        style={{ background: 'white', color: 'var(--texto)', textAlign: 'left', width: '100%', border: 'none', padding: '10px 12px', cursor: 'pointer' }}
+                        style={{ background: 'var(--branco)', color: 'var(--texto)', textAlign: 'left', width: '100%', border: 'none', padding: '10px 12px', cursor: 'pointer' }}
                       >
                         {p.nome}
                       </button>
                     ))
                   ) : (
-                    <div style={{ padding: '10px 12px', fontSize: 12, color: '#aaa', background: 'white' }}>
+                    <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--texto-sec)', background: 'var(--branco)' }}>
                       Nenhum professor encontrado
                     </div>
                   )}

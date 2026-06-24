@@ -50,8 +50,9 @@
 /* Ajuste o seletor abaixo para a classe de dark mode real do projeto,
    se não for ".dark-mode" */
 .dark-mode .notif-dropdown {
-  background: #1e1e1e;
-  color: #f1f1f1;
+  background: var(--branco);
+  color: var(--texto);
+  border: 1px solid var(--borda);
 }
 
 .notif-dropdown-header {
@@ -98,8 +99,12 @@
 }
 
 .dark-mode .notif-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--roxo-claro);
 }
+
+.dark-mode .notif-item { border-color: var(--borda); }
+.dark-mode .notif-item-nao-lida { background: #2c2238; }
+.dark-mode .notif-marcar-lidas { color: #cba5eb; }
 
 .notif-item-nao-lida {
   background: rgba(124, 58, 237, 0.06); /* tom leve de --roxo */

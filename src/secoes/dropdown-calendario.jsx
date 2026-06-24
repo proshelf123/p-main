@@ -96,12 +96,13 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
   const popup = open && createPortal(
     <div
       ref={popupRef}
+      className="date-picker-popup"
       style={{
         position: 'absolute',
         top: popupPos.top,
         left: popupPos.left,
         zIndex: 99999,
-        background: 'white',
+        background: 'var(--branco)',
         border: '1px solid #AFA9EC',
         borderRadius: 12,
         boxShadow: '0 8px 32px rgba(111,59,157,0.18)',
@@ -156,7 +157,7 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid #eee' }}>
-          <button className="cal-nav" style={{ fontSize: 12, color: '#888' }} onClick={() => { onChange(''); setDropdownAberto(null) }}>Limpar</button>
+          <button className="cal-nav" style={{ fontSize: 12, color: 'var(--texto-sec)' }} onClick={() => { onChange(''); setDropdownAberto(null) }}>Limpar</button>
           <button className="cal-nav" style={{ fontSize: 12 }} onClick={selecionarHoje}>Hoje</button>
         </div>
       </>}
@@ -201,10 +202,10 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
         type="button"
         className="perfil-input"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                 cursor: 'pointer', textAlign: 'left', background: 'white' }}
+                 cursor: 'pointer', textAlign: 'left', background: 'var(--branco)' }}
         onClick={handleOpen}
       >
-        <span style={{ color: displayValue ? 'var(--texto)' : '#aaa' }}>
+        <span style={{ color: displayValue ? 'var(--texto)' : 'var(--texto-sec)' }}>
           {displayValue ?? 'dd/mm/aaaa'}
         </span>
         <span style={{ color: 'var(--roxo)', fontSize: 16 }}><Calendar size={20}/></span>

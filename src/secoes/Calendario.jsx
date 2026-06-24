@@ -61,10 +61,10 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
         </div>
 
         {/* Texto */}
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Remover evento?
         </h3>
-        <p style={{ fontSize: 13, color: '#666', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
           Você está prestes a remover o evento
         </p>
 
@@ -84,7 +84,7 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: '#999', margin: '0 0 20px', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
           Esta ação não poderá ser desfeita.
         </p>
 
@@ -94,9 +94,9 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
             onClick={onCancelar}
             style={{
               flex: 1, padding: '11px', borderRadius: 10,
-              border: '1px solid #e0e0e0', background: '#fff',
+              border: '1px solid var(--borda)', background: 'var(--branco)',
               fontSize: 13, fontFamily: "'Poppins', sans-serif",
-              color: '#555', cursor: 'pointer',
+              color: 'var(--texto)', cursor: 'pointer',
               transition: 'all .15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
@@ -287,14 +287,14 @@ export default function Calendario({ uid }) {
 
         {/* Eventos do dia selecionado */}
         {diaSelecionado && (
-          <div style={{ marginTop: 12, borderTop: '1px solid #eee', paddingTop: 12 }}>
+          <div style={{ marginTop: 12, borderTop: '1px solid var(--borda)', paddingTop: 12 }}>
             <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--texto)' }}>
                 {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
               </span>
             </div>
             {eventosDiaSel.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Nenhum evento neste dia.</p>
+              <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: 0 }}>Nenhum evento neste dia.</p>
             ) : (
               eventosDiaSel.map(ev => {
                 const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao

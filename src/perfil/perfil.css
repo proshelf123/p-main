@@ -185,6 +185,31 @@
 .perfil-salvar:hover   { opacity: 0.88; }
 .perfil-salvar:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Tema escuro */
+:root.dark-mode .perfil-modal {
+  background: var(--branco);
+  color: var(--texto);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.5);
+}
+
+:root.dark-mode .perfil-header,
+:root.dark-mode .perfil-rodape { border-color: var(--borda); }
+:root.dark-mode .perfil-titulo { color: var(--texto); }
+:root.dark-mode .perfil-subtitulo,
+:root.dark-mode .perfil-label { color: var(--texto-sec); }
+
+:root.dark-mode .perfil-input {
+  background: #12151c;
+  border-color: var(--borda);
+  color: var(--texto);
+}
+
+:root.dark-mode .perfil-input::placeholder { color: #929ba9; }
+:root.dark-mode .perfil-input-disabled { background: #242936; color: #9ca5b3; }
+:root.dark-mode .perfil-fechar { color: var(--texto-sec); }
+:root.dark-mode .perfil-fechar:hover { background: var(--roxo-claro); color: var(--texto); }
+:root.dark-mode .perfil-cancelar { border-color: var(--borda); color: var(--texto-sec); }
+
 /* ── Responsivo ── */
 @media (max-width: 540px) {
   .perfil-modal    { border-radius: 16px 16px 0 0; align-self: flex-end; max-height: 95vh; }
