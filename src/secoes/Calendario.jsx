@@ -3,7 +3,9 @@ import { buscarEventos, criarEvento, deletarEvento } from '../firebase/estrutura
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
 import CustomDatePicker from './dropdown-calendario'
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react'
+import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
+import { auth } from "../firebase"
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB']
@@ -17,30 +19,6 @@ const COR_TIPO = {
 
 const FORM_INICIAL = { titulo: '', data: '', tipo: 'reuniao', descricao: '' }
 
-import { criarNotificacaoPorRole } from "../notificacoes/notificacoes";
-
-async function handleSalvarEvento(dadosEvento, usuarioLogado) {
-  try {
-    // 1. Salva o evento no calendário (sua lógica atual)
-    await criarEvento(usuarioLogado.uid, dadosEvento);
-
-    // 2. Dispara a notificação para todos os professores
-    await criarNotificacaoPorRole({
-      role: "professor",
-      titulo: "Novo Evento no Calendário",
-      mensagem: `O coordenador adicionou: "${dadosEvento.titulo}"`,
-      tipo: "calendario", // vai renderizar o emoji 📅 conforme seu ICONES_TIPO
-      link: "/calendario", // rota para onde o professor vai ao clicar
-      criadoPorUid: usuarioLogado.uid,
-      criadoPorNome: usuarioLogado.nome
-    });
-
-    console.log("Evento criado e professores notificados!");
-  } catch (error) {
-    console.error("Erro:", error);
-  }
-}
-
 // ── Modal de confirmação customizado para Eventos ──────────────────────────
 function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
   const tipo = COR_TIPO[evento?.tipo] || COR_TIPO.reuniao
@@ -49,7 +27,6 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
     <>
       <div className='modal-confirmar-overlay' onClick={onCancelar} />
       <div className='modal-confirmar'>
-        {/* Ícone */}
         <div style={{
           width: 52, height: 52, borderRadius: '50%',
           background: '#FFF0F3',
@@ -60,7 +37,6 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
           <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
         </div>
 
-        {/* Texto */}
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Remover evento?
         </h3>
@@ -68,7 +44,6 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
           Você está prestes a remover o evento
         </p>
 
-        {/* Card do evento */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 14px', borderRadius: 12,
@@ -88,7 +63,6 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
           Esta ação não poderá ser desfeita.
         </p>
 
-        {/* Botões */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={onCancelar}
@@ -124,7 +98,8 @@ function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
   )
 }
 
-export default function Calendario({ uid }) {
+export default function Calendario({ uid, professor }) {
+  const isCoordenador = professor?.role === 'coordenador'
   const hoje = new Date()
   const [mes, setMes] = useState(hoje.getMonth())
   const [ano, setAno] = useState(hoje.getFullYear())
@@ -136,12 +111,12 @@ export default function Calendario({ uid }) {
   const [erro, setErro] = useState('')
   const [diaSelecionado, setDiaSelecionado] = useState(null)
   const [dropdownAberto, setDropdownAberto] = useState(null)
-  const [confirmarDelete, setConfirmarDelete] = useState(null) // Novo estado para o alerta
+  const [confirmarDelete, setConfirmarDelete] = useState(null)
 
   useEffect(() => {
     if (!uid) return
-    buscarEventos(uid).then(dados => { setEventos(dados); setLoading(false) })
-  }, [uid])
+    buscarEventos(uid, professor).then(dados => { setEventos(dados); setLoading(false) })
+  }, [uid, professor])
 
   function diasDoMes(m, a)         { return new Date(a, m + 1, 0).getDate() }
   function primeiroDiaSemana(m, a) { return new Date(a, m, 1).getDay() }
@@ -177,35 +152,82 @@ export default function Calendario({ uid }) {
   }
 
   async function handleSalvar() {
-    if (!form.titulo.trim()) { setErro('Informe o título do evento.'); return }
-    if (!form.data)          { setErro('Informe a data.'); return }
-    setSalvando(true)
-    try {
-      await criarEvento(uid, form)
-      const dados = await buscarEventos(uid)
-      setEventos(dados)
-      setModalAberto(false)
-      setForm(FORM_INICIAL)
-    } catch {
-      setErro('Erro ao salvar. Tente novamente.')
-    } finally {
-      setSalvando(false)
-    }
+  if (!isCoordenador) return
+
+  if (!form.titulo.trim()) {
+    setErro('Informe o título do evento.')
+    return
   }
 
-  // Função para abrir o alerta
+  if (!form.data) {
+    setErro('Informe a data.')
+    return
+  }
+
+  setSalvando(true)
+
+  try {
+    await criarEvento(uid, {
+      ...form,
+      compartilharComProfessores: true,
+    })
+
+    console.log('Evento criado. Criando notificação do evento...')
+
+    try {
+      const resultado = await criarNotificacaoPorRole({
+        role: "professor",
+        titulo: "Novo Evento no Calendário",
+        mensagem: `O coordenador adicionou: "${form.titulo}"`,
+        tipo: "calendario",
+        link: "/calendario",
+        criadoPorUid: auth.currentUser?.uid || uid,
+        criadoPorNome:
+          professor?.nome ||
+          auth.currentUser?.displayName ||
+          'Coordenação',
+      })
+
+      console.log('Resultado da criação de notificações:', resultado)
+    } catch (erroNotificacao) {
+      console.error(
+        "Evento salvo, mas ocorreu erro ao criar notificação:",
+        erroNotificacao
+      )
+    }
+
+    const dados = await buscarEventos(uid, professor)
+
+    setEventos(dados)
+    setModalAberto(false)
+    setForm(FORM_INICIAL)
+    setErro('')
+  } catch (err) {
+    console.error("Erro ao salvar evento:", err)
+    setErro('Erro ao salvar. Tente novamente.')
+  } finally {
+    setSalvando(false)
+  }
+}
+
   function handleDeletar(evento, e) {
-    if (e) e.stopPropagation()
+    e?.stopPropagation()
+    if (!isCoordenador) return
     setConfirmarDelete(evento)
   }
 
-  // Função para realmente excluir
   async function executarDelete() {
-    if (!confirmarDelete) return
-    const id = confirmarDelete.id
-    await deletarEvento(uid, id)
-    setEventos(prev => prev.filter(e => e.id !== id))
-    setConfirmarDelete(null)
+    if (!isCoordenador || !confirmarDelete) return
+
+    try {
+      await deletarEvento(uid, confirmarDelete.id)
+      const dados = await buscarEventos(uid, professor)
+      setEventos(dados)
+      setConfirmarDelete(null)
+    } catch (err) {
+      console.error("Erro ao remover evento:", err)
+      setErro("Erro ao remover evento. Tente novamente.")
+    }
   }
 
   const total = diasDoMes(mes, ano)
@@ -219,7 +241,6 @@ export default function Calendario({ uid }) {
       {/* ── Calendário visual ── */}
       <div className='card'>
 
-        {/* Header roxo pill */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -242,7 +263,6 @@ export default function Calendario({ uid }) {
           >›</button>
         </div>
 
-        {/* Grade do calendário */}
         <div className='cal-grid'>
           {DIAS_SEMANA.map((d, i) => (
             <div key={i} className='cal-dia-label'>{d}</div>
@@ -262,10 +282,8 @@ export default function Calendario({ uid }) {
                 onClick={() => setDiaSelecionado(dia === diaSelecionado ? null : dia)}
                 style={{ cursor: 'pointer' }}
               >
-                {/* Número do dia */}
                 <span className='cal-dia-num'>{dia}</span>
 
-                {/* Bolinhas coloridas — máx 3, sem texto */}
                 {temEv && (
                   <div className='cal-dia-bolinhas'>
                     {evsDia.slice(0, 3).map(ev => {
@@ -302,7 +320,9 @@ export default function Calendario({ uid }) {
                   <div key={ev.id} className='cal-evento' style={{ borderLeftColor: tipo.cor }}>
                     <div className='cal-evento-nome'>{ev.titulo}</div>
                     <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                    <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                    {isCoordenador && (
+                      <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                    )}
                   </div>
                 )
               })
@@ -310,15 +330,17 @@ export default function Calendario({ uid }) {
           </div>
         )}
 
-      </div>{/* fim card calendário */}
+      </div>
 
       {/* ── Eventos do mês ── */}
       <div className='card'>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos em: {MESES[mes]}</div>
-          <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => abrirModal()}>
-            + Novo evento
-          </button>
+          {isCoordenador && (
+            <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => abrirModal()}>
+              + Novo evento
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -341,7 +363,9 @@ export default function Calendario({ uid }) {
                 <div className='cal-evento-data'>{formatarData(ev.data)}</div>
                 <div className='cal-evento-nome'>{ev.titulo}</div>
                 <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                {isCoordenador && (
+                  <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                )}
               </div>
             )
           })
@@ -349,7 +373,7 @@ export default function Calendario({ uid }) {
       </div>
 
       {/* ── Modal novo evento ── */}
-      {modalAberto && (
+      {isCoordenador && modalAberto && (
         <div className='modal-overlay' onClick={() => setModalAberto(false)}>
           <div className='modal' onClick={e => e.stopPropagation()}>
             <h3 className='modal-titulo'>Novo evento</h3>

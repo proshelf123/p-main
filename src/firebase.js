@@ -29,5 +29,12 @@ export const db = initializeFirestore(
   'firestoreproshelf'
 );
 
+export const defaultDb = initializeFirestore(
+  app,
+  {
+    experimentalAutoDetectLongPolling: true,
+  }
+);
+
 export const storage = getStorage(app);    // Storage (arquivos)
 export const functions = getFunctions(app, 'us-central1');

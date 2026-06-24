@@ -168,7 +168,14 @@ body > *:not(.dash-wrapper) {
   max-height: 60px;
 }
 
-.perfil-wrapper { justify-self: end; position: relative; }
+.cabecalho-acoes {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perfil-wrapper { position: relative; }
 
 .perfil-btn {
   background: none; 

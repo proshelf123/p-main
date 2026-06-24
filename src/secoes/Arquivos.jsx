@@ -5,77 +5,34 @@ import TurmaArquivos from './TurmaArquivos'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
 import { buscarPerfil } from '../firebase/estrutura'
+import { escutarTurmasPeriodo, adicionarTurmaPeriodo, removerTurmaPeriodo } from '../firebase/estrutura'
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
 import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
 
 const MotionDiv = motion.div
 
-const periodos = [
+// Estrutura base dos períodos (cores e ordem fixas; turmas vêm do Firestore)
+const PERIODOS_BASE = [
   {
     nome: 'Período Matutino',
     cor: '#F59E0B',
     corFundo: '#FFFBEB',
-    turmas: [
-      '2° Informática para Internet',
-      '3° Informática para Internet',
-      '1° Desenvolvimento de Sistemas',
-      '1° Marketing',
-      '2° Marketing',
-      '3° Marketing',
-      '1° Recursos Humanos',
-      '2° Recursos Humanos',
-      '3° Recursos Humanos',
-      '1° Eletrônica',
-      '2° Eletrônica',
-      '3° Eletrônica',
-    ],
   },
   {
     nome: 'Período Vespertino',
     cor: '#8B5CF6',
     corFundo: '#F5F3FF',
-    turmas: [
-      '1° Programação de Jogos Digitais',
-      '2° Programação de Jogos Digitais',
-      '3° Programação de Jogos Digitais',
-      '1° Administração',
-      '2° Administração',
-      '3° Administração',
-      '1° Farmácia',
-      '2° Farmácia',
-      '3° Farmácia',
-      '1° Biotecnologia - Modular',
-      '2° Biotecnologia - Modular',
-      '3° Biotecnologia - Modular',
-    ],
   },
   {
     nome: 'Período Noturno',
     cor: '#1E40AF',
     corFundo: '#EFF6FF',
-    turmas: [
-      '1° Eletroeletrônica',
-      '2° Eletroeletrônica',
-      '3° Eletroeletrônica',
-      '2° Desenvolvimento de Sistemas',
-      '3° Desenvolvimento de Sistemas',
-      '1° Informática para Internet',
-      '1° Administração',
-      '2° Administração',
-      '3° Administração',
-      '1° Marketing - Modular',
-      '2° Marketing - Modular',
-      '3° Marketing - Modular',
-      '1° Farmácia - Modular',
-      '2° Farmácia - Modular',
-      '3° Farmácia - Modular',
-    ],
   },
 ]
 
 const ANOS = ['1°', '2°', '3°']
-const PERIODOS_NOMES = periodos.map(p => p.nome)
+const PERIODOS_NOMES = PERIODOS_BASE.map(p => p.nome)
 const FORM_INICIAL = { ano: '1°', curso: '', periodo: 'Período Matutino', modular: false }
 
 const containerVariants = {
@@ -197,13 +154,12 @@ function ModalNovaTurma({ onClose, onSalvar }) {
   )
 }
 
-// ─── Modal Confirmar Exclusão (Seu Estilo Customizado) ───────────────────────
+// ─── Modal Confirmar Exclusão ────────────────────────────────────────────────
 function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCancelar }) {
   return (
     <>
       <div className='modal-confirmar-overlay' onClick={onCancelar} />
       <div className='modal-confirmar'>
-        {/* Ícone Animado */}
         <div style={{
           width: 52, height: 52, borderRadius: '50%',
           background: '#FFF0F3',
@@ -214,7 +170,6 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
           <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
         </div>
 
-        {/* Texto */}
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Remover turma?
         </h3>
@@ -222,7 +177,6 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
           Você está prestes a remover a turma
         </p>
 
-        {/* Card Dinâmico da Turma */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 14px', borderRadius: 12,
@@ -240,7 +194,6 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
           Todos os dados vinculados a ela deixarão de aparecer nesta listagem.
         </p>
 
-        {/* Botões de Ação */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={onCancelar}
@@ -279,93 +232,88 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function Arquivos({ uid, professor }) {
   const [perfilCarregado, setPerfilCarregado] = useState(null)
-  const [modalAberto, setModalAberto]               = useState(false)
-  const [confirmarDelete, setConfirmarDelete]       = useState(null) // { nomeTurma, nomePeriodo, corPeriodo }
+  const [modalAberto, setModalAberto]         = useState(false)
+  const [confirmarDelete, setConfirmarDelete] = useState(null)
+  const [carregando, setCarregando]           = useState(true)
 
-  // Inicializa e sincroniza a listagem com o localStorage
-  const [listaPeriodos, setListaPeriodos] = useState(() => {
-    const dadosSalvos = localStorage.getItem('listaPeriodos')
-    return dadosSalvos ? JSON.parse(dadosSalvos) : periodos
-  })
+  // Mapa de período → lista de turmas vindas do Firestore
+  // { 'Período Matutino': [{ id, nomeTurma }, ...], ... }
+  const [turmasPorPeriodo, setTurmasPorPeriodo] = useState({})
 
-  // Inicializa seleções com localStorage para persistência pós-refresh
-  const [turmaSelecionada, setTurmaSelecionada] = useState(() => {
-    return localStorage.getItem('turmaSelecionada') || null
-  })
-  const [nomePeriodoSelecionado, setNomePeriodoSelecionado] = useState(() => {
-    return localStorage.getItem('nomePeriodoSelecionado') || null
-  })
+  const [turmaSelecionada, setTurmaSelecionada] = useState(null)
+  const [nomePeriodoSelecionado, setNomePeriodoSelecionado] = useState(null)
 
   const perfilAtual = professor
     ? { ...professor, uid: uid || professor.uid || professor.id }
     : perfilCarregado
   const isCoordenador = perfilAtual?.role === 'coordenador'
 
+  // Carrega o perfil quando não vem pelo prop
   useEffect(() => {
     if (professor) return
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return
       const perfil = await buscarPerfil(user.uid)
-      const perfilComUid = perfil ? { ...perfil, uid: user.uid } : null
-      setPerfilCarregado(perfilComUid)
+      setPerfilCarregado(perfil ? { ...perfil, uid: user.uid } : null)
     })
     return () => unsubscribe()
   }, [professor, uid])
 
-  // Efeitos colaterais de persistência (localStorage)
+  // Escuta o Firestore em tempo real — qualquer mudança do coordenador
+  // aparece automaticamente para todos os usuários conectados
   useEffect(() => {
-    localStorage.setItem('listaPeriodos', JSON.stringify(listaPeriodos))
-  }, [listaPeriodos])
+    const unsub = escutarTurmasPeriodo((mapa) => {
+      setTurmasPorPeriodo(mapa)
+      setCarregando(false)
+    })
+    return () => unsub()
+  }, [])
 
-  useEffect(() => {
-    if (turmaSelecionada) {
-      localStorage.setItem('turmaSelecionada', turmaSelecionada)
-    } else {
-      localStorage.removeItem('turmaSelecionada')
-    }
-  }, [turmaSelecionada])
-
-  useEffect(() => {
-    if (nomePeriodoSelecionado) {
-      localStorage.setItem('nomePeriodoSelecionado', nomePeriodoSelecionado)
-    } else {
-      localStorage.removeItem('nomePeriodoSelecionado')
-    }
-  }, [nomePeriodoSelecionado])
+  // Monta a lista de períodos mesclando a estrutura base (cores) com as turmas do Firestore
+  const listaPeriodos = PERIODOS_BASE.map(periodo => ({
+    ...periodo,
+    turmas: turmasPorPeriodo[periodo.nome] || [],
+  }))
 
   async function handleAdicionarTurma(nomeTurma, nomePeriodo) {
-    setListaPeriodos(prev =>
-      prev.map(p =>
-        p.nome === nomePeriodo
-          ? { ...p, turmas: [...p.turmas, nomeTurma] }
-          : p
-      )
+  try {
+    await adicionarTurmaPeriodo(
+      nomeTurma,
+      nomePeriodo,
+      auth.currentUser?.uid
     )
 
+    console.log('Turma criada. Criando notificação para professores...')
+
     try {
-      await criarNotificacaoPorRole({
+      const resultado = await criarNotificacaoPorRole({
         role: 'professor',
         titulo: 'Nova turma criada',
         mensagem: `A turma ${nomeTurma} (${nomePeriodo}) foi adicionada.`,
         tipo: 'turma',
-        link: '/turmas',
-        criadoPorUid: auth.currentUser?.uid,
-        criadoPorNome: auth.currentUser?.displayName,
+        link: '/arquivos',
+        criadoPorUid: auth.currentUser?.uid || uid,
+        criadoPorNome:
+          perfilAtual?.nome ||
+          auth.currentUser?.displayName ||
+          'Coordenação',
       })
-    } catch (err) {
-      console.error('Erro ao notificar professores sobre nova turma:', err)
-    }
-  }
 
-  function executarDelete() {
-    if (!confirmarDelete) return
-    setListaPeriodos(prev =>
-      prev.map(p =>
-        p.nome === confirmarDelete.nomePeriodo
-          ? { ...p, turmas: p.turmas.filter(t => t !== confirmarDelete.nomeTurma) }
-          : p
+      console.log('Resultado da criação de notificações:', resultado)
+    } catch (erroNotificacao) {
+      console.error(
+        'Turma criada, mas ocorreu erro ao notificar professores:',
+        erroNotificacao
       )
-    )
+    }
+  } catch (err) {
+    console.error('Erro ao adicionar turma:', err)
+  }
+}
+
+  async function executarDelete() {
+    if (!confirmarDelete) return
+    await removerTurmaPeriodo(confirmarDelete.turmaDocId)
     setConfirmarDelete(null)
   }
 
@@ -391,7 +339,6 @@ export default function Arquivos({ uid, professor }) {
   return (
     <div className='arquivos-container' style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px 40px' }}>
 
-      {/* Modal Nova Turma */}
       {modalAberto && (
         <ModalNovaTurma
           onClose={() => setModalAberto(false)}
@@ -399,7 +346,6 @@ export default function Arquivos({ uid, professor }) {
         />
       )}
 
-      {/* Modal Confirmar Exclusão Customizado */}
       {confirmarDelete && (
         <ModalConfirmar
           nomeTurma={confirmarDelete.nomeTurma}
@@ -437,63 +383,76 @@ export default function Arquivos({ uid, professor }) {
         )}
       </MotionDiv>
 
-      {/* Períodos */}
-      {listaPeriodos.map((periodo, pi) => (
-        <MotionDiv
-          key={periodo.nome}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: pi * 0.1 }}
-          style={{ marginBottom: 40 }}
-        >
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            marginBottom: 16, paddingBottom: 10,
-            borderBottom: `2px solid ${periodo.cor}22`,
-          }}>
-            <span style={{
-              fontSize: 13, fontWeight: 700,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              color: periodo.cor,
-            }}>
-              {periodo.nome}
-            </span>
-            <span style={{
-              fontSize: 12, background: periodo.cor + '18',
-              color: periodo.cor, borderRadius: 99,
-              padding: '2px 10px', fontWeight: 600,
-            }}>
-              {periodo.turmas.length} turmas
-            </span>
-          </div>
-
-          {/* Grid de cards */}
+      {carregando ? (
+        <p style={{ color: 'var(--texto-sec)', fontSize: 14 }}>Carregando turmas...</p>
+      ) : (
+        listaPeriodos.map((periodo, pi) => (
           <MotionDiv
-            variants={containerVariants}
-            initial='hidden'
-            animate='show'
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
-              gap: 14,
-            }}
+            key={periodo.nome}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: pi * 0.1 }}
+            style={{ marginBottom: 40 }}
           >
-            {periodo.turmas.map(turma => (
-              <TurmaCard
-                key={turma}
-                turma={turma}
-                periodo={periodo}
-                isCoordenador={isCoordenador}
-                onExcluir={() => setConfirmarDelete({ nomeTurma: turma, nomePeriodo: periodo.nome, corPeriodo: periodo.cor })}
-                onClick={() => {
-                  setTurmaSelecionada(turma)
-                  setNomePeriodoSelecionado(periodo.nome)
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              marginBottom: 16, paddingBottom: 10,
+              borderBottom: `2px solid ${periodo.cor}22`,
+            }}>
+              <span style={{
+                fontSize: 13, fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: periodo.cor,
+              }}>
+                {periodo.nome}
+              </span>
+              <span style={{
+                fontSize: 12, background: periodo.cor + '18',
+                color: periodo.cor, borderRadius: 99,
+                padding: '2px 10px', fontWeight: 600,
+              }}>
+                {periodo.turmas.length} turmas
+              </span>
+            </div>
+
+            {periodo.turmas.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--texto-sec)', fontStyle: 'italic' }}>
+                Nenhuma turma neste período.
+              </p>
+            ) : (
+              <MotionDiv
+                variants={containerVariants}
+                initial='hidden'
+                animate='show'
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                  gap: 14,
                 }}
-              />
-            ))}
+              >
+                {periodo.turmas.map(({ id: turmaDocId, nomeTurma }) => (
+                  <TurmaCard
+                    key={turmaDocId}
+                    turma={nomeTurma}
+                    periodo={periodo}
+                    isCoordenador={isCoordenador}
+                    onExcluir={() => setConfirmarDelete({
+                      turmaDocId,
+                      nomeTurma,
+                      nomePeriodo: periodo.nome,
+                      corPeriodo: periodo.cor,
+                    })}
+                    onClick={() => {
+                      setTurmaSelecionada(nomeTurma)
+                      setNomePeriodoSelecionado(periodo.nome)
+                    }}
+                  />
+                ))}
+              </MotionDiv>
+            )}
           </MotionDiv>
-        </MotionDiv>
-      ))}
+        ))
+      )}
     </div>
   )
 }
@@ -532,7 +491,7 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
           <button
             title="Excluir turma"
             onClick={(e) => {
-              e.stopPropagation() // Impede a abertura acidental da tela de arquivos ao clicar em apagar
+              e.stopPropagation()
               onExcluir()
             }}
             style={{

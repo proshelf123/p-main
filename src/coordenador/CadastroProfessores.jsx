@@ -55,7 +55,7 @@ export default function CadastroProfessores() {
     try {
       const criarProfessor = httpsCallable(functions, 'criarProfessor')
 
-      await criarProfessor({
+      const resultadoId = await criarProfessor({
         nome:    form.nome,
         email:   form.email,
         senha:   form.senha,

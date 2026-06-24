@@ -117,7 +117,8 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
   )
 }
 
-export default function Turmas({ uid }) {
+export default function Turmas({ uid, professor }) {
+  const isCoordenador = professor?.role === 'coordenador'
   const [turmas, setTurmas]                   = useState([])
   const [disciplinas, setDisciplinas]         = useState([])
   const [disciplinaAtiva, setDisciplinaAtiva] = useState(null)
@@ -137,16 +138,16 @@ export default function Turmas({ uid }) {
   const [professores, setProfessores]           = useState([])
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
 
-  useEffect(() => { if (uid) carregarTurmas() }, [uid])
+  useEffect(() => { if (uid) carregarTurmas() }, [uid, professor?.role])
 
   useEffect(() => {
-    if (uid) {
+    if (uid && isCoordenador) {
       buscarProfessores().then(dados => setProfessores(dados))
     }
-  }, [uid])
+  }, [uid, isCoordenador])
 
   async function carregarTurmas() {
-    const dados = await buscarTurmas(uid)
+    const dados = await buscarTurmas(uid, professor)
     setTurmas(dados)
     const discs = [...new Set(dados.map(t => t.disciplina))].filter(Boolean)
     setDisciplinas(discs)
@@ -156,11 +157,12 @@ export default function Turmas({ uid }) {
 
   async function abrirTurma(turma) {
     setTurmaAberta(turma)
-    const regs = await buscarRegistros(uid, turma.id)
+    const regs = await buscarRegistros(turma.ownerUid || uid, turma.id)
     setRegistros(regs)
   }
 
   async function handleSalvarTurma() {
+    if (!isCoordenador) return
     if (!formTurma.nome.trim())       { setErroTurma('Informe o nome da turma.'); return }
     if (!formTurma.disciplina.trim()) { setErroTurma('Informe a disciplina.'); return }
     setSalvando(true)
@@ -196,18 +198,20 @@ export default function Turmas({ uid }) {
   // Executado ao confirmar no modal
   async function executarDelete() {
     if (!confirmarDelete) return
-    await deletarTurma(uid, confirmarDelete.id)
+    await deletarTurma(confirmarDelete.ownerUid || uid, confirmarDelete.id)
     setConfirmarDelete(null)
     await carregarTurmas()
   }
 
   async function handleSalvarRegistro() {
+    if (!isCoordenador) return
     if (!formRegistro.data)            { setErroRegistro('Informe a data da aula.'); return }
     if (!formRegistro.conteudo.trim()) { setErroRegistro('Informe o conteúdo da aula.'); return }
     setSalvando(true)
     try {
-      await criarRegistroAula(uid, turmaAberta.id, formRegistro)
-      const regs = await buscarRegistros(uid, turmaAberta.id)
+      const ownerUid = turmaAberta.ownerUid || uid
+      await criarRegistroAula(ownerUid, turmaAberta.id, formRegistro)
+      const regs = await buscarRegistros(ownerUid, turmaAberta.id)
       setRegistros(regs)
       setPainelRegistro(false)
       setFormRegistro(FORM_REGISTRO_INICIAL)
@@ -216,7 +220,8 @@ export default function Turmas({ uid }) {
   }
 
   async function handleDeletarRegistro(registroId) {
-    await deletarRegistro(uid, turmaAberta.id, registroId)
+    if (!isCoordenador) return
+    await deletarRegistro(turmaAberta.ownerUid || uid, turmaAberta.id, registroId)
     setRegistros(prev => prev.filter(r => r.id !== registroId))
   }
 
@@ -306,21 +311,25 @@ export default function Turmas({ uid }) {
                   <span style={{ color: tipo.cor, fontSize: 13, flex: 1 }}>
                     Aula do dia {r.data.split('-').reverse().join('/')} — {r.conteudo}
                   </span>
-                  <button className='arquivo-acao' style={{ color: tipo.cor, opacity: 0.6 }} onClick={() => handleDeletarRegistro(r.id)} title='Remover'>
-                    <Trash2 size={14} />
-                  </button>
+                  {isCoordenador && (
+                    <button className='arquivo-acao' style={{ color: tipo.cor, opacity: 0.6 }} onClick={() => handleDeletarRegistro(r.id)} title='Remover'>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
         )}
 
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--borda)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, color: 'var(--texto-sec)' }}>Adicione novos registros de aulas</span>
-          <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => { setErroRegistro(''); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true) }}>
-            + Novo registro
-          </button>
-        </div>
+        {isCoordenador && (
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--borda)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 13, color: 'var(--texto-sec)' }}>Adicione novos registros de aulas</span>
+            <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => { setErroRegistro(''); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true) }}>
+              + Novo registro
+            </button>
+          </div>
+        )}
 
         {/* Painel de novo registro */}
         {painelRegistro && (
@@ -403,9 +412,11 @@ export default function Turmas({ uid }) {
       ) : turmas.length === 0 ? (
         <>
           <p className='secao-vazia'>Nenhuma turma cadastrada.</p>
-          <button className='btn-upload' onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
-            + Nova turma
-          </button>
+          {isCoordenador && (
+            <button className='btn-upload' onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
+              + Nova turma
+            </button>
+          )}
         </>
       ) : (
         <>
@@ -421,11 +432,13 @@ export default function Turmas({ uid }) {
                 </button>
               )
             })}
-            <button className='turma-tab-pill'
-              style={{ background: 'none', color: 'var(--roxo)', border: '1.5px dashed var(--roxo)', marginLeft: 'auto' }}
-              onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
-              + Nova turma
-            </button>
+            {isCoordenador && (
+              <button className='turma-tab-pill'
+                style={{ background: 'none', color: 'var(--roxo)', border: '1.5px dashed var(--roxo)', marginLeft: 'auto' }}
+                onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
+                + Nova turma
+              </button>
+            )}
           </div>
 
           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--texto)', margin: '0 0 12px' }}>{disciplinaAtiva}</p>
@@ -444,14 +457,16 @@ export default function Turmas({ uid }) {
                     </div>
                     <span style={{ fontSize: 18, fontWeight: 300 }}>›</span>
                   </button>
-                  <button
-                    onClick={e => handleDeletarTurma(t, e)}
-                    style={{ position: 'absolute', top: '50%', right: 26, transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.35, transition: 'opacity .15s' }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                    onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}
-                    title='Remover turma'>
-                    <Trash2 size={14} color={c.cor} />
-                  </button>
+                  {isCoordenador && (
+                    <button
+                      onClick={e => handleDeletarTurma(t, e)}
+                      style={{ position: 'absolute', top: '50%', right: 26, transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.35, transition: 'opacity .15s' }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}
+                      title='Remover turma'>
+                      <Trash2 size={14} color={c.cor} />
+                    </button>
+                  )}
                 </div>
               )
             })}
@@ -469,7 +484,7 @@ export default function Turmas({ uid }) {
       )}
 
       {/* ── Modal Nova Turma com Autocomplete do Professor ── */}
-      {modalTurma && (
+      {isCoordenador && modalTurma && (
         <div className='modal-overlay' onClick={() => setModalTurma(false)}>
           <div className='modal' onClick={e => e.stopPropagation()}>
             <h3 className='modal-titulo'>Nova turma</h3>

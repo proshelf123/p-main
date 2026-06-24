@@ -1,10 +1,13 @@
 // src/perfil/Perfil.jsx
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { buscarPerfil, salvarPerfil } from '../firebase/estrutura'
 import { auth } from '../firebase'
+import DropdownComPortal from '../secoes/DropwdownComPortal'
 import './perfil.css'
+
+const MotionDiv = motion.div
 
 const MODALIDADES = ['Presencial', 'Híbrido', 'EAD']
 
@@ -20,6 +23,7 @@ export default function Perfil({ uid, onFechar }) {
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo] = useState(false)
   const [erro, setErro] = useState('')
+  const [dropdownAberto, setDropdownAberto] = useState(null)
 
   useEffect(() => {
     if (!uid) return
@@ -54,14 +58,14 @@ export default function Perfil({ uid, onFechar }) {
   }
 
   return (
-    <motion.div
+    <MotionDiv
       className='perfil-overlay'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onFechar}
     >
-      <motion.div
+      <MotionDiv
         className='perfil-modal'
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -114,16 +118,15 @@ export default function Perfil({ uid, onFechar }) {
                 placeholder='Registro do professor'
               />
             </div>
-            <div className='perfil-grupo'>
-              <label className='perfil-label'>Modalidade</label>
-              <select
-                className='perfil-input'
-                value={form.modalidade}
-                onChange={e => setForm({ ...form, modalidade: e.target.value })}
-              >
-                {MODALIDADES.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
+            <DropdownComPortal
+              label='Modalidade'
+              opcoes={MODALIDADES}
+              valor={form.modalidade}
+              onChange={modalidade => setForm({ ...form, modalidade })}
+              id='perfil-modalidade'
+              dropdownAberto={dropdownAberto}
+              setDropdownAberto={setDropdownAberto}
+            />
           </div>
 
           <div className='perfil-grupo'>
@@ -156,7 +159,7 @@ export default function Perfil({ uid, onFechar }) {
             {salvando ? 'Salvando...' : salvo ? '✓ Salvo!' : 'Salvar perfil'}
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </MotionDiv>
+    </MotionDiv>
   )
 }

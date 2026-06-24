@@ -9,6 +9,7 @@ import {
   aprovarEAdicionarArquivo,
   deletarArquivoAprovado
 } from "../firebase/estrutura";
+import { notificarCoordenadores } from "../notificacoes/notificacoes"
 
 export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp, perfil, uid, onClose, onVoltar, turma, periodo }) {
   const idTurma = turmaIdProp || [periodo?.nome, turma].filter(Boolean).join(" - ");

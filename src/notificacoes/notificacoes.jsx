@@ -33,16 +33,29 @@ export default function NotificationBell({ uid }) {
   useEffect(() => {
     if (!uid) return
 
-    const ref = query(
-      collection(db, "users", uid, "notificacoes"),
-      orderBy("criadoEm", "desc"),
-      limit(30)
-    )
+    const baseRef = collection(db, "users", uid, "notificacoes")
+    const ordenarNotificacoes = (lista) =>
+      lista.sort((a, b) => {
+        const dataA = a.criadoEm?.toMillis?.() || 0
+        const dataB = b.criadoEm?.toMillis?.() || 0
+        return dataB - dataA
+      })
 
-    const unsubscribe = onSnapshot(ref, (snapshot) => {
+    const atualizarLista = (snapshot) => {
       const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setNotificacoes(lista)
-    })
+      setNotificacoes(ordenarNotificacoes(lista).slice(0, 30))
+    }
+
+    let unsubscribe = onSnapshot(
+      query(baseRef, orderBy("criadoEm", "desc"), limit(30)),
+      atualizarLista,
+      (erro) => {
+        console.error("Erro ao escutar notificações ordenadas:", erro)
+        unsubscribe = onSnapshot(baseRef, atualizarLista, (fallbackErro) => {
+          console.error("Erro ao escutar notificações:", fallbackErro)
+        })
+      }
+    )
 
     return () => unsubscribe()
   }, [uid])

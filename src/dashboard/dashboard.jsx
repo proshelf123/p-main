@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
-import { buscarPerfil, buscarCronograma, buscarEventos, atualizarConfigUser } from '../firebase/estrutura'
+import { buscarPerfil, buscarCronograma, buscarEventos, atualizarConfigUser, criarPerfil } from '../firebase/estrutura'
 import {
   aplicarTemaEscuro,
   buscarTemaLegado,
@@ -25,6 +25,7 @@ import Arquivos from '../secoes/Arquivos'
 import Calendario from '../secoes/Calendario'
 import Configuracoes from '../secoes/config'  // ← NOVA IMPORTAÇÃO
 import Perfil from '../perfil/Perfil'
+import NotificationBell from '../notificacoes/notificacoes.jsx'
 import IconePerfil from '../assets/Frame 4.png'
 import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 
@@ -65,7 +66,11 @@ useEffect(() => {
       return
     }
     setUid(user.uid)
-    const dados = await buscarPerfil(user.uid)
+    let dados = await buscarPerfil(user.uid)
+    if (!dados) {
+      await criarPerfil(user.uid, user.email)
+      dados = await buscarPerfil(user.uid)
+    }
     setProfessor(dados)
 
     let temaEscuro = typeof dados?.darkMode === 'boolean'
@@ -94,7 +99,7 @@ useEffect(() => {
     const listaC = await buscarCronograma(user.uid)
     setCronogramas(listaC)
 
-    const listaE = await buscarEventos(user.uid)
+    const listaE = await buscarEventos(user.uid, dados)
     setEventos(listaE)
   })
   return () => unsubscribe()
@@ -139,9 +144,9 @@ useEffect(() => {
           </>
         )
       case 'Cronogramas':    return <Cronogramas uid={uid} professor={professor} />
-      case 'Turmas':         return <Turmas uid={uid} />
+      case 'Turmas':         return <Turmas uid={uid} professor={professor} />
       case 'Arquivos':       return <Arquivos uid={uid} professor={professor} />
-      case 'Calendário':     return <Calendario uid={uid} />
+      case 'Calendário':     return <Calendario uid={uid} professor={professor} />
       case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />  // ← NOVO CASE
       // ── Seções exclusivas do coordenador ──
       case 'Upload Horário': return <UploadCronograma />
@@ -261,7 +266,9 @@ useEffect(() => {
         </nav>
 
         {/* Ícone de usuário + dropdown */}
-        <div className='perfil-wrapper' ref={dropdownRef}>
+        <div className='cabecalho-acoes'>
+          {uid && <NotificationBell uid={uid} />}
+          <div className='perfil-wrapper' ref={dropdownRef}>
           <button
             className='perfil-btn'
             onClick={() => setDropdownAberto(v => !v)}
@@ -303,6 +310,7 @@ useEffect(() => {
               </MotionDiv>
             )}
           </AnimatePresence>
+          </div>
         </div>
       </header>
 
