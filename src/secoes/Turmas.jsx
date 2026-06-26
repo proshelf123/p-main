@@ -147,18 +147,38 @@ export default function Turmas({ uid, professor }) {
   }, [uid, isCoordenador])
 
   async function carregarTurmas() {
-    const dados = await buscarTurmas(uid, professor)
-    setTurmas(dados)
-    const discs = [...new Set(dados.map(t => t.disciplina))].filter(Boolean)
-    setDisciplinas(discs)
-    if (discs.length > 0) setDisciplinaAtiva(discs[0])
-    setLoading(false)
+    setLoading(true)
+    setErroTurma('')
+
+    try {
+      const dados = await buscarTurmas(uid, professor)
+      setTurmas(dados)
+      const discs = [...new Set(dados.map(t => t.disciplina))].filter(Boolean)
+      setDisciplinas(discs)
+      if (discs.length > 0) setDisciplinaAtiva(discs[0])
+    } catch (erro) {
+      console.error('Erro ao carregar turmas:', erro)
+      setTurmas([])
+      setDisciplinas([])
+      setDisciplinaAtiva(null)
+      setErroTurma('Nao foi possivel carregar suas turmas. Verifique as permissoes do Firestore.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function abrirTurma(turma) {
     setTurmaAberta(turma)
-    const regs = await buscarRegistros(turma.ownerUid || uid, turma.id)
-    setRegistros(regs)
+    setErroRegistro('')
+
+    try {
+      const regs = await buscarRegistros(turma.ownerUid || uid, turma.id)
+      setRegistros(regs)
+    } catch (erro) {
+      console.error('Erro ao carregar registros da turma:', erro)
+      setRegistros([])
+      setErroRegistro('Nao foi possivel carregar os registros desta turma.')
+    }
   }
 
   async function handleSalvarTurma() {
@@ -331,8 +351,10 @@ export default function Turmas({ uid, professor }) {
                 <span style={{ fontSize: 16, color: 'var(--texto)', lineHeight: 1 }}>{v.label}</span>
               </div>
             ))}
-          </div>
         </div>
+      </div>
+
+        {erroRegistro && <p style={{ color: '#c0392b', fontSize: 12, margin: '0 0 16px' }}>{erroRegistro}</p>}
 
         {/* Lista de registros */}
         {registros.length === 0 ? (
@@ -444,6 +466,8 @@ export default function Turmas({ uid, professor }) {
         <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--texto)', margin: '0 0 4px' }}>Turmas</h2>
         <p style={{ fontSize: 14, color: 'var(--texto-sec)', margin: 0 }}>Disciplinas ministradas</p>
       </div>
+
+      {erroTurma && <p style={{ color: '#c0392b', fontSize: 12, margin: '0 0 16px' }}>{erroTurma}</p>}
 
       {loading ? (
         <p className='secao-vazia'>Carregando...</p>

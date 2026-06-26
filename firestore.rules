@@ -62,8 +62,18 @@ service cloud.firestore {
     // Turmas de aula (Turmas.jsx)
 
     match /turmas/{uid}/{document=**} {
-      allow read: if logado() && (eDono(uid) || eCoordenador());
+      allow read: if logado()
+        && (eDono(uid) || eCoordenador() || resource.data.professorId == request.auth.uid);
       allow write: if logado() && (eDono(uid) || eCoordenador());
+    }
+
+    match /turmas/{uid}/lista/{turmaId}/registros/{registroId} {
+      allow read: if logado()
+        && (
+          eDono(uid)
+          || eCoordenador()
+          || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
+        );
     }
 
     // Cronograma pessoal

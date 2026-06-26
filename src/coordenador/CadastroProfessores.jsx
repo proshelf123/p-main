@@ -6,13 +6,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { functions, db } from '../firebase'
+import { auth, functions, db } from '../firebase'
 import './coordenador.css'
 import { Trash2, TriangleAlert, CircleCheckBig } from 'lucide-react'
 import { criarNotificacao } from '../notificacoes/notificacoes'
 
-
 const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
+const FUNCTIONS_HTTP_BASE = 'https://us-central1-proshelf-8ecfd.cloudfunctions.net'
 
 function normalizarEmail(email) {
   return String(email || '').trim().toLowerCase()
@@ -39,6 +39,47 @@ function mensagemErro(error, fallback) {
 
 function obterNomeProfessor(professor) {
   return professor?.nomePDF || professor?.nome || professor?.email || 'Professor'
+}
+
+async function chamarFuncaoHttp(nomeFuncao, dados) {
+  const token = await auth.currentUser?.getIdToken()
+
+  if (!token) {
+    const error = new Error('Sua sessão expirou. Faça login novamente.')
+    error.code = 'functions/unauthenticated'
+    throw error
+  }
+
+  const response = await fetch(`${FUNCTIONS_HTTP_BASE}/${nomeFuncao}Http`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ data: dados }),
+  })
+  const payload = await response.json().catch(() => ({}))
+
+  if (!response.ok || payload.error) {
+    const erroPayload = payload.error || {}
+    const error = new Error(erroPayload.message || 'Erro ao chamar Cloud Function.')
+    error.code = erroPayload.status
+      ? `functions/${String(erroPayload.status).toLowerCase().replaceAll('_', '-')}`
+      : `functions/http-${response.status}`
+    throw error
+  }
+
+  return { data: payload.result }
+}
+
+async function chamarFuncaoProfessor(nomeFuncao, dados) {
+  try {
+    const callable = httpsCallable(functions, nomeFuncao)
+    return await callable(dados)
+  } catch (error) {
+    console.warn(`Callable ${nomeFuncao} falhou. Tentando rota HTTP autenticada:`, error)
+    return chamarFuncaoHttp(nomeFuncao, dados)
+  }
 }
 
 export default function CadastroProfessores() {
@@ -170,8 +211,7 @@ export default function CadastroProfessores() {
     setSalvo(false)
 
     try {
-      const criarProfessor = httpsCallable(functions, 'criarProfessorHttp')
-      const resultadoId = await criarProfessor(dados)
+      const resultadoId = await chamarFuncaoProfessor('criarProfessor', dados)
       const uidCriado = resultadoId?.data?.uid
 
       if (!uidCriado) {
@@ -220,8 +260,7 @@ export default function CadastroProfessores() {
     setErro('')
     setExcluindoId(id)
     try {
-      const deletarProfessor = httpsCallable(functions, 'deletarProfessorHttp')
-      await deletarProfessor({ email })
+      await chamarFuncaoProfessor('deletarProfessor', { email })
       await carregarProfessores({ mostrarLoading: false })
     } catch (error) {
       console.error('Erro ao remover professor:', error)

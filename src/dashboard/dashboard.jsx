@@ -46,6 +46,7 @@ function Dashboard() {
   const [professor, setProfessor]   = useState(null)
   const [secaoAtiva, setSecaoAtiva] = useState('Início')
   const [cronogramas, setCronogramas] = useState([])
+  const [cronogramasCarregados, setCronogramasCarregados] = useState(false)
   const [eventos, setEventos]       = useState([])
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const [perfilAberto, setPerfilAberto]     = useState(false)
@@ -65,6 +66,7 @@ function Dashboard() {
         return
       }
       setUid(user.uid)
+      setCronogramasCarregados(false)
       let dados = await buscarPerfil(user.uid)
       if (!dados) {
         await criarPerfil(user.uid, user.email)
@@ -100,6 +102,7 @@ function Dashboard() {
 
       const listaC = await buscarCronograma(user.uid, dados)
       setCronogramas(listaC)
+      setCronogramasCarregados(true)
 
       const listaE = await buscarEventos(user.uid, dados)
       setEventos(listaE)
@@ -130,6 +133,11 @@ function Dashboard() {
     }
   }
 
+  function handleCronogramasAtualizados(lista) {
+    setCronogramas(lista)
+    setCronogramasCarregados(true)
+  }
+
   function renderSecao() {
     switch (secaoAtiva) {
       case 'Início':
@@ -143,7 +151,16 @@ function Dashboard() {
             onIrCalendario={() => setSecaoAtiva('Calendário')}
           />
         )
-      case 'Cronogramas':    return <Cronogramas uid={uid} professor={professor} />
+      case 'Cronogramas':
+        return (
+          <Cronogramas
+            uid={uid}
+            professor={professor}
+            cronogramasIniciais={cronogramas}
+            cronogramasCarregados={cronogramasCarregados}
+            onCronogramasAtualizados={handleCronogramasAtualizados}
+          />
+        )
       case 'Turmas':         return <Turmas uid={uid} professor={professor} />
       case 'Arquivos':       return <Arquivos uid={uid} professor={professor} />
       case 'Calendário':     return <Calendario uid={uid} professor={professor} />

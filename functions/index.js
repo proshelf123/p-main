@@ -23,6 +23,30 @@ const PUBLIC_CALLABLE_OPTIONS = {
   cors: CORS_ORIGINS,
 }
 
+function origemCorsPermitida(origin) {
+  if (!origin) return false
+  return CORS_ORIGINS.some((permitida) => permitida.test(origin))
+}
+
+function responderCors(req, res) {
+  const origin = String(req.get('origin') || '')
+
+  if (origemCorsPermitida(origin)) {
+    res.set('Access-Control-Allow-Origin', origin)
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+    res.set('Access-Control-Max-Age', '3600')
+    res.set('Vary', 'Origin')
+  }
+
+  if (req.method === 'OPTIONS') {
+    res.status(origemCorsPermitida(origin) ? 204 : 403).send('')
+    return true
+  }
+
+  return false
+}
+
 function erroCallable(error) {
   if (error instanceof HttpsError) return error
   return new HttpsError('internal', error?.message || 'Erro interno.')
@@ -35,6 +59,8 @@ function callableHttp(options, handler) {
   }
 
   return onRequest({ ...PUBLIC_CALLABLE_OPTIONS, ...options }, async (req, res) => {
+    if (responderCors(req, res)) return
+
     if (req.method !== 'POST') {
       res.status(405).json({
         error: {
