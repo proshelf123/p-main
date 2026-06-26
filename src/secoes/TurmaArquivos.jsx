@@ -1,15 +1,15 @@
 // src/components/TurmaArquivos.jsx
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen, Send, CheckCircle, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen, Send, CheckCircle, XCircle, Trash2, Upload } from "lucide-react";
 import { 
   criarSolicitacaoArquivo, 
   escutarSolicitacoes, 
   escutarArquivosDaTurma, 
   aprovarEAdicionarArquivo,
+  recusarSolicitacaoArquivo,
   deletarArquivoAprovado
 } from "../firebase/estrutura";
-import { notificarCoordenadores } from "../notificacoes/notificacoes"
 
 export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp, perfil, uid, onClose, onVoltar, turma, periodo }) {
   const idTurma = turmaIdProp || [periodo?.nome, turma].filter(Boolean).join(" - ");
@@ -29,6 +29,7 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   const [novaSolicitacao, setNovaSolicitacao] = useState({ nome: "", descricao: "", arquivo: null });
   const [erroSolicitacao, setErroSolicitacao] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState("");
 
   // Sincronização em tempo real com as duas coleções do Firestore
   useEffect(() => {
@@ -83,18 +84,41 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
 
   // Handler: Coordenador aprova o pedido e anexa as propriedades
   async function handleAprovar(solicitacao) {
+    if (!isCoordenador || processandoSolicitacaoId) return;
+    const nomeArquivo = solicitacao.nome || solicitacao.arquivoNome || "arquivo";
     const metaArquivo = {
-      tipo: solicitacao.arquivoTipo || solicitacao.nome.split(".").pop().toLowerCase() || "arquivo",
+      tipo: solicitacao.arquivoTipo || nomeArquivo.split(".").pop()?.toLowerCase() || "arquivo",
       tamanho: formatarTamanho(solicitacao.arquivoTamanho),
       url: solicitacao.arquivoUrl || "",
-      arquivoNome: solicitacao.arquivoNome || solicitacao.nome,
+      arquivoNome: solicitacao.arquivoNome || nomeArquivo,
       storagePath: solicitacao.arquivoStoragePath || ""
     };
 
     try {
+      setProcessandoSolicitacaoId(solicitacao.id);
       await aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuarioFormatado);
+      // Notificação ao professor já disparada dentro de aprovarEAdicionarArquivo (estrutura.js)
     } catch (err) {
       console.error("Erro ao validar aprovação:", err);
+    } finally {
+      setProcessandoSolicitacaoId("");
+    }
+  }
+
+  async function handleRecusar(solicitacao) {
+    if (!isCoordenador || processandoSolicitacaoId) return;
+
+    const motivo = window.prompt("Motivo da recusa (opcional):", "");
+    if (motivo === null) return;
+
+    try {
+      setProcessandoSolicitacaoId(solicitacao.id);
+      await recusarSolicitacaoArquivo(solicitacao, usuarioFormatado, motivo);
+      // Notificação ao professor já disparada dentro de recusarSolicitacaoArquivo (estrutura.js)
+    } catch (err) {
+      console.error("Erro ao recusar solicitacao:", err);
+    } finally {
+      setProcessandoSolicitacaoId("");
     }
   }
 
@@ -189,8 +213,8 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
               {solicitacoes.map((sol) => (
                 <div key={sol.id} className="solicitacao-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "var(--branco)", borderRadius: 8, border: "1px solid var(--borda)" }}>
                   <div>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, marginRight: 8, background: sol.status === "pendente" ? "#fef3c7" : "#d1fae5", color: sol.status === "pendente" ? "#d97706" : "#065f46" }}>
-                      {sol.status.toUpperCase()}
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, marginRight: 8, background: (sol.status || "pendente") === "pendente" ? "#fef3c7" : "#d1fae5", color: (sol.status || "pendente") === "pendente" ? "#d97706" : "#065f46" }}>
+                      {(sol.status || "pendente").toUpperCase()}
                     </span>
                     <strong style={{ fontSize: 13, color: "var(--texto)" }}>{sol.nome}</strong>
                     <div style={{ fontSize: 11, color: "var(--texto-sec)", marginTop: 2 }}>Pedido por: {sol.professorNome}</div>
@@ -204,17 +228,31 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
                     )}
                   </div>
 
-                  {isCoordenador && sol.status === "pendente" && (
-                    <button
-                      onClick={() => handleAprovar(sol)}
-                      style={{
-                        background: "#10B981", color: "#fff", border: "none", borderRadius: 6,
-                        padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 4
-                      }}
-                    >
-                      <CheckCircle size={14} /> Aprovar e Inserir
-                    </button>
+                  {isCoordenador && (sol.status || "pendente") === "pendente" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <button
+                        onClick={() => handleAprovar(sol)}
+                        disabled={Boolean(processandoSolicitacaoId)}
+                        style={{
+                          background: "#10B981", color: "#fff", border: "none", borderRadius: 6,
+                          padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: processandoSolicitacaoId ? "wait" : "pointer",
+                          display: "flex", alignItems: "center", gap: 4, opacity: processandoSolicitacaoId === sol.id ? 0.7 : 1
+                        }}
+                      >
+                        <CheckCircle size={14} /> Aprovar
+                      </button>
+                      <button
+                        onClick={() => handleRecusar(sol)}
+                        disabled={Boolean(processandoSolicitacaoId)}
+                        style={{
+                          background: "#ef4444", color: "#fff", border: "none", borderRadius: 6,
+                          padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: processandoSolicitacaoId ? "wait" : "pointer",
+                          display: "flex", alignItems: "center", gap: 4, opacity: processandoSolicitacaoId === sol.id ? 0.7 : 1
+                        }}
+                      >
+                        <XCircle size={14} /> Recusar
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

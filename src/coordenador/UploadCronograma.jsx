@@ -1,7 +1,7 @@
 // src/coordenador/UploadCronograma.jsx
 
 import { useState } from 'react'
-import { collection, setDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, setDoc, doc, getDocs, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '../firebase'
 import './coordenador.css'
@@ -13,6 +13,14 @@ import { criarNotificacaoPorRole } from '../notificacoes/notificacoes'
 
 
 const PERIODOS = ['Matutino', 'Vespertino', 'Noturno']
+
+function normalizarNomeCronograma(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase()
+}
 
 export default function UploadCronograma() {
   const [arquivo, setArquivo]       = useState(null)
@@ -96,13 +104,22 @@ export default function UploadCronograma() {
   async function salvarNoFirestore(turmas) {
     let totalAulas = 0
     const batch = writeBatch(db)
+    const professoresSnap = await getDocs(collection(db, 'professores_escola'))
+    const professoresPorNome = new Map()
+
+    professoresSnap.docs.forEach((professorDoc) => {
+      const professor = professorDoc.data()
+      const nomePDF = normalizarNomeCronograma(professor.nomePDF)
+      const nome = normalizarNomeCronograma(professor.nome)
+      if (nomePDF) professoresPorNome.set(nomePDF, professor.nomePDF)
+      if (nome) professoresPorNome.set(nome, professor.nomePDF || professor.nome)
+    })
 
     for (const [nomeTurma, aulas] of Object.entries(turmas)) {
       if (!aulas || aulas.length === 0) continue
       for (const aula of aulas) {
         const aulaId = `${aula.dia}_${aula.ordem}_${periodo}`
-        const ref = doc(db, 'cronogramas_escola', nomeTurma, 'aulas', aulaId)
-        batch.set(ref, {
+        const aulaDados = {
           dia:        aula.dia || '',
           ordem:      aula.ordem || 1,
           periodo:    aula.periodo || periodo,
@@ -110,7 +127,26 @@ export default function UploadCronograma() {
           professor:  aula.professor || '',
           turma:      nomeTurma,
           atualizadoEm: serverTimestamp(),
-        })
+        }
+        const ref = doc(db, 'cronogramas_escola', nomeTurma, 'aulas', aulaId)
+        batch.set(ref, aulaDados)
+
+        const nomeProfessorCadastrado = professoresPorNome.get(normalizarNomeCronograma(aula.professor))
+        if (nomeProfessorCadastrado) {
+          const refProfessor = doc(
+            db,
+            'cronogramas_escola',
+            nomeProfessorCadastrado,
+            'aulas',
+            `${aula.dia}_${aula.ordem}_${nomeTurma}_${periodo}`
+          )
+          batch.set(doc(db, 'cronogramas_escola', nomeProfessorCadastrado), {
+            tipo: 'professor',
+            nomePDF: nomeProfessorCadastrado,
+            atualizadoEm: serverTimestamp(),
+          }, { merge: true })
+          batch.set(refProfessor, aulaDados)
+        }
         totalAulas++
       }
     }

@@ -23,11 +23,13 @@ import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
 import Arquivos from '../secoes/Arquivos'
 import Calendario from '../secoes/Calendario'
-import Configuracoes from '../secoes/config'  // ← NOVA IMPORTAÇÃO
+import Configuracoes from '../secoes/config'
 import Perfil from '../perfil/Perfil'
 import NotificationBell from '../notificacoes/notificacoes.jsx'
 import IconePerfil from '../assets/Frame 4.png'
 import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
+import NotificationToast from '../notificacoes/notificacaoToast.jsx'
+import { useToastNotificacoes } from '../notificacoes/notificacaoToast.js'
 
 // ── Importações exclusivas do coordenador ──
 import UploadCronograma from '../coordenador/UploadCronograma'
@@ -35,21 +37,16 @@ import CadastroProfessores from '../coordenador/CadastroProfessores'
 
 const MotionDiv = motion.div
 
-// Seções visíveis para todos os professores
-// 'Início' é a tela de boas-vindas — não aparece no nav como botão extra,
-// mas é a seção padrão ao abrir o dashboard.
-const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário',]  // ← ADICIONADO
-
-// Seções extras visíveis só para o coordenador
+const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
 const SECOES_COORDENADOR = ['Upload Horário', 'Professores']
 
 function Dashboard() {
   const navigate = useNavigate()
   const [uid, setUid]               = useState(null)
   const [professor, setProfessor]   = useState(null)
-  const [secaoAtiva, setSecaoAtiva] = useState('Início')   // ← começa na tela de boas-vindas
-  const [cronogramas, setCronogramas] = useState([])        // passe os dados reais aqui
-  const [eventos, setEventos]       = useState([])          // passe os dados reais aqui
+  const [secaoAtiva, setSecaoAtiva] = useState('Início')
+  const [cronogramas, setCronogramas] = useState([])
+  const [eventos, setEventos]       = useState([])
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const [perfilAberto, setPerfilAberto]     = useState(false)
   const [menuMobileAberto, setMenuMobileAberto] = useState(false)
@@ -57,53 +54,58 @@ function Dashboard() {
 
   const eCoordenador = professor?.role === 'coordenador'
 
-// No seu useEffect do dashboard.jsx:
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      removerTemaVisual()
-      navigate('/login')
-      return
-    }
-    setUid(user.uid)
-    let dados = await buscarPerfil(user.uid)
-    if (!dados) {
-      await criarPerfil(user.uid, user.email)
-      dados = await buscarPerfil(user.uid)
-    }
-    setProfessor(dados)
+  // ── Toast de notificações em tempo real ──
+  useToastNotificacoes(uid)
 
-    let temaEscuro = typeof dados?.darkMode === 'boolean'
-      ? dados.darkMode
-      : buscarTemaLocal(user.uid)
-
-    const precisaMigrarTema = temaEscuro === null
-    if (precisaMigrarTema) {
-      temaEscuro = buscarTemaLegado() ?? false
-    }
-
-    salvarTemaLocal(user.uid, temaEscuro)
-    removerTemaLegado()
-    aplicarTemaEscuro(temaEscuro)
-
-    if (precisaMigrarTema) {
-      try {
-        await atualizarConfigUser(user.uid, { darkMode: temaEscuro })
-      } catch (erro) {
-        console.error('Erro ao migrar preferência de tema:', erro)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        removerTemaVisual()
+        navigate('/login')
+        return
       }
-    }
+      setUid(user.uid)
+      let dados = await buscarPerfil(user.uid)
+      if (!dados) {
+        await criarPerfil(user.uid, user.email)
+        dados = await buscarPerfil(user.uid)
+      }
+      dados = {
+        ...(dados || {}),
+        id: dados?.id || user.uid,
+        email: dados?.email || user.email || '',
+      }
+      setProfessor(dados)
 
-    // ── Carregar cronogramas e eventos do professor ──
-    // Substitua pelas suas funções reais de busca no Firestore, por ex.:
-    const listaC = await buscarCronograma(user.uid)
-    setCronogramas(listaC)
+      let temaEscuro = typeof dados?.darkMode === 'boolean'
+        ? dados.darkMode
+        : buscarTemaLocal(user.uid)
 
-    const listaE = await buscarEventos(user.uid, dados)
-    setEventos(listaE)
-  })
-  return () => unsubscribe()
-}, [])
+      const precisaMigrarTema = temaEscuro === null
+      if (precisaMigrarTema) {
+        temaEscuro = buscarTemaLegado() ?? false
+      }
+
+      salvarTemaLocal(user.uid, temaEscuro)
+      removerTemaLegado()
+      aplicarTemaEscuro(temaEscuro)
+
+      if (precisaMigrarTema) {
+        try {
+          await atualizarConfigUser(user.uid, { darkMode: temaEscuro })
+        } catch (erro) {
+          console.error('Erro ao migrar preferência de tema:', erro)
+        }
+      }
+
+      const listaC = await buscarCronograma(user.uid, dados)
+      setCronogramas(listaC)
+
+      const listaE = await buscarEventos(user.uid, dados)
+      setEventos(listaE)
+    })
+    return () => unsubscribe()
+  }, [])
 
   useEffect(() => {
     function handleClickFora(e) {
@@ -132,30 +134,26 @@ useEffect(() => {
     switch (secaoAtiva) {
       case 'Início':
         return (
-          <>
-            <Bemvindo
-              professor={professor}
-              uid={uid}
-              cronogramas={cronogramas}
-              eventos={eventos}
-              onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
-              onIrCalendario={() => setSecaoAtiva('Calendário')}
-            />
-          </>
+          <Bemvindo
+            professor={professor}
+            uid={uid}
+            cronogramas={cronogramas}
+            eventos={eventos}
+            onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
+            onIrCalendario={() => setSecaoAtiva('Calendário')}
+          />
         )
       case 'Cronogramas':    return <Cronogramas uid={uid} professor={professor} />
       case 'Turmas':         return <Turmas uid={uid} professor={professor} />
       case 'Arquivos':       return <Arquivos uid={uid} professor={professor} />
       case 'Calendário':     return <Calendario uid={uid} professor={professor} />
-      case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />  // ← NOVO CASE
-      // ── Seções exclusivas do coordenador ──
+      case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />
       case 'Upload Horário': return <UploadCronograma />
       case 'Professores':    return <CadastroProfessores />
       default:               return null
     }
   }
 
-  // Seções exibidas na nav (sem 'Início', que é implícito pelo logo/clique)
   const secoesNav = SECOES_PROFESSOR.filter(s => s !== 'Início')
 
   return (
@@ -205,13 +203,11 @@ useEffect(() => {
       {/* ── Header ── */}
       <header className='cabecalho-dashboard'>
 
-        {/* Logo */}
         <div className='cabecalho-logo'>
           <img src={Logo} alt='ProShelf' className='logo-claro' />
           <img src={LogoDarkMode} alt='ProShelf' className='logo-escuro' />
         </div>
 
-        {/* Hambúrguer (só mobile) */}
         <button
           className='nav-hamburger'
           onClick={() => setMenuMobileAberto(v => !v)}
@@ -222,7 +218,6 @@ useEffect(() => {
 
         <nav>
           <ul className='lista-nav'>
-            {/* Botão Home */}
             <li>
               <button
                 className={`nav-link ${secaoAtiva === 'Início' ? 'ativo' : ''}`}
@@ -232,7 +227,6 @@ useEffect(() => {
               </button>
             </li>
 
-            {/* Seções normais — visíveis para todos */}
             {secoesNav.map(s => (
               <li key={s}>
                 <button
@@ -244,7 +238,6 @@ useEffect(() => {
               </li>
             ))}
 
-            {/* Seções do coordenador — aparecem só se for coordenador */}
             {eCoordenador && (
               <>
                 <li className='nav-divisor' />
@@ -265,51 +258,50 @@ useEffect(() => {
           </ul>
         </nav>
 
-        {/* Ícone de usuário + dropdown */}
         <div className='cabecalho-acoes'>
           {uid && <NotificationBell uid={uid} />}
           <div className='perfil-wrapper' ref={dropdownRef}>
-          <button
-            className='perfil-btn'
-            onClick={() => setDropdownAberto(v => !v)}
-            aria-label='Menu do usuário'
-          >
-          <img src={IconePerfil} alt='Perfil' className='perfil-icone' />
-          </button>
+            <button
+              className='perfil-btn'
+              onClick={() => setDropdownAberto(v => !v)}
+              aria-label='Menu do usuário'
+            >
+              <img src={IconePerfil} alt='Perfil' className='perfil-icone' />
+            </button>
 
-          <AnimatePresence>
-            {dropdownAberto && (
-              <MotionDiv
-                className='dropdown'
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.15 }}
-              >
-                {professor?.nome && (
-                  <div className='dropdown-nome'>
-                    {eCoordenador ? ' ' : ''} Prof. {professor.nome.split(' ')[0]}
-                  </div>
-                )}
-                <button
-                  className='dropdown-item'
-                  onClick={() => { setPerfilAberto(true); setDropdownAberto(false) }}
+            <AnimatePresence>
+              {dropdownAberto && (
+                <MotionDiv
+                  className='dropdown'
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15 }}
                 >
-                  <UserRound size={15} /> Editar perfil
-                </button>
-                <button 
-                  className='dropdown-item'
-                  onClick={() => { setSecaoAtiva('Configurações'); setDropdownAberto(false) }}
-                >
-                  <Settings size={15} /> Configurações
-                </button>
-                <div className='dropdown-divisor' />
-                <button className='dropdown-item sair' onClick={handleSair}>
-                  <LogOut size={15} /> Sair da conta
-                </button>
-              </MotionDiv>
-            )}
-          </AnimatePresence>
+                  {professor?.nome && (
+                    <div className='dropdown-nome'>
+                      {eCoordenador ? ' ' : ''} Prof. {professor.nome.split(' ')[0]}
+                    </div>
+                  )}
+                  <button
+                    className='dropdown-item'
+                    onClick={() => { setPerfilAberto(true); setDropdownAberto(false) }}
+                  >
+                    <UserRound size={15} /> Editar perfil
+                  </button>
+                  <button
+                    className='dropdown-item'
+                    onClick={() => { setSecaoAtiva('Configurações'); setDropdownAberto(false) }}
+                  >
+                    <Settings size={15} /> Configurações
+                  </button>
+                  <div className='dropdown-divisor' />
+                  <button className='dropdown-item sair' onClick={handleSair}>
+                    <LogOut size={15} /> Sair da conta
+                  </button>
+                </MotionDiv>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
@@ -342,7 +334,10 @@ useEffect(() => {
           />
         )}
       </AnimatePresence>
-      
+
+      {/* ── Toasts de notificação em tempo real ── */}
+      <NotificationToast />
+
     </div>
   )
 }

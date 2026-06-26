@@ -218,6 +218,31 @@ main, .pagina-conteudo {
 :root.dark-mode .upload-tamanho { color: #c7a6e2; }
 :root.dark-mode .upload-btn:disabled { background: #4a505c; color: #c2c7cf; }
 
+.professor-remover-btn {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--texto-sec);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 16px;
+  justify-content: center;
+  opacity: 0.55;
+  padding: 4px 7px;
+  transition: opacity .15s, background .15s;
+}
+
+.professor-remover-btn:hover:not(:disabled) {
+  background: rgba(111, 59, 157, 0.08);
+  opacity: 1;
+}
+
+.professor-remover-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
 :root.dark-mode .professor-card {
   background: #12151c !important;
   border-color: var(--borda) !important;

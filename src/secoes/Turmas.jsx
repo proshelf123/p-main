@@ -5,7 +5,7 @@ import { buscarTurmas, criarTurma, deletarTurma,
 import './secoes.css'
 import { Trash2, AlertTriangle, X } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
-import { criarNotificacao } from "../notificacoes/notificacoes";
+import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
 
 const COR_DISCIPLINA = {
   'Matemática': { ativo: '#FF0000', bg: '#fff0f0', cor: '#b30000' },
@@ -199,6 +199,22 @@ export default function Turmas({ uid, professor }) {
   async function executarDelete() {
     if (!confirmarDelete) return
     await deletarTurma(confirmarDelete.ownerUid || uid, confirmarDelete.id)
+
+    // Notifica professores que a turma foi removida
+    try {
+      await criarNotificacaoPorRole({
+        role: 'professor',
+        titulo: 'Turma removida',
+        mensagem: `A turma "${confirmarDelete.nome}" (${confirmarDelete.disciplina} · ${confirmarDelete.periodo}) foi encerrada.`,
+        tipo: 'turma',
+        link: '/turmas',
+        criadoPorUid: uid,
+        criadoPorNome: professor?.nome || 'Coordenação',
+      })
+    } catch (err) {
+      console.warn('Erro ao notificar remoção de turma:', err)
+    }
+
     setConfirmarDelete(null)
     await carregarTurmas()
   }
@@ -215,6 +231,28 @@ export default function Turmas({ uid, professor }) {
       setRegistros(regs)
       setPainelRegistro(false)
       setFormRegistro(FORM_REGISTRO_INICIAL)
+
+      // Notifica o professor vinculado à turma (se houver)
+      const destinatarios = turmaAberta.professorId
+        ? [turmaAberta.professorId]
+        : []
+
+      if (destinatarios.length > 0) {
+        try {
+          const dataFormatada = formRegistro.data.split('-').reverse().join('/')
+          await criarNotificacao({
+            titulo: 'Novo registro de aula',
+            mensagem: `Foi adicionado um registro de aula do dia ${dataFormatada} na turma ${turmaAberta.nome}: "${formRegistro.conteudo}".`,
+            tipo: 'turma',
+            link: '/turmas',
+            destinatarioUids: destinatarios,
+            criadoPorUid: uid,
+            criadoPorNome: professor?.nome || 'Coordenação',
+          })
+        } catch (err) {
+          console.warn('Erro ao notificar novo registro:', err)
+        }
+      }
     } catch { setErroRegistro('Erro ao salvar. Tente novamente.') }
     finally  { setSalvando(false) }
   }

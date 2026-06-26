@@ -3,18 +3,43 @@
 // Usa Cloud Functions para criar a conta do professor
 // sem deslogar o coordenador.
 
-import { useState, useEffect } from 'react'
-import { collection, getDocs } from 'firebase/firestore'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { functions, db } from '../firebase'
 import './coordenador.css'
-import { Trash2 } from 'lucide-react';
-import { TriangleAlert } from 'lucide-react';
-import { CircleCheckBig } from 'lucide-react';
+import { Trash2, TriangleAlert, CircleCheckBig } from 'lucide-react'
 import { criarNotificacao } from '../notificacoes/notificacoes'
 
 
 const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
+
+function normalizarEmail(email) {
+  return String(email || '').trim().toLowerCase()
+}
+
+function normalizarNomePDF(nomePDF) {
+  return String(nomePDF || '').trim().toUpperCase()
+}
+
+function mensagemErro(error, fallback) {
+  const code = String(error?.code || '')
+
+  if (code.includes('unauthenticated')) return 'Sua sessão expirou. Faça login novamente.'
+  if (code.includes('permission-denied')) return 'Apenas coordenadores podem gerenciar professores.'
+  if (code.includes('invalid-argument')) return error?.message || fallback
+  if (code.includes('not-found')) return 'Professor não encontrado.'
+  if (code.includes('already-exists')) return 'Este e-mail já está cadastrado.'
+  if (code.includes('internal')) {
+    return 'Não foi possível concluir a ação. Verifique se as Cloud Functions foram publicadas e tente novamente.'
+  }
+
+  return error?.message || fallback
+}
+
+function obterNomeProfessor(professor) {
+  return professor?.nomePDF || professor?.nome || professor?.email || 'Professor'
+}
 
 export default function CadastroProfessores() {
   const [professores, setProfessores] = useState([])
@@ -24,80 +49,188 @@ export default function CadastroProfessores() {
   const [salvo, setSalvo]             = useState(false)
   const [erro, setErro]               = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [excluindoId, setExcluindoId] = useState('')
 
-  useEffect(() => { carregarProfessores() }, [])
+  const componenteAtivoRef = useRef(true)
+  const salvoTimeoutRef = useRef(null)
 
-  async function carregarProfessores() {
-    const snap = await getDocs(collection(db, 'professores_escola'))
-    setProfessores(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    setLoading(false)
-  }
+  const carregarProfessores = useCallback(async ({ mostrarLoading = true } = {}) => {
+    if (mostrarLoading) setLoading(true)
+
+    try {
+      const snap = await getDocs(collection(db, 'professores_escola'))
+      const lista = snap.docs
+        .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+        .sort((a, b) => obterNomeProfessor(a).localeCompare(
+          obterNomeProfessor(b),
+          'pt-BR',
+          { sensitivity: 'base' },
+        ))
+
+      if (!componenteAtivoRef.current) return
+      setProfessores(lista)
+    } catch (error) {
+      console.error('Erro ao carregar professores:', error)
+
+      if (!componenteAtivoRef.current) return
+      setErro(mensagemErro(error, 'Erro ao carregar professores.'))
+      setProfessores([])
+    } finally {
+      if (componenteAtivoRef.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    componenteAtivoRef.current = true
+    carregarProfessores()
+
+    return () => {
+      componenteAtivoRef.current = false
+      if (salvoTimeoutRef.current) clearTimeout(salvoTimeoutRef.current)
+    }
+  }, [carregarProfessores])
 
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setForm((formAtual) => ({ ...formAtual, [name]: value }))
     setErro('')
   }
 
+  function handleNomePDFChange(e) {
+    const nomePDF = normalizarNomePDF(e.target.value)
+    setForm((formAtual) => ({ ...formAtual, nomePDF }))
+    setErro('')
+  }
+
+  /**
+   * Garante que o documento users/{uid} existe no Firestore com role: "professor".
+   * Isso é necessário para que criarNotificacaoPorRole({ role: "professor" }) 
+   * consiga encontrar o professor pela query where("role", "==", "professor").
+   * 
+   * Usa { merge: true } para não sobrescrever dados caso o professor já tenha
+   * feito login e tenha dados adicionais no perfil.
+   */
+  async function garantirPerfilNoFirestore(uid, dados) {
+    try {
+      await setDoc(doc(db, 'users', uid), {
+        nome: dados.nome,
+        email: dados.email,
+        role: 'professor',
+        nomePDF: dados.nomePDF,
+        criadoEm: serverTimestamp(),
+      }, { merge: true })
+    } catch (err) {
+      // Não bloqueia o cadastro se falhar — o professor ainda pode logar
+      // e o criarPerfil() vai criar o documento no primeiro login
+      console.warn('Não foi possível criar perfil no Firestore:', err)
+    }
+  }
+
+  async function enviarNotificacaoBoasVindas(uid, nome) {
+    try {
+      const resultado = await criarNotificacao({
+        titulo: "Bem-vindo ao ProShelf!",
+        mensagem: `Olá ${nome}, sua conta de acesso foi criada com sucesso pelo coordenador.`,
+        tipo: "aviso",
+        link: "/perfil",
+        destinatarioUids: [uid],
+        criadoPorNome: "Coordenação"
+      })
+
+      if (resultado?.sucesso === false) {
+        console.warn("Notificação de boas-vindas não foi criada:", resultado)
+      }
+    } catch (notifErr) {
+      console.error("Erro ao enviar notificação de boas-vindas:", notifErr)
+    }
+  }
+
   async function handleSalvar() {
-    if (!form.nome || !form.email || !form.senha || !form.nomePDF) {
+    if (salvando) return
+
+    const dados = {
+      nome: form.nome.trim(),
+      email: normalizarEmail(form.email),
+      senha: form.senha,
+      nomePDF: normalizarNomePDF(form.nomePDF),
+    }
+
+    if (!dados.nome || !dados.email || !dados.senha || !dados.nomePDF) {
       setErro('Preencha todos os campos.'); return
     }
-    if (!form.email.includes('@')) {
+    if (!dados.email.includes('@')) {
       setErro('Digite um e-mail válido.'); return
     }
-    if (form.senha.length < 6) {
+    if (dados.senha.length < 6) {
       setErro('A senha deve ter pelo menos 6 caracteres.'); return
     }
 
     setSalvando(true)
     setErro('')
+    setSalvo(false)
 
     try {
-      const criarProfessor = httpsCallable(functions, 'criarProfessor')
+      const criarProfessor = httpsCallable(functions, 'criarProfessorHttp')
+      const resultadoId = await criarProfessor(dados)
+      const uidCriado = resultadoId?.data?.uid
 
-      const resultadoId = await criarProfessor({
-        nome:    form.nome,
-        email:   form.email,
-        senha:   form.senha,
-        nomePDF: form.nomePDF,
-      })
+      if (!uidCriado) {
+        throw new Error('A função criou o professor, mas não retornou o UID.')
+      }
 
-      if (resultadoId?.data?.uid) {
-  try {
-    await criarNotificacao({
-      titulo: "Bem-vindo ao ProShelf!",
-      mensagem: `Olá ${form.nome}, sua conta de acesso foi criada com sucesso pelo coordenador.`,
-      tipo: "aviso", // Vai renderizar o emoji 📢
-      link: "/perfil",
-      destinatarioUids: [resultadoId.data.uid], // UID do professor recém-criado
-      criadoPorNome: "Coordenação"
-    })
-  } catch (notifErr) {
-    console.error("Erro ao enviar notificação de boas-vindas:", notifErr)
-  }
-}
+      // ── NOVO: cria users/{uid} com role: "professor" para que as
+      //         notificações por role funcionem imediatamente ──────
+      await garantirPerfilNoFirestore(uidCriado, dados)
 
+      await enviarNotificacaoBoasVindas(uidCriado, dados.nome)
+
+      if (!componenteAtivoRef.current) return
       setForm(FORM_INICIAL)
       setSalvo(true)
-      setTimeout(() => setSalvo(false), 3000)
-      await carregarProfessores()
+
+      if (salvoTimeoutRef.current) clearTimeout(salvoTimeoutRef.current)
+      salvoTimeoutRef.current = setTimeout(() => {
+        if (componenteAtivoRef.current) setSalvo(false)
+      }, 3000)
+
+      await carregarProfessores({ mostrarLoading: false })
 
     } catch (error) {
-      setErro(error.message || 'Erro ao cadastrar professor.')
-    }
+      console.error('Erro ao cadastrar professor:', error)
 
-    setSalvando(false)
+      if (componenteAtivoRef.current) {
+        setErro(mensagemErro(error, 'Erro ao cadastrar professor.'))
+      }
+    } finally {
+      if (componenteAtivoRef.current) setSalvando(false)
+    }
   }
 
-  async function handleDeletar(email) {
-    if (!confirm('Remover este professor? Isso apaga a conta de acesso dele.')) return
+  async function handleDeletar(professor) {
+    const email = normalizarEmail(professor?.email)
+    const id = professor?.id || email
 
+    if (!email) {
+      setErro('Não foi possível remover: o professor está sem e-mail cadastrado.')
+      return
+    }
+
+    if (!window.confirm('Remover este professor? Isso apaga a conta de acesso dele.')) return
+
+    setErro('')
+    setExcluindoId(id)
     try {
-      const deletarProfessor = httpsCallable(functions, 'deletarProfessor')
+      const deletarProfessor = httpsCallable(functions, 'deletarProfessorHttp')
       await deletarProfessor({ email })
-      await carregarProfessores()
+      await carregarProfessores({ mostrarLoading: false })
     } catch (error) {
-      alert('Erro ao remover: ' + error.message)
+      console.error('Erro ao remover professor:', error)
+
+      if (componenteAtivoRef.current) {
+        setErro(mensagemErro(error, 'Erro ao remover professor.'))
+      }
+    } finally {
+      if (componenteAtivoRef.current) setExcluindoId('')
     }
   }
 
@@ -137,7 +270,7 @@ export default function CadastroProfessores() {
               placeholder='Mínimo 6 caracteres'
               style={{ paddingRight: 80 }}
             />
-            <button onClick={() => setMostrarSenha(v => !v)} style={{
+            <button type='button' onClick={() => setMostrarSenha(v => !v)} style={{
               position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
               background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 11, color: 'var(--texto-sec)', fontFamily: 'Poppins, sans-serif',
@@ -154,7 +287,7 @@ export default function CadastroProfessores() {
           <label className='perfil-label'>Nome no PDF do horário (MAIÚSCULAS)</label>
           <input
             className='perfil-input' name='nomePDF' value={form.nomePDF}
-            onChange={e => setForm({ ...form, nomePDF: e.target.value.toUpperCase() })}
+            onChange={handleNomePDFChange}
             placeholder='Ex: GETULIO, MARIA JOSÉ, ADILSON'
             style={{ textTransform: 'uppercase' }}
           />
@@ -171,7 +304,7 @@ export default function CadastroProfessores() {
           </div>
         )}
 
-        <button className='upload-btn' onClick={handleSalvar} disabled={salvando}>
+        <button className='upload-btn' type='button' onClick={handleSalvar} disabled={salvando}>
           {salvando ? 'Cadastrando...' : 'Cadastrar professor'}
         </button>
       </div>
@@ -190,38 +323,44 @@ export default function CadastroProfessores() {
           Nenhum professor cadastrado ainda.
         </p>
       ) : (
-        professores.map(p => (
-          <div key={p.id} className='professor-card' style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 12px', borderRadius: 8,
-            background: 'var(--bg)', marginBottom: 6,
-            fontFamily: 'Poppins, sans-serif',
-            border: '0.5px solid var(--borda)',
-          }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: '#6F3B9D', color: '#fff',
-              fontSize: 15, fontWeight: 600,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
+        professores.map((professor) => {
+          const nome = obterNomeProfessor(professor)
+          const id = professor.id || professor.email
+          const excluindoEste = excluindoId === id
+
+          return (
+            <div key={id} className='professor-card' style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 12px', borderRadius: 8,
+              background: 'var(--bg)', marginBottom: 6,
+              fontFamily: 'Poppins, sans-serif',
+              border: '0.5px solid var(--borda)',
             }}>
-              {p.nomePDF?.charAt(0) || '?'}
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: '#6F3B9D', color: '#fff',
+                fontSize: 15, fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                {nome.charAt(0).toUpperCase() || '?'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--texto)' }}>{professor.nomePDF || professor.nome}</div>
+                <div style={{ fontSize: 11, color: 'var(--texto-sec)' }}>{professor.email}</div>
+              </div>
+              <button
+                className='professor-remover-btn'
+                type='button'
+                onClick={() => handleDeletar(professor)}
+                disabled={excluindoEste || salvando}
+                title='Remover professor'
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--texto)' }}>{p.nomePDF}</div>
-              <div style={{ fontSize: 11, color: 'var(--texto-sec)' }}>{p.email}</div>
-            </div>
-            <button onClick={() => handleDeletar(p.email)}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 16, color: 'var(--texto-sec)', opacity: 0.55, transition: 'opacity .15s, background .15s', padding: '4px 7px', borderRadius: 6,
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '0.4'}
-              title='Remover professor'
-            ><Trash2 size={16} /></button>
-          </div>
-        ))
+          )
+        })
       )}
     </div>
   )

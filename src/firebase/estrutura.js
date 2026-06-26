@@ -163,9 +163,140 @@ export async function criarAulaCronograma(uid, dados) {
   });
 }
 
-export async function buscarCronograma(uid) {
-  const snap = await getDocs(collection(db, "cronogramas", uid, "aulas"));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+function normalizarChaveCronograma(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+function nomeDocumentoCronograma(valor) {
+  return String(valor || "").trim().toUpperCase();
+}
+
+function sanitizarEmailCronograma(email) {
+  return String(email || "").trim().toLowerCase().replace(/[@.]/g, "_");
+}
+
+async function buscarNomesProfessorCronograma(perfil = null) {
+  const nomes = [
+    perfil?.nomePDF,
+    perfil?.nome,
+    normalizarChaveCronograma(perfil?.nomePDF),
+    normalizarChaveCronograma(perfil?.nome),
+  ];
+  const emailId = sanitizarEmailCronograma(perfil?.email);
+
+  if (emailId) {
+    const vinculoSnap = await getDoc(doc(db, "professores_escola", emailId));
+    if (vinculoSnap.exists()) {
+      const vinculo = vinculoSnap.data();
+      nomes.push(
+        vinculo.nomePDF,
+        vinculo.nome,
+        normalizarChaveCronograma(vinculo.nomePDF),
+        normalizarChaveCronograma(vinculo.nome)
+      );
+    }
+  }
+
+  const professoresSnap = await getDocs(collection(db, "professores_escola"));
+  professoresSnap.docs.forEach((professorDoc) => {
+    const professor = professorDoc.data();
+    const mesmoEmail = professor.email
+      && perfil?.email
+      && String(professor.email).trim().toLowerCase() === String(perfil.email).trim().toLowerCase();
+    const mesmoUid = professor.uid && perfil?.id && professor.uid === perfil.id;
+
+    if (mesmoEmail || mesmoUid) {
+      nomes.push(
+        professor.nomePDF,
+        professor.nome,
+        normalizarChaveCronograma(professor.nomePDF),
+        normalizarChaveCronograma(professor.nome)
+      );
+    }
+  });
+
+  return [...new Set(nomes.map(nomeDocumentoCronograma).filter(Boolean))];
+}
+
+function dadosAulaCronograma(d, origem = "") {
+  return {
+    id: d.id,
+    sourcePath: d.ref.path,
+    origem,
+    ...d.data(),
+  };
+}
+
+function chaveAulaCronograma(aula) {
+  return [
+    aula.dia || "",
+    aula.ordem || "",
+    aula.periodo || "",
+    aula.turma || "",
+    aula.disciplina || "",
+    aula.professor || "",
+  ].map(normalizarChaveCronograma).join("|");
+}
+
+export async function buscarCronograma(uid, perfil = null) {
+  const aulas = [];
+  const rolePerfil = normalizarChaveCronograma(perfil?.role);
+
+  const adicionar = (novasAulas) => {
+    aulas.push(...novasAulas);
+  };
+
+  const nomesProfessorDocumento = await buscarNomesProfessorCronograma(perfil);
+  const nomesProfessorComparacao = nomesProfessorDocumento.map(normalizarChaveCronograma);
+
+  const snapPessoal = await getDocs(collection(db, "cronogramas", uid, "aulas"));
+  adicionar(snapPessoal.docs.map((d) => dadosAulaCronograma(d, "pessoal")));
+
+  if (rolePerfil === "PROFESSOR" && nomesProfessorDocumento.length > 0) {
+    const snapsProfessor = await Promise.allSettled(
+      nomesProfessorDocumento.map((nomePDF) => getDocs(collection(db, "cronogramas_escola", nomePDF, "aulas")))
+    );
+
+    snapsProfessor.forEach((resultado) => {
+      if (resultado.status === "fulfilled") {
+        adicionar(resultado.value.docs.map((d) => dadosAulaCronograma(d, "professor")));
+      }
+    });
+  }
+
+  const turmasPeriodoSnap = await getDocs(collection(db, "turmas_periodo"));
+  const nomesTurmas = [...new Set(
+    turmasPeriodoSnap.docs.map((d) => d.data().nomeTurma).filter(Boolean)
+  )];
+
+  const snapsTurmas = await Promise.allSettled(
+    nomesTurmas.map((nomeTurma) => getDocs(collection(db, "cronogramas_escola", nomeTurma, "aulas")))
+  );
+
+  snapsTurmas.forEach((resultado) => {
+    if (resultado.status !== "fulfilled") return;
+
+    const aulasDaTurma = resultado.value.docs
+      .map((d) => dadosAulaCronograma(d, "turma"))
+      .filter((aula) => {
+        if (rolePerfil !== "PROFESSOR" || nomesProfessorComparacao.length === 0) return true;
+        return nomesProfessorComparacao.includes(normalizarChaveCronograma(aula.professor));
+      });
+
+    adicionar(aulasDaTurma);
+  });
+
+  const vistas = new Set();
+  return aulas.filter((aula) => {
+    const chave = chaveAulaCronograma(aula);
+    if (vistas.has(chave)) return false;
+    vistas.add(chave);
+    return true;
+  });
 }
 
 export async function atualizarAulaCronograma(uid, aulaId, dados) {
@@ -246,7 +377,7 @@ export async function criarEvento(uid, dados) {
   });
 }
 
-export async function deletarEvento(uid, eventoId, compartilhadoComUids = []) {
+export async function deletarEvento(uid, eventoId) {
   // Tenta deletar nas duas coleções (um dos dois vai simplesmente não encontrar)
   await Promise.allSettled([
     deleteDoc(doc(db, "eventos_escola", eventoId)),
@@ -254,9 +385,7 @@ export async function deletarEvento(uid, eventoId, compartilhadoComUids = []) {
   ]);
 }
 
-export async function buscarEventos(uid, perfil = null) {
-  const role = perfil?.role || "professor";
-
+export async function buscarEventos(uid) {
   // Sempre busca os eventos globais da escola (coordenador compartilhou)
   const escolaSnap = await getDocs(
     query(collection(db, "eventos_escola"), orderBy("data", "asc"))
@@ -405,16 +534,20 @@ export async function criarSolicitacaoArquivo(turmaId, dadosSolicitacao, usuario
 }
 
 /**
- * Escuta em tempo real as solicitações pendentes ou concluídas de uma determinada turma.
+ * Escuta em tempo real as solicitações de uma turma.
+ * Por padrão, oculta pedidos já aprovados ou recusados da fila principal.
  */
-export function escutarSolicitacoes(turmaId, callback) {
+export function escutarSolicitacoes(turmaId, callback, opcoes = {}) {
   const q = query(
     collection(db, "solicitacoes_arquivos"),
     where("turmaId", "==", turmaId),
     orderBy("criadoEm", "desc")
   );
   return onSnapshot(q, (snapshot) => {
-    const lista = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const incluirResolvidas = opcoes.incluirResolvidas === true;
+    const lista = snapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter((solicitacao) => incluirResolvidas || (solicitacao.status || "pendente") === "pendente");
     callback(lista);
   });
 }
@@ -438,8 +571,15 @@ export function escutarArquivosDaTurma(turmaId, callback) {
  * 2. O Coordenador aprova a solicitação, anexa o metadado do arquivo e o Professor é avisado.
  */
 export async function aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuarioAtual) {
+  if (!solicitacao?.id) {
+    throw new Error("Solicitacao invalida para aprovacao.");
+  }
+  if (solicitacao.status && solicitacao.status !== "pendente") {
+    throw new Error("Esta solicitacao ja foi resolvida.");
+  }
+
   const arquivosRef = collection(db, "turmas_arquivos_aprovados");
-  await addDoc(arquivosRef, {
+  const arquivoRef = await addDoc(arquivosRef, {
     turmaId: solicitacao.turmaId,
     nome: solicitacao.nome,
     tipo: metaArquivo.tipo || "pdf",
@@ -451,13 +591,54 @@ export async function aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuario
     criadoEm: serverTimestamp()
   });
 
-  await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), { status: "aprovado" });
+  await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), {
+    status: "aprovado",
+    arquivoAprovadoId: arquivoRef.id,
+    resolvidoEm: serverTimestamp(),
+    resolvidoPorUid: usuarioAtual.uid || "",
+    resolvidoPorNome: usuarioAtual.nome || "Coordenacao",
+  });
 
   if (solicitacao.professorId) {
     await criarNotificacao({
       titulo: "Arquivo Solicitado Disponível!",
       mensagem: `A coordenação aprovou e adicionou o arquivo "${solicitacao.nome}" à sua turma.`,
       tipo: "turma",
+      link: "/arquivos",
+      destinatarioUids: [solicitacao.professorId],
+      criadoPorUid: usuarioAtual.uid,
+      criadoPorNome: usuarioAtual.nome
+    });
+  }
+
+  return arquivoRef.id;
+}
+
+export async function recusarSolicitacaoArquivo(solicitacao, usuarioAtual, motivo = "") {
+  if (!solicitacao?.id) {
+    throw new Error("Solicitacao invalida para recusa.");
+  }
+  if (solicitacao.status && solicitacao.status !== "pendente") {
+    throw new Error("Esta solicitacao ja foi resolvida.");
+  }
+
+  const motivoLimpo = String(motivo || "").trim();
+
+  await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), {
+    status: "recusado",
+    motivoRecusa: motivoLimpo,
+    resolvidoEm: serverTimestamp(),
+    resolvidoPorUid: usuarioAtual.uid || "",
+    resolvidoPorNome: usuarioAtual.nome || "Coordenacao",
+  });
+
+  if (solicitacao.professorId) {
+    await criarNotificacao({
+      titulo: "Solicitacao de Arquivo Recusada",
+      mensagem: motivoLimpo
+        ? `A coordenacao recusou o arquivo "${solicitacao.nome}". Motivo: ${motivoLimpo}`
+        : `A coordenacao recusou o arquivo "${solicitacao.nome}".`,
+      tipo: "aviso",
       link: "/arquivos",
       destinatarioUids: [solicitacao.professorId],
       criadoPorUid: usuarioAtual.uid,

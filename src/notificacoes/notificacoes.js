@@ -10,9 +10,8 @@ import {
   where,
   getDocs,
 } from "firebase/firestore"
-import { httpsCallable } from "firebase/functions"
 
-import { db, defaultDb, functions as firebaseFunctions } from "../firebase"
+import { db, defaultDb } from "../firebase"
 
 const BANCOS_BUSCA = [db, defaultDb].filter(Boolean)
 
@@ -24,6 +23,8 @@ function normalizarTexto(valor) {
     .toLowerCase()
 }
 
+// Retorna as variantes de role que devem ser buscadas com ==
+// Separado em múltiplas queries simples para evitar índice composto
 function variantesDeRole(role) {
   const normalizada = normalizarTexto(role)
   const aliases = {
@@ -52,7 +53,6 @@ function extrairUidDoProfessorVinculado(idDocumento, dados) {
 
   if (uid) return String(uid)
 
-  // professores_escola usually uses sanitized email as document id.
   if (idDocumento && !idDocumento.includes("@") && !idDocumento.includes("_")) {
     return idDocumento
   }
@@ -104,76 +104,52 @@ async function buscarUidsProfessoresVinculados(banco) {
   return [...new Set([...uidsDiretos, ...uidsPorEmail])]
 }
 
-async function sincronizarProfessoresSePossivel(role) {
-  if (normalizarTexto(role) !== "professor") return null
-
-  try {
-    const criarProfessor = httpsCallable(firebaseFunctions, "criarProfessor")
-    const resultado = await criarProfessor({ acao: "sincronizarProfessores" })
-
-    console.log("Sincronização de professores concluída:", resultado.data)
-
-    return resultado.data
-  } catch (erro) {
-    console.warn("Não foi possível sincronizar professores automaticamente:", erro)
-    return null
-  }
-}
-
 /**
  * Busca os UIDs dos usuários por role.
  *
- * Exemplo:
- * buscarUidsPorRole("coordenador")
- * buscarUidsPorRole("professor")
- *
- * IMPORTANTE:
- * No Firestore precisa existir:
- *
- * users/{uid}
- * {
- *   nome: "Nome do usuário",
- *   email: "email@email.com",
- *   role: "coordenador" ou "professor"
- * }
+ * USA where("role", "==", variante) em série para evitar índice composto
+ * que causava "The query requires an index" no Firestore.
  */
 export async function buscarUidsPorRole(role) {
   try {
     if (!role) {
       console.error("Role não informada em buscarUidsPorRole.")
-
       return []
     }
 
     const roleNormalizada = String(role).trim()
-    const rolesPossiveis = variantesDeRole(roleNormalizada)
+    const variantes = variantesDeRole(roleNormalizada)
 
+    // Faz uma query simples (==) por variante — sem índice composto
     const resultadosUsers = await Promise.all(
-      BANCOS_BUSCA.map(async (banco) => {
-        try {
-          const usersRef = collection(banco, "users")
-          const q = query(
-            usersRef,
-            where("role", "in", rolesPossiveis.slice(0, 10))
-          )
-          const snapshot = await getDocs(q)
-          return snapshot.docs.map((documento) => documento.id)
-        } catch (erro) {
-          console.warn("Não foi possível buscar usuários por role neste banco:", erro)
-          return []
-        }
-      })
+      BANCOS_BUSCA.flatMap((banco) =>
+        variantes.map(async (variante) => {
+          try {
+            const snap = await getDocs(
+              query(
+                collection(banco, "users"),
+                where("role", "==", variante)   // <-- == simples, sem índice
+              )
+            )
+            return snap.docs.map((d) => d.id)
+          } catch (erro) {
+            console.warn(`Não foi possível buscar role "${variante}":`, erro)
+            return []
+          }
+        })
+      )
     )
 
     let uids = [...new Set(resultadosUsers.flat())]
 
+    // Fallback: busca em professores_escola se não achou ninguém
     if (uids.length === 0 && normalizarTexto(roleNormalizada) === "professor") {
       const resultadosVinculos = await Promise.all(
         BANCOS_BUSCA.map(async (banco) => {
           try {
             return await buscarUidsProfessoresVinculados(banco)
           } catch (erro) {
-            console.warn("Não foi possível buscar professores_escola neste banco:", erro)
+            console.warn("Não foi possível buscar professores_escola:", erro)
             return []
           }
         })
@@ -189,7 +165,6 @@ export async function buscarUidsPorRole(role) {
     return uids
   } catch (erro) {
     console.error(`Erro ao buscar usuários com role "${role}":`, erro)
-
     return []
   }
 }
@@ -197,10 +172,7 @@ export async function buscarUidsPorRole(role) {
 /**
  * Cria uma notificação para um ou mais usuários.
  *
- * Caminho criado:
- * users/{uid}/notificacoes/{notifId}
- *
- * Esse caminho precisa ser o mesmo que o NotificationBell.jsx lê.
+ * Caminho: users/{uid}/notificacoes/{notifId}
  */
 export async function criarNotificacao({
   titulo,
@@ -214,22 +186,12 @@ export async function criarNotificacao({
   try {
     if (!titulo || !mensagem) {
       console.error("Título e mensagem são obrigatórios.")
-
-      return {
-        sucesso: false,
-        notificacoesCriadas: 0,
-        erro: "Título e mensagem são obrigatórios.",
-      }
+      return { sucesso: false, notificacoesCriadas: 0, erro: "Título e mensagem são obrigatórios." }
     }
 
     if (!Array.isArray(destinatarioUids)) {
       console.error("destinatarioUids precisa ser um array.")
-
-      return {
-        sucesso: false,
-        notificacoesCriadas: 0,
-        erro: "destinatarioUids precisa ser um array.",
-      }
+      return { sucesso: false, notificacoesCriadas: 0, erro: "destinatarioUids precisa ser um array." }
     }
 
     const uidsValidos = [
@@ -240,30 +202,20 @@ export async function criarNotificacao({
 
     if (uidsValidos.length === 0) {
       console.warn("Nenhum destinatário encontrado para a notificação.")
-
-      return {
-        sucesso: false,
-        notificacoesCriadas: 0,
-        motivo: "Nenhum destinatário encontrado.",
-      }
+      return { sucesso: false, notificacoesCriadas: 0, motivo: "Nenhum destinatário encontrado." }
     }
 
     const batch = writeBatch(db)
 
     uidsValidos.forEach((uid) => {
-      const notifRef = doc(
-        collection(db, "users", uid, "notificacoes")
-      )
-
+      const notifRef = doc(collection(db, "users", uid, "notificacoes"))
       batch.set(notifRef, {
         titulo,
         mensagem,
         tipo,
         link,
-
         lida: false,
         criadoEm: serverTimestamp(),
-
         criadoPorUid,
         criadoPorNome,
       })
@@ -272,31 +224,15 @@ export async function criarNotificacao({
     await batch.commit()
 
     console.log("Notificações criadas:", uidsValidos.length)
-
-    return {
-      sucesso: true,
-      notificacoesCriadas: uidsValidos.length,
-    }
+    return { sucesso: true, notificacoesCriadas: uidsValidos.length }
   } catch (erro) {
     console.error("Erro ao criar notificação:", erro)
-
-    return {
-      sucesso: false,
-      notificacoesCriadas: 0,
-      erro: erro.message || "Erro desconhecido ao criar notificação.",
-    }
+    return { sucesso: false, notificacoesCriadas: 0, erro: erro.message || "Erro desconhecido." }
   }
 }
 
 /**
  * Cria notificação para todos os usuários de uma role.
- *
- * Exemplo:
- * criarNotificacaoPorRole({
- *   role: "coordenador",
- *   titulo: "Nova solicitação",
- *   mensagem: "Um professor enviou uma nova solicitação.",
- * })
  */
 export async function criarNotificacaoPorRole({
   role,
@@ -308,12 +244,7 @@ export async function criarNotificacaoPorRole({
   criadoPorNome = null,
 }) {
   try {
-    let uids = await buscarUidsPorRole(role)
-
-    if (uids.length === 0) {
-      await sincronizarProfessoresSePossivel(role)
-      uids = await buscarUidsPorRole(role)
-    }
+    const uids = await buscarUidsPorRole(role)
 
     console.log(`Criando notificação para role "${role}". UIDs encontrados:`, uids)
 
@@ -328,20 +259,12 @@ export async function criarNotificacaoPorRole({
     })
   } catch (erro) {
     console.error(`Erro ao criar notificação para role "${role}":`, erro)
-
-    return {
-      sucesso: false,
-      notificacoesCriadas: 0,
-      erro: erro.message || "Erro desconhecido ao criar notificação por role.",
-    }
+    return { sucesso: false, notificacoesCriadas: 0, erro: erro.message || "Erro desconhecido." }
   }
 }
 
 /**
  * Atalho para notificar todos os coordenadores.
- *
- * Use essa função quando um professor fizer uma solicitação
- * e o coordenador precisar receber no sino.
  */
 export async function notificarCoordenadores({
   titulo,
@@ -364,8 +287,6 @@ export async function notificarCoordenadores({
 
 /**
  * Atalho para notificar todos os professores.
- *
- * Use essa função quando o coordenador publicar algo para todos os professores.
  */
 export async function notificarProfessores({
   titulo,
@@ -392,15 +313,7 @@ export async function notificarProfessores({
 export async function marcarComoLida(uid, notifId) {
   try {
     if (!uid || !notifId) return
-
-    const notifRef = doc(
-      db,
-      "users",
-      uid,
-      "notificacoes",
-      notifId
-    )
-
+    const notifRef = doc(db, "users", uid, "notificacoes", notifId)
     await updateDoc(notifRef, {
       lida: true,
       lidaEm: serverTimestamp(),
@@ -417,21 +330,13 @@ export async function marcarTodasComoLidas(uid, notificacoes = []) {
   try {
     if (!uid || notificacoes.length === 0) return
 
-    const naoLidas = notificacoes.filter((notificacao) => !notificacao.lida)
-
+    const naoLidas = notificacoes.filter((n) => !n.lida)
     if (naoLidas.length === 0) return
 
     const batch = writeBatch(db)
 
     naoLidas.forEach((notificacao) => {
-      const notifRef = doc(
-        db,
-        "users",
-        uid,
-        "notificacoes",
-        notificacao.id
-      )
-
+      const notifRef = doc(db, "users", uid, "notificacoes", notificacao.id)
       batch.update(notifRef, {
         lida: true,
         lidaEm: serverTimestamp(),

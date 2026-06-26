@@ -1,15 +1,20 @@
 // src/secoes/Cronogramas.jsx
-//
-// Busca o cronograma do professor logado em 2 passos:
-// 1. Lê professores_escola/{emailSanitizado} para descobrir o nomePDF
-// 2. Lê cronogramas_escola/{nomePDF}/aulas para pegar as aulas
 import { useState, useEffect } from 'react'
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
-import { auth, db } from '../firebase'
+import { buscarCronograma } from '../firebase/estrutura'
 import '../dashboard/dashboard.css'
 import './secoes.css'
 
 const DIAS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
+
+const DIA_LABEL = {
+  DOM: 'Domingo',
+  SEG: 'Segunda',
+  TER: 'Terça',
+  QUA: 'Quarta',
+  QUI: 'Quinta',
+  SEX: 'Sexta',
+  SAB: 'Sábado',
+}
 
 const NOMES_DISCIPLINA = {
   MAT: 'Matemática', FIS: 'Física', QUI: 'Química',
@@ -41,117 +46,144 @@ function corDisciplina(disc) {
   return { bg: '#f3f0f9', cor: '#6F3B9D' }
 }
 
-// Sanitiza o e-mail igual ao CadastroProfessores.jsx
-function sanitizarEmail(email) {
-  return email.toLowerCase().replace(/[@.]/g, '_')
-}
-
 export default function Cronogramas({ uid, professor }) {
-  const [diaAtivo, setDiaAtivo] = useState(() => {
-    const dias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
-    return dias[new Date().getDay()]
-  })
+  const [diaAtivo, setDiaAtivo] = useState(() => DIAS[new Date().getDay()])
   const [cronograma, setCronograma] = useState([])
   const [loading, setLoading] = useState(true)
-  const [status, setStatus] = useState('') // mensagem de status para o professor
+  const [status, setStatus] = useState('')
 
-  useEffect(() => {
-    if (!professor?.email) return
-    carregarCronograma(professor.email)
-  }, [professor])
+async function carregarCronograma() {
+  if (!uid) return
 
-  async function carregarCronograma(email) {
-    setLoading(true)
-    setStatus('')
+  setLoading(true)
+  setStatus('')
 
-    try {
-      // Passo 1: busca o nomePDF pelo e-mail
-      const emailId = sanitizarEmail(email)
-      const vinculoSnap = await getDoc(doc(db, 'professores_escola', emailId))
+  try {
+    const aulas = await buscarCronograma(uid, professor)
 
-      if (!vinculoSnap.exists()) {
-        setStatus('Seu e-mail ainda não foi vinculado ao horário. Aguarde o coordenador cadastrá-lo.')
-        setLoading(false)
-        return
-      }
-
-      const nomePDF = vinculoSnap.data().nomePDF
-
-      // Passo 2: busca as aulas pelo nomePDF
-      const aulasSnap = await getDocs(
-        collection(db, 'cronogramas_escola', nomePDF, 'aulas')
-      )
-
-      if (aulasSnap.empty) {
-        setStatus('Nenhum horário encontrado. Aguarde o coordenador fazer o upload do PDF.')
-        setLoading(false)
-        return
-      }
-
-      setCronograma(aulasSnap.docs.map(d => ({ id: d.id, ...d.data() })))
-    } catch (err) {
-      console.error('Erro ao buscar cronograma:', err)
-      setStatus('Erro ao carregar o cronograma. Tente novamente.')
+    if (aulas.length === 0) {
+      setCronograma([])
+      setStatus('Nenhum horÃ¡rio encontrado. Aguarde o coordenador fazer o upload do PDF.')
+      setLoading(false)
+      return
     }
 
+    setCronograma(aulas)
     setLoading(false)
+    return
+  } catch (err) {
+    console.error('Erro ao buscar cronograma:', err)
+    setCronograma([])
+    setStatus('Erro ao carregar o cronograma. Tente novamente.')
+    setLoading(false)
+    return
   }
 
-  const primeiroNome = professor?.nome?.split(' ')[0] || 'Professor'
-  const inicial = professor?.nome?.charAt(0).toUpperCase() || 'P'
+/*
+  try {
+    // Busca os nomes das turmas via turmas_periodo (já funciona para professores)
+    const turmasPeriodoSnap = await getDocs(collection(db, 'turmas_periodo'))
+
+    if (turmasPeriodoSnap.empty) {
+      setStatus('Nenhum horário encontrado. Aguarde o coordenador fazer o upload do PDF.')
+      setLoading(false)
+      return
+    }
+
+    // Pega nomes únicos de turmas
+    const nomesTurmas = [...new Set(
+      turmasPeriodoSnap.docs.map(d => d.data().nomeTurma).filter(Boolean)
+    )]
+
+    console.log('Turmas do período:', nomesTurmas)
+
+    const todasAulas = []
+
+    await Promise.all(
+      nomesTurmas.map(async (nomeTurma) => {
+        try {
+          const aulasSnap = await getDocs(
+            collection(db, 'cronogramas_escola', nomeTurma, 'aulas')
+          )
+          aulasSnap.docs.forEach(d => {
+            todasAulas.push({ id: d.id, ...d.data() })
+          })
+        } catch (e) {
+          console.warn('Sem aulas para turma:', nomeTurma, e)
+        }
+      })
+    )
+
+    console.log('Total de aulas:', todasAulas.length)
+
+    if (todasAulas.length === 0) {
+      setStatus('Nenhum horário encontrado. Aguarde o coordenador fazer o upload do PDF.')
+      setLoading(false)
+      return
+    }
+
+    setCronograma(todasAulas)
+  } catch (err) {
+    console.error('Erro ao buscar cronograma:', err)
+    setStatus('Erro ao carregar o cronograma. Tente novamente.')
+  }
+
+  setLoading(false)
+*/
+}
+  useEffect(() => {
+    carregarCronograma()
+  }, [uid, professor])
 
   const aulasDoDia = cronograma
-    .filter(a => a.dia === diaAtivo)
-    .sort((a, b) => a.ordem - b.ordem)
+    .filter(a => a.dia === DIA_LABEL[diaAtivo])
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
 
   return (
-    <>
-      {/* Cronograma */}
-      <div className='card'>
-        <div className='card-titulo'>Cronograma semanal</div>
+    <div className='card'>
+      <div className='card-titulo'>Cronograma semanal</div>
 
-        {loading ? (
-          <p className='secao-vazia'>Carregando seu horário...</p>
-        ) : status ? (
-          <div className='secao-vazia' style={{ padding: '28px 0' }}>
-            <p>{status}</p>
+      {loading ? (
+        <p className='secao-vazia'>Carregando horário...</p>
+      ) : status ? (
+        <div className='secao-vazia' style={{ padding: '28px 0' }}>
+          <p>{status}</p>
+        </div>
+      ) : (
+        <>
+          <div className='dia-seletor'>
+            {DIAS.map(dia => (
+              <button
+                key={dia}
+                className={`dia-btn ${diaAtivo === dia ? 'ativo' : ''}`}
+                onClick={() => setDiaAtivo(dia)}
+              >
+                {dia}
+              </button>
+            ))}
           </div>
-        ) : (
-          <>
-            <div className='dia-seletor'>
-              {DIAS.map(dia => (
-                <button
-                  key={dia}
-                  className={`dia-btn ${diaAtivo === dia ? 'ativo' : ''}`}
-                  onClick={() => setDiaAtivo(dia)}
-                >
-                  {dia}
-                </button>
-              ))}
-            </div>
 
-            {aulasDoDia.length === 0 ? (
-              <p className='secao-vazia'>Sem aulas neste dia.</p>
-            ) : (
-              aulasDoDia.map((aula, i) => {
-                const { bg, cor } = corDisciplina(aula.disciplina)
-                return (
-                  <div key={i} className='aula-linha'>
-                    <span className='aula-num'>{aula.ordem}ª aula</span>
-                    <span className='aula-disc' style={{ background: bg, color: cor }}>
-                      {NOMES_DISCIPLINA[aula.disciplina] || aula.disciplina}
-                    </span>
-                    <span className='aula-turma'>{aula.turma}</span>
-                    <span className='aula-sala'>
-                      {aula.sala ? `Sala ${aula.sala}` : ''}
-                    </span>
-                  </div>
-                )
-              })
-            )}
-          </>
-        )}
-      </div>
-    </>
+          {aulasDoDia.length === 0 ? (
+            <p className='secao-vazia'>Sem aulas neste dia.</p>
+          ) : (
+            aulasDoDia.map((aula, i) => {
+              const { bg, cor } = corDisciplina(aula.disciplina)
+              return (
+                <div key={i} className='aula-linha'>
+                  <span className='aula-num'>{aula.ordem}ª aula</span>
+                  <span className='aula-disc' style={{ background: bg, color: cor }}>
+                    {NOMES_DISCIPLINA[aula.disciplina] || aula.disciplina}
+                  </span>
+                  <span className='aula-turma'>{aula.turma}</span>
+                  <span className='aula-sala'>
+                    {aula.sala ? `Sala ${aula.sala}` : ''}
+                  </span>
+                </div>
+              )
+            })
+          )}
+        </>
+      )}
+    </div>
   )
 }

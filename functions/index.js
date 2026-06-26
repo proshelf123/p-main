@@ -1,4 +1,4 @@
-const { onCall, HttpsError } = require('firebase-functions/v2/https')
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https')
 const { defineSecret } = require('firebase-functions/params')
 const { GoogleGenAI } = require('@google/genai')
 const { initializeApp, getApps } = require('firebase-admin/app')
@@ -11,6 +11,68 @@ if (!getApps().length) initializeApp()
 const GEMINI_KEY = defineSecret('GEMINI_API_KEY')
 const FIRESTORE_DATABASE_ID = 'firestoreproshelf'
 const CAMPOS_ROLE = ['role', 'perfil', 'tipo', 'cargo', 'papel']
+const CORS_ORIGINS = [
+  /^http:\/\/localhost(:\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^https:\/\/proshelf-8ecfd\.web\.app$/,
+  /^https:\/\/proshelf-8ecfd\.firebaseapp\.com$/,
+]
+const PUBLIC_CALLABLE_OPTIONS = {
+  region: 'us-central1',
+  invoker: 'public',
+  cors: CORS_ORIGINS,
+}
+
+function erroCallable(error) {
+  if (error instanceof HttpsError) return error
+  return new HttpsError('internal', error?.message || 'Erro interno.')
+}
+
+function callableHttp(options, handler) {
+  if (!handler) {
+    handler = options
+    options = {}
+  }
+
+  return onRequest({ ...PUBLIC_CALLABLE_OPTIONS, ...options }, async (req, res) => {
+    if (req.method !== 'POST') {
+      res.status(405).json({
+        error: {
+          status: 'INVALID_ARGUMENT',
+          message: 'Use POST para chamar esta função.',
+        },
+      })
+      return
+    }
+
+    const authorization = String(req.get('authorization') || '')
+    let auth = null
+
+    if (authorization.startsWith('Bearer ')) {
+      try {
+        const token = await getAuth().verifyIdToken(authorization.slice(7))
+        auth = { uid: token.uid, token }
+      } catch (error) {
+        console.warn('Token de autenticação inválido na callable HTTP:', error)
+      }
+    }
+
+    try {
+      const result = await handler({
+        data: req.body?.data,
+        auth,
+        rawRequest: req,
+      })
+
+      res.status(200).json({ result })
+    } catch (error) {
+      const httpsError = erroCallable(error)
+      res.status(httpsError.httpErrorCode.status).json({
+        error: httpsError.toJSON(),
+      })
+    }
+  })
+}
 
 function getDb() {
   return getFirestore(FIRESTORE_DATABASE_ID)
@@ -345,11 +407,10 @@ async function salvarNoFirestore(turmas, periodo) {
 
 exports.processarHorario = onCall(
   {
+    ...PUBLIC_CALLABLE_OPTIONS,
     secrets: [GEMINI_KEY],
     timeoutSeconds: 120,
     memory: '512MiB',
-    region: 'us-central1',
-    invoker: 'public',
   },
   async (request) => {
     await exigirCoordenador(request)
@@ -445,14 +506,7 @@ ${textoPdf}
   }
 )
 
-exports.criarProfessor = onCall(
-  {
-    timeoutSeconds: 60,
-    memory: '256MiB',
-    region: 'us-central1',
-    invoker: 'public',
-  },
-  async (request) => {
+async function criarProfessorHandler(request) {
     await exigirCoordenador(request)
 
     if (request.data?.acao === 'sincronizarProfessores') {
@@ -518,18 +572,27 @@ exports.criarProfessor = onCall(
       }, { merge: true }),
     ])
 
-    return { uid: userRecord.uid }
-  }
+  return { uid: userRecord.uid }
+}
+
+exports.criarProfessor = onCall(
+  {
+    ...PUBLIC_CALLABLE_OPTIONS,
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  criarProfessorHandler
 )
 
-exports.deletarProfessor = onCall(
+exports.criarProfessorHttp = callableHttp(
   {
     timeoutSeconds: 60,
     memory: '256MiB',
-    region: 'us-central1',
-    invoker: 'public',
   },
-  async (request) => {
+  criarProfessorHandler
+)
+
+async function deletarProfessorHandler(request) {
     await exigirCoordenador(request)
 
     const email = String(request.data?.email || '').trim().toLowerCase()
@@ -557,16 +620,31 @@ exports.deletarProfessor = onCall(
     if (uid) deletes.push(db.doc(`users/${uid}`).delete())
     await Promise.allSettled(deletes)
 
-    return { uid }
-  }
+  return { uid }
+}
+
+exports.deletarProfessor = onCall(
+  {
+    ...PUBLIC_CALLABLE_OPTIONS,
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  deletarProfessorHandler
+)
+
+exports.deletarProfessorHttp = callableHttp(
+  {
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  deletarProfessorHandler
 )
 
 exports.criarNotificacaoPorRole = onCall(
   {
+    ...PUBLIC_CALLABLE_OPTIONS,
     timeoutSeconds: 60,
     memory: '256MiB',
-    region: 'us-central1',
-    invoker: 'public',
   },
   async (request) => {
     if (!request.auth?.uid) {
