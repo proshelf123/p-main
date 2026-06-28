@@ -867,10 +867,18 @@ select.perfil-input option:checked {
   background: #fff;
   border-radius: 20px;
   padding: 28px 40px 36px;
-  max-width: 900px;
+  max-width: 1120px;
   margin: 0 auto;
   box-shadow: 0 2px 16px rgba(111, 59, 157, 0.07);
   font-family: inherit;
+}
+
+.crono-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 /* Título */
@@ -878,8 +886,94 @@ select.perfil-input option:checked {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a2e;
-  margin: 0 0 20px;
+  margin: 0;
   letter-spacing: -0.3px;
+}
+
+.crono-subtitulo {
+  margin: 6px 0 0;
+  color: #6F3B9D;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.crono-voltar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  background: #f0ebf8;
+  color: #6F3B9D;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.crono-voltar-btn:hover {
+  background: #e2d9f3;
+  transform: translateY(-1px);
+}
+
+.crono-cursos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.crono-curso-card {
+  border: 1px solid #ece5f5;
+  border-radius: 14px;
+  padding: 18px;
+  min-height: 156px;
+  background: #fff;
+  color: #1a1a2e;
+  font-family: 'Poppins', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(111, 59, 157, 0.08);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.crono-curso-card:hover {
+  transform: translateY(-2px);
+  border-color: #c7a9e8;
+  box-shadow: 0 14px 30px rgba(111, 59, 157, 0.13);
+}
+
+.crono-curso-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 1.05rem;
+  color: #1a1a2e;
+}
+
+.crono-curso-ano,
+.crono-curso-sigla,
+.crono-curso-meta {
+  display: block;
+}
+
+.crono-curso-ano {
+  color: #6F3B9D;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.crono-curso-sigla {
+  color: #7a6d86;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.crono-curso-meta {
+  color: #6f6877;
+  font-size: 0.78rem;
+  line-height: 1.55;
 }
 
 /* Seletor de dias */
@@ -949,9 +1043,10 @@ select.perfil-input option:checked {
 /* Linha de cada aula */
 .crono-pill-row {
   display: grid;
-  grid-template-columns: 70px 2fr 1fr 1fr;
+  grid-template-columns: 96px 2fr 1fr 1.2fr 1fr;
   align-items: end;
-  gap: 10px;
+  column-gap: 18px;
+  row-gap: 10px;
 }
 
 /* "Nª aula" — alinhado ao centro verticalmente */
@@ -961,6 +1056,7 @@ select.perfil-input option:checked {
   color: #888;
   white-space: nowrap;
   padding-bottom: 10px;
+  padding-right: 8px;
 }
 
 /* Wrapper de cada coluna com label acima */
@@ -983,6 +1079,7 @@ select.perfil-input option:checked {
 /* Base compartilhada de todas as pílulas */
 .crono-pill-disc,
 .crono-pill-turma,
+.crono-pill-professor,
 .crono-pill-sala,
 .crono-pill-sem-grade {
   display: flex;
@@ -1000,6 +1097,7 @@ select.perfil-input option:checked {
 
 .crono-pill-disc:hover,
 .crono-pill-turma:hover,
+.crono-pill-professor:hover,
 .crono-pill-sala:hover {
   transform: translateY(-1px);
 }
@@ -1021,6 +1119,13 @@ select.perfil-input option:checked {
   box-shadow: 0 2px 6px rgba(111, 59, 157, 0.08);
 }
 
+/* Professor */
+.crono-pill-professor {
+  background: #eef6fb;
+  color: #2E5F7A;
+  box-shadow: 0 2px 6px rgba(46, 95, 122, 0.08);
+}
+
 /* Sala */
 .crono-pill-sala {
   background: #f5f5f5;
@@ -1036,6 +1141,295 @@ select.perfil-input option:checked {
   background: #fafafa;
   border: 1.5px dashed #e0e0e0;
   box-shadow: none;
+}
+
+.crono-editor {
+  border: 1px solid #ece5f5;
+  border-radius: 14px;
+  background: #fbf9ff;
+  padding: 14px;
+  margin: 0 0 24px;
+}
+
+.crono-editor-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  background: #f0ebf8;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.crono-editor-tab {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #6f5f80;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.crono-editor-tab.ativo {
+  background: #6F3B9D;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(111, 59, 157, 0.24);
+}
+
+.crono-editor-curso {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 150px 170px auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.crono-editor-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crono-editor-dropdown .perfil-grupo {
+  margin: 0;
+}
+
+.crono-editor-dropdown .perfil-label {
+  color: #7a6d86;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.crono-editor-dropdown .dropdown-trigger {
+  min-height: 38px;
+}
+
+.crono-editor-campo span,
+.crono-editor-kicker {
+  color: #7a6d86;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.crono-editor input,
+.crono-editor select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #e0d6ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a2e;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  padding: 8px 10px;
+  box-sizing: border-box;
+}
+
+.crono-editor input:focus,
+.crono-editor select:focus {
+  border-color: #8e5cc2;
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
+}
+
+.crono-editor-acao,
+.crono-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #6F3B9D;
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.crono-editor-acao:hover,
+.crono-editor-btn:hover {
+  background: #5d3184;
+  transform: translateY(-1px);
+}
+
+.crono-editor-btn.salvar {
+  background: #15803d;
+}
+
+.crono-editor-btn.salvar:hover {
+  background: #166534;
+}
+
+.crono-editor-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
+.crono-editor-grade-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.crono-editor-grade-topo strong {
+  display: block;
+  margin-top: 3px;
+  color: #1a1a2e;
+  font-size: 1rem;
+}
+
+.crono-editor-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.crono-editor-planilha {
+  overflow-x: auto;
+  border: 1px solid #e8def3;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.crono-editor-head,
+.crono-editor-row {
+  display: grid;
+  grid-template-columns: 130px 70px 110px 130px 80px minmax(170px, 1.2fr) minmax(190px, 1.3fr) 110px 44px;
+  gap: 1px;
+  min-width: 1080px;
+  background: #e8def3;
+}
+
+.crono-editor-head span {
+  background: #f5effb;
+  color: #6F3B9D;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.45px;
+  padding: 10px;
+  text-transform: uppercase;
+}
+
+.crono-editor-row {
+  align-items: stretch;
+  border-top: 1px solid #e8def3;
+}
+
+.crono-editor-row > input,
+.crono-editor-row > select,
+.crono-editor-row > label,
+.crono-editor-grade-dropdown,
+.crono-editor-stack,
+.crono-editor-remover {
+  border-radius: 0;
+  border: none;
+  background-color: #fff;
+}
+
+.crono-editor-row > input,
+.crono-editor-row > select {
+  min-height: 44px;
+}
+
+.crono-editor-grade-dropdown {
+  display: flex;
+  align-items: stretch;
+  min-height: 44px;
+}
+
+.crono-editor-grade-dropdown .perfil-grupo {
+  display: flex;
+  width: 100%;
+  margin: 0;
+}
+
+.crono-editor-grade-dropdown .dropdown-trigger {
+  min-height: 44px;
+  height: 100%;
+  border: none !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  font-size: 0.82rem !important;
+  padding: 8px 10px !important;
+}
+
+.crono-editor-row.dividida {
+  background: #d9cbed;
+}
+
+.crono-editor-stack {
+  display: grid;
+  gap: 1px;
+}
+
+.crono-editor-stack input,
+.crono-editor-stack select {
+  min-height: 42px;
+  border: none;
+  border-radius: 0;
+}
+
+.crono-editor-stack .crono-editor-grade-dropdown,
+.crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+  min-height: 42px;
+}
+
+.crono-editor-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #6F3B9D;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.crono-editor-toggle input {
+  width: 16px;
+  min-height: 16px;
+  accent-color: #6F3B9D;
+}
+
+.crono-editor-remover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b42318;
+  cursor: pointer;
+}
+
+.crono-editor-remover:hover {
+  background: #fff1f0;
+}
+
+.crono-editor-feedback {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.crono-editor-feedback.erro {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.crono-editor-feedback.sucesso {
+  background: #ecfdf3;
+  color: #047857;
 }
 
 /* Estado vazio / loading */
@@ -1057,17 +1451,45 @@ select.perfil-input option:checked {
   color: var(--texto);
 }
 
-:root.dark-mode .crono-data {
-  color: var(--texto-sec);
+:root.dark-mode .crono-subtitulo,
+:root.dark-mode .crono-curso-ano {
+  color: #d9c4ff;
 }
 
+:root.dark-mode .crono-voltar-btn,
 :root.dark-mode .crono-dia-btn {
   background: #2d2738;
   color: #c4a8e8;
 }
 
+:root.dark-mode .crono-voltar-btn:hover,
 :root.dark-mode .crono-dia-btn:hover:not(.ativo) {
   background: #383046;
+}
+
+:root.dark-mode .crono-curso-card {
+  background: var(--branco);
+  border-color: var(--borda);
+  color: var(--texto);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+}
+
+:root.dark-mode .crono-curso-card:hover {
+  border-color: #74479c;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+}
+
+:root.dark-mode .crono-curso-card strong {
+  color: var(--texto);
+}
+
+:root.dark-mode .crono-curso-sigla,
+:root.dark-mode .crono-curso-meta {
+  color: var(--texto-sec);
+}
+
+:root.dark-mode .crono-data {
+  color: var(--texto-sec);
 }
 
 :root.dark-mode .crono-dia-btn.ativo {
@@ -1086,6 +1508,12 @@ select.perfil-input option:checked {
 :root.dark-mode .crono-pill-turma {
   background: #2d2738;
   color: #c4a8e8;
+  box-shadow: none;
+}
+
+:root.dark-mode .crono-pill-professor {
+  background: #203240;
+  color: #c7edff;
   box-shadow: none;
 }
 
@@ -1359,13 +1787,28 @@ select.perfil-input option:checked {
     border-radius: 16px;
   }
 
+  .crono-topo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .crono-voltar-btn {
+    justify-content: center;
+  }
+
+  .crono-cursos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
   .crono-pill-row {
-    grid-template-columns: 58px 2fr 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 86px 2fr 1fr 1.1fr 0.8fr;
+    column-gap: 12px;
+    row-gap: 8px;
   }
 
   .crono-pill-disc,
   .crono-pill-turma,
+  .crono-pill-professor,
   .crono-pill-sala {
     padding: 9px 12px;
     font-size: 0.8rem;
@@ -1433,6 +1876,14 @@ select.perfil-input option:checked {
   }
 
   /* Cronogramas responsivo */
+  .crono-cursos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .crono-curso-card {
+    min-height: 136px;
+  }
+
   .crono-dias {
     gap: 6px;
   }
@@ -1443,8 +1894,9 @@ select.perfil-input option:checked {
   }
 
   .crono-pill-row {
-    grid-template-columns: 48px 2fr 1fr;
-    gap: 6px;
+    grid-template-columns: 78px 1.5fr 1fr 1fr;
+    column-gap: 10px;
+    row-gap: 6px;
   }
 
   .crono-pill-ordem {
@@ -1452,12 +1904,152 @@ select.perfil-input option:checked {
   }
 
   .crono-pill-disc,
-  .crono-pill-turma {
+  .crono-pill-turma,
+  .crono-pill-professor {
     padding: 8px 10px;
     font-size: 0.75rem;
   }
 
   .crono-pill-col:last-child {
     display: none;
+  }
+}
+
+:root.dark-mode .crono-editor {
+  background: #171321;
+  border-color: var(--borda);
+}
+
+:root.dark-mode .crono-editor-tabs {
+  background: #2d2738;
+}
+
+:root.dark-mode .crono-editor-tab {
+  color: #c4a8e8;
+}
+
+:root.dark-mode .crono-editor-tab.ativo {
+  background: #74479c;
+  color: #fff;
+}
+
+:root.dark-mode .crono-editor-campo span,
+:root.dark-mode .crono-editor-dropdown .perfil-label,
+:root.dark-mode .crono-editor-kicker {
+  color: var(--texto-sec);
+}
+
+:root.dark-mode .crono-editor input,
+:root.dark-mode .crono-editor select {
+  background: #1f1a2b;
+  border-color: var(--borda);
+  color: var(--texto);
+}
+
+:root.dark-mode .crono-editor input:focus,
+:root.dark-mode .crono-editor select:focus {
+  border-color: #9d6bd0;
+  box-shadow: 0 0 0 3px rgba(157, 107, 208, 0.16);
+}
+
+:root.dark-mode .crono-editor-grade-topo strong {
+  color: var(--texto);
+}
+
+:root.dark-mode .crono-editor-planilha,
+:root.dark-mode .crono-editor-head,
+:root.dark-mode .crono-editor-row {
+  background: #30273d;
+  border-color: var(--borda);
+}
+
+:root.dark-mode .crono-editor-head span {
+  background: #2d2738;
+  color: #d9c4ff;
+}
+
+:root.dark-mode .crono-editor-row > input,
+:root.dark-mode .crono-editor-row > select,
+:root.dark-mode .crono-editor-row > label,
+:root.dark-mode .crono-editor-grade-dropdown,
+:root.dark-mode .crono-editor-stack,
+:root.dark-mode .crono-editor-remover {
+  background-color: #1f1a2b;
+}
+
+:root.dark-mode .crono-editor-grade-dropdown .dropdown-trigger {
+  background: #1f1a2b !important;
+}
+
+:root.dark-mode .crono-editor-row.dividida {
+  background: #463556;
+}
+
+:root.dark-mode .crono-editor-toggle {
+  color: #d9c4ff;
+}
+
+:root.dark-mode .crono-editor-remover {
+  color: #fca5a5;
+}
+
+:root.dark-mode .crono-editor-remover:hover {
+  background: #3b1d24;
+}
+
+:root.dark-mode .crono-editor-feedback.erro {
+  background: #3b1d24;
+  color: #fca5a5;
+}
+
+:root.dark-mode .crono-editor-feedback.sucesso {
+  background: #123524;
+  color: #86efac;
+}
+
+@media (max-width: 900px) {
+  .crono-editor-curso {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .crono-editor-acao {
+    grid-column: 1 / -1;
+  }
+
+  .crono-editor-grade-topo {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .crono-editor {
+    padding: 12px;
+  }
+
+  .crono-editor-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .crono-editor-tab {
+    flex: 1;
+  }
+
+  .crono-editor-curso {
+    grid-template-columns: 1fr;
+  }
+
+  .crono-editor-acoes {
+    width: 100%;
+  }
+
+  .crono-editor-btn {
+    flex: 1;
+  }
+
+  .crono-editor-head,
+  .crono-editor-row {
+    min-width: 980px;
   }
 }

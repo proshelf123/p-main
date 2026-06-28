@@ -4,6 +4,16 @@ import ReactDOM from 'react-dom'
 export default function DropdownComPortal({ label, opcoes, valor, onChange, id, dropdownAberto, setDropdownAberto }) {
   const buttonRef = useRef(null)
   const [posicao, setPosicao] = useState(null)
+  const opcoesNormalizadas = opcoes.map((opt) => {
+    if (opt && typeof opt === 'object') {
+      const valorOpcao = opt.valor ?? opt.value ?? opt.label ?? ''
+      return { valor: valorOpcao, label: opt.label ?? valorOpcao }
+    }
+
+    return { valor: opt, label: opt }
+  })
+  const opcaoSelecionada = opcoesNormalizadas.find((opt) => opt.valor === valor || opt.label === valor)
+  const valorExibido = opcaoSelecionada?.label ?? valor
 
   useEffect(() => {
     if (dropdownAberto === id && buttonRef.current) {
@@ -16,12 +26,37 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
     }
   }, [dropdownAberto, id])
 
+  useEffect(() => {
+    if (dropdownAberto !== id) return
+
+    function handlePointerDown(e) {
+      const clicouNoBotao = buttonRef.current?.contains(e.target)
+      const portal = e.target.closest?.('[data-dropdown-portal-id]')
+      const clicouNoMenu = portal?.dataset?.dropdownPortalId === id
+
+      if (!clicouNoBotao && !clicouNoMenu) {
+        setDropdownAberto(null)
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') setDropdownAberto(null)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown, true)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [dropdownAberto, id, setDropdownAberto])
+
   const handleClickButton = () => {
     setDropdownAberto(dropdownAberto === id ? null : id)
   }
 
   const handleSelectItem = (opt) => {
-    onChange(opt)
+    onChange(opt?.valor ?? opt)
     setDropdownAberto(null)
   }
 
@@ -32,6 +67,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
       <button
         ref={buttonRef}
         className={`dropdown-trigger ${dropdownAberto === id ? 'aberto' : ''}`}
+        type='button'
         onClick={handleClickButton}
         style={{
           background: 'var(--branco)',
@@ -49,10 +85,10 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
           transition: 'all 0.15s',
           zIndex: 10,
         }}
-        onMouseEnter={(e) => e.target.style.borderColor = 'var(--roxo)'}
-        onMouseLeave={(e) => e.target.style.borderColor = 'var(--borda)'}
+        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--roxo)'}
+        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--borda)'}
       >
-        <span>{valor}</span>
+        <span>{valorExibido}</span>
         <span className='arrow' style={{ fontSize: '16px', color: 'var(--roxo)', transition: 'transform 0.3s ease', transform: dropdownAberto === id ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
       </button>
 
@@ -60,6 +96,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
       {dropdownAberto === id && posicao && ReactDOM.createPortal(
         <div
           className='dropdown-menu'
+          data-dropdown-portal-id={id}
           style={{
             position: 'fixed',
             top: posicao.top,

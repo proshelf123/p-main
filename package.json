@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^2.9.0",
     "@tailwindcss/vite": "^4.2.4",
     "bootstrap": "^5.3.8",
     "firebase": "^12.14.0",

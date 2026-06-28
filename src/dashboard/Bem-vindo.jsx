@@ -103,6 +103,28 @@ function MiniCalendario({ eventos = [] }) {
 
 const CORES_TURMA = ['#7C3FBD', '#2E7D9C', '#C05621', '#2D6A4F', '#9B2335']
 
+function formatarHorarioCurto(horario) {
+  const texto = String(horario || '').trim()
+  const match = texto.match(/^(\d{1,2}):(\d{2})/)
+  if (!match) return texto
+
+  const hora = Number(match[1])
+  const minutos = match[2]
+  return minutos === '00' ? `${hora}h` : `${hora}h${minutos}`
+}
+
+function descricaoHorarioCronograma(item) {
+  const partes = []
+  if (item.dia) partes.push(item.dia)
+  if (item.ordem) {
+    const horario = formatarHorarioCurto(item.horario)
+    partes.push(horario ? `${item.ordem}ª aula (${horario})` : `${item.ordem}ª aula`)
+  } else if (item.horario) {
+    partes.push(formatarHorarioCurto(item.horario))
+  }
+  return partes.join(' • ') || 'Horário não definido'
+}
+
 function CardCronograma({ item, index, onClick }) {
   const cor = CORES_TURMA[index % CORES_TURMA.length]
   return (
@@ -120,7 +142,7 @@ function CardCronograma({ item, index, onClick }) {
         <p className='bv-crono-disciplina'>{item.disciplina ?? item.nome ?? '—'}</p>
         <div className='bv-crono-meta'>
           <Clock size={12} />
-          <span>{item.horario ?? 'Horário não definido'}</span>
+          <span>{descricaoHorarioCronograma(item)}</span>
         </div>
       </div>
       <ChevronRight size={15} className='bv-crono-seta' />
@@ -190,6 +212,10 @@ export default function Bemvindo({
 }) {
   const eCoordenador = professor?.role === 'coordenador'
   const nome = professor?.nome ?? ''
+  const tituloCronogramas = eCoordenador ? 'Cronogramas' : 'Próxima aula'
+  const textoVazioCronogramas = eCoordenador
+    ? 'Nenhum cronograma encontrado.'
+    : 'Nenhuma próxima aula encontrada.'
 
   return (
     <div className='bv-wrapper'>
@@ -217,7 +243,11 @@ export default function Bemvindo({
         <div className='bv-chips'>
           <div className='bv-chip'>
             <Layers size={14} />
-            <span>{cronogramas.length} cronograma{cronogramas.length !== 1 ? 's' : ''}</span>
+            <span>
+              {eCoordenador
+                ? `${cronogramas.length} cronograma${cronogramas.length !== 1 ? 's' : ''}`
+                : (cronogramas.length > 0 ? '1 próxima aula' : 'Sem próxima aula')}
+            </span>
           </div>
           <div className='bv-chip'>
             <Calendar size={14} />
@@ -238,7 +268,7 @@ export default function Bemvindo({
           <div className='bv-secao-header'>
             <div className='bv-secao-titulo'>
               <BookOpen size={15} />
-              <h2>Meus cronogramas</h2>
+              <h2>{tituloCronogramas}</h2>
             </div>
             <button className='bv-link' onClick={onIrCronogramas}>
               Ver todos <ChevronRight size={13} />
@@ -246,7 +276,7 @@ export default function Bemvindo({
           </div>
 
           {cronogramas.length === 0 ? (
-            <p className='bv-vazio'>Nenhum cronograma encontrado.</p>
+            <p className='bv-vazio'>{textoVazioCronogramas}</p>
           ) : (
             <div className='bv-crono-lista'>
               {cronogramas.slice(0, 5).map((c, i) => (

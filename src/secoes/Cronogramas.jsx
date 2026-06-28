@@ -1,11 +1,47 @@
 // src/secoes/Cronogramas.jsx
 import { useState, useEffect } from 'react'
-import { buscarCronograma } from '../firebase/estrutura'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, Plus, Save, Trash2, PencilLine } from 'lucide-react'
+import {
+  buscarCronograma,
+  buscarProfessores,
+  salvarCronogramaTurmaManual,
+} from '../firebase/estrutura'
+import DropdownComPortal from './DropwdownComPortal'
+import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
+import { montarGradienteDisciplina } from './coresDisciplinas'
 import '../dashboard/dashboard.css'
 import './secoes.css'
 
 const DIAS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
-const MENSAGEM_SEM_HORARIO = 'Nenhum horário encontrado. Aguarde o coordenador fazer o upload do PDF.'
+const MENSAGEM_SEM_HORARIO = 'Nenhum cronograma encontrado. Aguarde o coordenador cadastrar as aulas.'
+const ANOS_CURSO = ['1', '2', '3']
+const ANOS_CURSO_LABEL = ANOS_CURSO.map((ano) => `${ano}° ano`)
+const PERIODOS_EDITOR = ['Matutino', 'Vespertino', 'Noturno']
+const DIAS_EDITOR = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+const CURSOS_CRONOGRAMA = {
+  RH: 'Recursos Humanos',
+  DS: 'Desenvolvimento de Sistemas',
+  INFONET: 'Informática para Internet',
+}
+
+const TRANSICAO_CRONOGRAMA = {
+  duration: 0.22,
+  ease: 'easeOut',
+}
+
+const ANIMACAO_PAINEL = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+  transition: TRANSICAO_CRONOGRAMA,
+}
+
+const ANIMACAO_CARD_CURSO = {
+  initial: { opacity: 0, y: 14, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+}
 
 const DIA_LABEL = {
   DOM: 'Domingo',
@@ -27,38 +63,103 @@ const DIA_LABEL_COMPLETO = {
   SAB: 'Sábado',
 }
 
+function novaAulaEditor(ordem = 1) {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    dia: 'Segunda',
+    ordem,
+    horario: '',
+    periodo: 'Matutino',
+    disciplina: '',
+    professor: '',
+    sala: '',
+    dividida: false,
+    A: { disciplina: '', professor: '', sala: '' },
+    B: { disciplina: '', professor: '', sala: '' },
+  }
+}
+
 const NOMES_DISCIPLINA = {
   MAT: 'Matemática', FIS: 'Física', QUI: 'Química',
   BIO: 'Biologia', PORT: 'Português', ING: 'Inglês',
   HIS: 'História', GEO: 'Geografia', FIL: 'Filosofia',
-  SOCI: 'Sociologia', ARTE: 'Arte',
+  SOCI: 'Sociologia', ARTE: 'Artes',
   'ED. FIS': 'Ed. Física', 'ED.FIS': 'Ed. Física',
 }
 
-const COR_DISCIPLINA = {
-  'Matemática': { bg: 'linear-gradient(135deg, #f72585, #c9184a)', cor: '#fff' },
-  'Física':     { bg: 'linear-gradient(135deg, #4cc9f0, #0096c7)', cor: '#fff' },
-  'Química':    { bg: 'linear-gradient(135deg, #f8c537, #f3a300)', cor: '#fff' },
-  'Biologia':   { bg: 'linear-gradient(135deg, #a855f7, #7c3aed)', cor: '#fff' },
-  'Português':  { bg: 'linear-gradient(135deg, #ff6b35, #e63946)', cor: '#fff' },
-  'Inglês':     { bg: 'linear-gradient(135deg, #06d6a0, #0077b6)', cor: '#fff' },
-  'História':   { bg: 'linear-gradient(135deg, #ff9f1c, #e07000)', cor: '#fff' },
-  'Geografia':  { bg: 'linear-gradient(135deg, #3a86ff, #1d4ed8)', cor: '#fff' },
-  'Filosofia':  { bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)', cor: '#fff' },
-  'Sociologia': { bg: 'linear-gradient(135deg, #ec4899, #be185d)', cor: '#fff' },
-  'Arte':       { bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)', cor: '#fff' },
-  'Ed. Física': { bg: 'linear-gradient(135deg, #14b8a6, #0e7490)', cor: '#fff' },
-}
-
-function corDisciplina(disc) {
-  if (COR_DISCIPLINA[disc]) return COR_DISCIPLINA[disc]
-  const nome = NOMES_DISCIPLINA[disc]
-  if (nome && COR_DISCIPLINA[nome]) return COR_DISCIPLINA[nome]
-  return { bg: 'linear-gradient(135deg, #a78bfa, #7c3aed)', cor: '#fff' }
+function corDisciplina(disc, coresCustomizadas = {}) {
+  return montarGradienteDisciplina(disc, coresCustomizadas)
 }
 
 function nomeDisciplina(disc) {
   return NOMES_DISCIPLINA[disc] || disc
+}
+
+function normalizarTextoCronograma(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toUpperCase()
+}
+
+function turmaBaseCronograma(turma) {
+  const nome = normalizarTextoCronograma(turma)
+  return nome.replace(/\s+[AB]$/, '')
+}
+
+function dadosCursoDaTurma(turma) {
+  const nomeBase = turmaBaseCronograma(turma)
+  const partes = nomeBase.match(/^(\d+)\s+(.+)$/)
+  if (!partes) {
+    return {
+      id: nomeBase || 'SEM_TURMA',
+      ano: '',
+      cursoSigla: nomeBase || 'Sem turma',
+      cursoNome: nomeBase || 'Sem turma',
+      titulo: nomeBase || 'Sem turma',
+    }
+  }
+
+  const ano = partes[1]
+  const cursoSigla = partes[2]
+  const cursoNome = CURSOS_CRONOGRAMA[cursoSigla] || cursoSigla
+
+  return {
+    id: nomeBase,
+    ano,
+    cursoSigla,
+    cursoNome,
+    titulo: `${ano}º ${cursoNome}`,
+  }
+}
+
+function agruparPorCurso(aulas) {
+  const mapa = new Map()
+
+  aulas.forEach((aula) => {
+    const curso = dadosCursoDaTurma(aula.turma)
+    if (!mapa.has(curso.id)) {
+      mapa.set(curso.id, {
+        ...curso,
+        aulas: [],
+        professores: new Set(),
+        dias: new Set(),
+      })
+    }
+
+    const grupo = mapa.get(curso.id)
+    grupo.aulas.push(aula)
+    if (aula.professor) grupo.professores.add(normalizarTextoCronograma(aula.professor))
+    if (aula.dia) grupo.dias.add(aula.dia)
+  })
+
+  return [...mapa.values()].sort((a, b) => {
+    const anoA = Number(a.ano || 99)
+    const anoB = Number(b.ano || 99)
+    return anoA - anoB || a.cursoNome.localeCompare(b.cursoNome, 'pt-BR')
+  })
 }
 
 function primeiroDiaComAula(aulas, diaAtual) {
@@ -71,6 +172,22 @@ function formatarData(diaSemana) {
   const opcoes = { day: '2-digit', month: 'long', year: 'numeric' }
   const dataFormatada = hoje.toLocaleDateString('pt-BR', opcoes)
   return `${dataFormatada} – ${DIA_LABEL_COMPLETO[diaSemana]}`
+}
+
+function formatarHorarioCurto(horario) {
+  const texto = String(horario || '').trim()
+  const match = texto.match(/^(\d{1,2}):(\d{2})/)
+  if (!match) return texto
+
+  const hora = Number(match[1])
+  const minutos = match[2]
+  return minutos === '00' ? `${hora}h` : `${hora}h${minutos}`
+}
+
+function rotuloAulaComHorario(aula) {
+  const ordem = aula.ordem ? `${aula.ordem}ª aula` : 'Aula'
+  const horario = formatarHorarioCurto(aula.horario)
+  return horario ? `${ordem} (${horario})` : ordem
 }
 
 function agruparPorPeriodo(aulas) {
@@ -103,10 +220,22 @@ export default function Cronogramas({
 }) {
   const [diaAtivo, setDiaAtivo] = useState(() => DIAS[new Date().getDay()])
   const [cronograma, setCronograma] = useState(() => cronogramasIniciais)
+  const [cursoSelecionado, setCursoSelecionado] = useState(null)
   const [loading, setLoading] = useState(() => !cronogramasCarregados)
   const [status, setStatus] = useState(() =>
     cronogramasCarregados && cronogramasIniciais.length === 0 ? MENSAGEM_SEM_HORARIO : ''
   )
+  const [abaEditor, setAbaEditor] = useState('curso')
+  const [formCurso, setFormCurso] = useState({ curso: '', ano: '1', periodo: 'Matutino' })
+  const [aulasEditor, setAulasEditor] = useState(() => [novaAulaEditor(1)])
+  const [professoresEditor, setProfessoresEditor] = useState([])
+  const [salvandoEditor, setSalvandoEditor] = useState(false)
+  const [erroEditor, setErroEditor] = useState('')
+  const [sucessoEditor, setSucessoEditor] = useState('')
+  const [dropdownEditorAberto, setDropdownEditorAberto] = useState(null)
+  const coresDisciplinas = useCoresDisciplinas()
+
+  const isCoordenador = professor?.role === 'coordenador'
 
   useEffect(() => {
     if (!uid) return
@@ -125,6 +254,17 @@ export default function Cronogramas({
 
     carregarCronograma()
   }, [uid, professor, cronogramasIniciais, cronogramasCarregados])
+
+  useEffect(() => {
+    if (!isCoordenador) return
+
+    buscarProfessores()
+      .then(setProfessoresEditor)
+      .catch((err) => {
+        console.error('Erro ao carregar professores para cronograma:', err)
+        setProfessoresEditor([])
+      })
+  }, [isCoordenador])
 
   async function carregarCronograma() {
     setLoading(true)
@@ -153,31 +293,461 @@ export default function Cronogramas({
     setLoading(false)
   }
 
-  const aulasDoDia = cronograma
+  const cursos = agruparPorCurso(cronograma)
+  const aulasCursoSelecionado = cursoSelecionado
+    ? cronograma.filter((aula) => turmaBaseCronograma(aula.turma) === cursoSelecionado.id)
+    : []
+
+  const aulasVisiveis = cursoSelecionado ? aulasCursoSelecionado : cronograma
+
+  const aulasDoDia = aulasVisiveis
     .filter((a) => a.dia === DIA_LABEL[diaAtivo])
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
 
   const periodos = agruparPorPeriodo(aulasDoDia)
 
+  function abrirCurso(curso) {
+    setCursoSelecionado(curso)
+    setAbaEditor('grade')
+    setDiaAtivo((diaAtual) => primeiroDiaComAula(curso.aulas, diaAtual))
+  }
+
+  function voltarParaCursos() {
+    setCursoSelecionado(null)
+    setAbaEditor('curso')
+    setDiaAtivo((diaAtual) => primeiroDiaComAula(cronograma, diaAtual))
+  }
+
+  function nomeTurmaEditor() {
+    const curso = normalizarTextoCronograma(formCurso.curso)
+    return curso ? `${formCurso.ano} ${curso}` : ''
+  }
+
+  function atualizarFormCurso(campo, valor) {
+    setFormCurso((atual) => ({ ...atual, [campo]: valor }))
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
+  function avancarParaGrade() {
+    if (!formCurso.curso.trim()) {
+      setErroEditor('Informe o nome do curso para montar o cronograma.')
+      return
+    }
+
+    setErroEditor('')
+    setSucessoEditor('')
+    setAbaEditor('grade')
+  }
+
+  function atualizarAulaEditor(index, campo, valor) {
+    setAulasEditor((atuais) => atuais.map((aula, i) => (
+      i === index ? { ...aula, [campo]: valor } : aula
+    )))
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
+  function atualizarAulaDividida(index, grupo, campo, valor) {
+    setAulasEditor((atuais) => atuais.map((aula, i) => (
+      i === index
+        ? { ...aula, [grupo]: { ...aula[grupo], [campo]: valor } }
+        : aula
+    )))
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
+  function adicionarLinhaAula() {
+    setAulasEditor((atuais) => [...atuais, novaAulaEditor(atuais.length + 1)])
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
+  function removerLinhaAula(index) {
+    setAulasEditor((atuais) => (
+      atuais.length === 1
+        ? [novaAulaEditor(1)]
+        : atuais.filter((_, i) => i !== index).map((aula, i) => ({ ...aula, ordem: i + 1 }))
+    ))
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
+  function aulaTemConteudo(aula) {
+    if (aula.dividida) {
+      return ['A', 'B'].some((grupo) => (
+        aula[grupo].disciplina || aula[grupo].professor || aula[grupo].sala
+      )) || aula.horario
+    }
+
+    return aula.disciplina || aula.professor || aula.sala || aula.horario
+  }
+
+  function professorOpcoes() {
+    return professoresEditor.map((professorItem) => {
+      const valor = professorItem.nomePDF || professorItem.nome || ''
+      const label = professorItem.nome
+        ? `${professorItem.nome}${professorItem.nomePDF ? ` (${professorItem.nomePDF})` : ''}`
+        : valor
+      return { valor, label }
+    }).filter((item) => item.valor)
+  }
+
+  function montarAulasParaSalvar() {
+    const turmaBase = nomeTurmaEditor()
+    const aulasValidas = []
+
+    aulasEditor.forEach((aula, index) => {
+      if (!aulaTemConteudo(aula)) return
+
+      const ordem = Number(aula.ordem || index + 1)
+      if (!aula.horario.trim()) {
+        throw new Error(`Informe o horário da ${ordem}ª aula.`)
+      }
+
+      if (aula.dividida) {
+        ;['A', 'B'].forEach((grupo) => {
+          const dadosGrupo = aula[grupo]
+          if (!dadosGrupo.disciplina && !dadosGrupo.professor && !dadosGrupo.sala) return
+          if (!dadosGrupo.disciplina.trim()) {
+            throw new Error(`Informe a disciplina da turma ${grupo} na ${ordem}ª aula.`)
+          }
+
+          aulasValidas.push({
+            dia: aula.dia,
+            ordem,
+            horario: aula.horario,
+            periodo: aula.periodo,
+            disciplina: dadosGrupo.disciplina.trim(),
+            professor: dadosGrupo.professor.trim(),
+            sala: dadosGrupo.sala.trim(),
+            turma: `${turmaBase} ${grupo}`,
+            divisao: grupo,
+          })
+        })
+        return
+      }
+
+      if (!aula.disciplina.trim()) {
+        throw new Error(`Informe a disciplina da ${ordem}ª aula.`)
+      }
+
+      aulasValidas.push({
+        dia: aula.dia,
+        ordem,
+        horario: aula.horario,
+        periodo: aula.periodo,
+        disciplina: aula.disciplina.trim(),
+        professor: aula.professor.trim(),
+        sala: aula.sala.trim(),
+        turma: turmaBase,
+        divisao: '',
+      })
+    })
+
+    if (aulasValidas.length === 0) {
+      throw new Error('Adicione pelo menos uma aula antes de salvar.')
+    }
+
+    return aulasValidas
+  }
+
+  async function salvarEditorCronograma() {
+    if (!isCoordenador || salvandoEditor) return
+
+    try {
+      setSalvandoEditor(true)
+      setErroEditor('')
+      setSucessoEditor('')
+
+      const aulasParaSalvar = montarAulasParaSalvar()
+      await salvarCronogramaTurmaManual({
+        uid,
+        curso: formCurso.curso.trim(),
+        ano: formCurso.ano,
+        nomeTurma: nomeTurmaEditor(),
+        periodo: formCurso.periodo,
+        aulas: aulasParaSalvar,
+      })
+
+      setSucessoEditor('Cronograma salvo com sucesso.')
+      await carregarCronograma()
+    } catch (err) {
+      console.error('Erro ao salvar cronograma manual:', err)
+      setErroEditor(err.message || 'Erro ao salvar cronograma.')
+    } finally {
+      setSalvandoEditor(false)
+    }
+  }
+
   return (
     <div className='crono-card'>
-      <h2 className='crono-titulo'>Cronogramas</h2>
+      <div className='crono-topo'>
+        <div>
+          <h2 className='crono-titulo'>Cronogramas</h2>
+          {cursoSelecionado && (
+            <p className='crono-subtitulo'>{cursoSelecionado.titulo}</p>
+          )}
+        </div>
 
-      {/* Seletor de dias */}
-      <div className='crono-dias'>
-        {DIAS.map((dia) => {
-          const temAula = cronograma.some((a) => a.dia === DIA_LABEL[dia])
-          return (
-            <button
-              key={dia}
-              className={`crono-dia-btn ${diaAtivo === dia ? 'ativo' : ''} ${!temAula ? 'sem-aula' : ''}`}
-              onClick={() => setDiaAtivo(dia)}
-            >
-              {dia}
-            </button>
-          )
-        })}
+        {cursoSelecionado && (
+          <button className='crono-voltar-btn' onClick={voltarParaCursos}>
+            <ArrowLeft size={16} />
+            Cursos
+          </button>
+        )}
       </div>
+
+      {isCoordenador && (
+        <section className='crono-editor'>
+          <div className='crono-editor-tabs'>
+            {!cursoSelecionado ? (
+              <button className='crono-editor-tab ativo'>
+                Curso
+              </button>
+            ) : (
+              <button className='crono-editor-tab ativo'>
+                Grade
+              </button>
+            )}
+          </div>
+
+          <AnimatePresence mode='wait'>
+            {abaEditor === 'curso' ? (
+              <motion.div
+                key='editor-curso'
+                className='crono-editor-curso'
+                {...ANIMACAO_PAINEL}
+              >
+                <label className='crono-editor-campo'>
+                  <span>Curso</span>
+                  <input
+                    value={formCurso.curso}
+                    onChange={(e) => atualizarFormCurso('curso', e.target.value)}
+                    placeholder='Ex: Recursos Humanos'
+                  />
+                </label>
+
+                <div className='crono-editor-dropdown'>
+                  <DropdownComPortal
+                    label='Ano'
+                    opcoes={ANOS_CURSO_LABEL}
+                    valor={`${formCurso.ano}° ano`}
+                    onChange={(valor) => atualizarFormCurso('ano', valor.replace(/\D/g, '') || '1')}
+                    id='crono-ano'
+                    dropdownAberto={dropdownEditorAberto}
+                    setDropdownAberto={setDropdownEditorAberto}
+                  />
+                </div>
+
+                <div className='crono-editor-dropdown'>
+                  <DropdownComPortal
+                    label='Período'
+                    opcoes={PERIODOS_EDITOR}
+                    valor={formCurso.periodo}
+                    onChange={(valor) => atualizarFormCurso('periodo', valor)}
+                    id='crono-periodo'
+                    dropdownAberto={dropdownEditorAberto}
+                    setDropdownAberto={setDropdownEditorAberto}
+                  />
+                </div>
+
+                <button className='crono-editor-acao' onClick={avancarParaGrade}>
+                  <PencilLine size={16} />
+                  Montar grade
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key='editor-grade'
+                className='crono-editor-grade-wrap'
+                {...ANIMACAO_PAINEL}
+              >
+                <div className='crono-editor-grade-topo'>
+                  <div>
+                    <span className='crono-editor-kicker'>Turma</span>
+                    <strong>{nomeTurmaEditor() || cursoSelecionado?.titulo || 'Sem curso'}</strong>
+                  </div>
+
+                  <div className='crono-editor-acoes'>
+                    <button className='crono-editor-btn' onClick={adicionarLinhaAula}>
+                      <Plus size={16} />
+                      Aula
+                    </button>
+                    <button
+                      className='crono-editor-btn salvar'
+                      onClick={salvarEditorCronograma}
+                      disabled={salvandoEditor}
+                    >
+                      <Save size={16} />
+                      {salvandoEditor ? 'Salvando...' : 'Salvar'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className='crono-editor-planilha'>
+                  <div className='crono-editor-head'>
+                    <span>Dia</span>
+                    <span>Aula</span>
+                    <span>Horário</span>
+                    <span>Período</span>
+                    <span>A/B</span>
+                    <span>Disciplina</span>
+                    <span>Professor</span>
+                    <span>Sala</span>
+                    <span />
+                  </div>
+
+                  {aulasEditor.map((aula, index) => (
+                    <div
+                      key={aula.id}
+                      className={`crono-editor-row ${aula.dividida ? 'dividida' : ''}`}
+                    >
+                      <div className='crono-editor-grade-dropdown'>
+                        <DropdownComPortal
+                          opcoes={DIAS_EDITOR}
+                          valor={aula.dia}
+                          onChange={(valor) => atualizarAulaEditor(index, 'dia', valor)}
+                          id={`crono-dia-${aula.id}`}
+                          dropdownAberto={dropdownEditorAberto}
+                          setDropdownAberto={setDropdownEditorAberto}
+                        />
+                      </div>
+
+                      <input
+                        type='number'
+                        min='1'
+                        max='9'
+                        value={aula.ordem}
+                        onChange={(e) => atualizarAulaEditor(index, 'ordem', e.target.value)}
+                      />
+
+                      <input
+                        type='time'
+                        value={aula.horario}
+                        onChange={(e) => atualizarAulaEditor(index, 'horario', e.target.value)}
+                      />
+
+                      <div className='crono-editor-grade-dropdown'>
+                        <DropdownComPortal
+                          opcoes={PERIODOS_EDITOR}
+                          valor={aula.periodo}
+                          onChange={(valor) => atualizarAulaEditor(index, 'periodo', valor)}
+                          id={`crono-periodo-${aula.id}`}
+                          dropdownAberto={dropdownEditorAberto}
+                          setDropdownAberto={setDropdownEditorAberto}
+                        />
+                      </div>
+
+                      <label className='crono-editor-toggle'>
+                        <input
+                          type='checkbox'
+                          checked={aula.dividida}
+                          onChange={(e) => atualizarAulaEditor(index, 'dividida', e.target.checked)}
+                        />
+                        <span>{aula.dividida ? 'Sim' : 'Não'}</span>
+                      </label>
+
+                      {aula.dividida ? (
+                        <>
+                          <div className='crono-editor-stack'>
+                            {['A', 'B'].map((grupo) => (
+                              <input
+                                key={grupo}
+                                value={aula[grupo].disciplina}
+                                onChange={(e) => atualizarAulaDividida(index, grupo, 'disciplina', e.target.value)}
+                                placeholder={`Disciplina ${grupo}`}
+                              />
+                            ))}
+                          </div>
+
+                          <div className='crono-editor-stack'>
+                            {['A', 'B'].map((grupo) => (
+                              <div
+                                key={grupo}
+                                className='crono-editor-grade-dropdown'
+                              >
+                                <DropdownComPortal
+                                  opcoes={[`Sem professor ${grupo}`, ...professorOpcoes().map((opcao) => opcao.valor)]}
+                                  valor={aula[grupo].professor || `Sem professor ${grupo}`}
+                                  onChange={(valor) => atualizarAulaDividida(
+                                    index,
+                                    grupo,
+                                    'professor',
+                                    valor === `Sem professor ${grupo}` ? '' : valor
+                                  )}
+                                  id={`crono-prof-${grupo}-${aula.id}`}
+                                  dropdownAberto={dropdownEditorAberto}
+                                  setDropdownAberto={setDropdownEditorAberto}
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className='crono-editor-stack'>
+                            {['A', 'B'].map((grupo) => (
+                              <input
+                                key={grupo}
+                                value={aula[grupo].sala}
+                                onChange={(e) => atualizarAulaDividida(index, grupo, 'sala', e.target.value)}
+                                placeholder={`Sala ${grupo}`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            value={aula.disciplina}
+                            onChange={(e) => atualizarAulaEditor(index, 'disciplina', e.target.value)}
+                            placeholder='Disciplina'
+                          />
+
+                          <div className='crono-editor-grade-dropdown'>
+                            <DropdownComPortal
+                              opcoes={['Sem professor', ...professorOpcoes().map((opcao) => opcao.valor)]}
+                              valor={aula.professor || 'Sem professor'}
+                              onChange={(valor) => atualizarAulaEditor(
+                                index,
+                                'professor',
+                                valor === 'Sem professor' ? '' : valor
+                              )}
+                              id={`crono-prof-${aula.id}`}
+                              dropdownAberto={dropdownEditorAberto}
+                              setDropdownAberto={setDropdownEditorAberto}
+                            />
+                          </div>
+
+                          <input
+                            value={aula.sala}
+                            onChange={(e) => atualizarAulaEditor(index, 'sala', e.target.value)}
+                            placeholder='Sala'
+                          />
+                        </>
+                      )}
+
+                      <button
+                        className='crono-editor-remover'
+                        onClick={() => removerLinhaAula(index)}
+                        aria-label='Remover aula'
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {(erroEditor || sucessoEditor) && (
+            <p className={`crono-editor-feedback ${erroEditor ? 'erro' : 'sucesso'}`}>
+              {erroEditor || sucessoEditor}
+            </p>
+          )}
+        </section>
+      )}
 
       {loading ? (
         <p className='crono-vazia'>Carregando horário...</p>
@@ -186,71 +756,128 @@ export default function Cronogramas({
           <p>{status}</p>
         </div>
       ) : (
-        <>
-          {/* Data atual */}
-          <p className='crono-data'>{formatarData(diaAtivo)}</p>
+        <AnimatePresence mode='wait'>
+          {!cursoSelecionado ? (
+            <motion.div
+              key='cursos'
+              className='crono-cursos-grid'
+              {...ANIMACAO_PAINEL}
+            >
+              {cursos.map((curso, index) => (
+                <motion.button
+                  key={curso.id}
+                  className='crono-curso-card'
+                  onClick={() => abrirCurso(curso)}
+                  {...ANIMACAO_CARD_CURSO}
+                  transition={{
+                    ...TRANSICAO_CRONOGRAMA,
+                    delay: Math.min(index * 0.035, 0.18),
+                  }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className='crono-curso-ano'>{curso.ano ? `${curso.ano}º ano` : 'Curso'}</span>
+                  <strong>{curso.cursoNome}</strong>
+                  <span className='crono-curso-sigla'>{curso.id}</span>
+                  <span className='crono-curso-meta'>
+                    {curso.aulas.length} aula{curso.aulas.length !== 1 ? 's' : ''} • {curso.dias.size} dia{curso.dias.size !== 1 ? 's' : ''}
+                  </span>
+                  <span className='crono-curso-meta'>
+                    {curso.professores.size} professor{curso.professores.size !== 1 ? 'es' : ''}
+                  </span>
+                </motion.button>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`curso-${cursoSelecionado.id}`}
+              {...ANIMACAO_PAINEL}
+            >
+              {/* Seletor de dias */}
+              <div className='crono-dias'>
+                {DIAS.map((dia) => {
+                  const temAula = aulasVisiveis.some((a) => a.dia === DIA_LABEL[dia])
+                  return (
+                    <button
+                      key={dia}
+                      className={`crono-dia-btn ${diaAtivo === dia ? 'ativo' : ''} ${!temAula ? 'sem-aula' : ''}`}
+                      onClick={() => setDiaAtivo(dia)}
+                    >
+                      {dia}
+                    </button>
+                  )
+                })}
+              </div>
 
-          {/* Períodos */}
-          {Object.entries(periodos).map(([nomePeriodo, aulasGrupo]) => (
-            <div key={nomePeriodo} className='crono-periodo-bloco'>
-              <h3 className='crono-periodo-titulo'>
-                Período {nomePeriodo}
-                {aulasGrupo.length > 0
-                  ? ` – ${aulasGrupo.length} aula${aulasGrupo.length > 1 ? 's' : ''}`
-                  : ' – Sem aulas'}
-              </h3>
+              {/* Data atual */}
+              <p className='crono-data'>{formatarData(diaAtivo)}</p>
 
-              {aulasGrupo.length > 0 && (
-                <div className='crono-lista'>
-                  {aulasGrupo.map((aula, i) => {
-                    const disc = nomeDisciplina(aula.disciplina)
-                    const semGrade = !aula.disciplina || aula.disciplina.trim() === ''
-                    const { bg, cor } = corDisciplina(disc)
-                    const primeiraLinha = i === 0
+              {/* Períodos */}
+              {Object.entries(periodos).map(([nomePeriodo, aulasGrupo]) => (
+                <div key={nomePeriodo} className='crono-periodo-bloco'>
+                  <h3 className='crono-periodo-titulo'>
+                    Período {nomePeriodo}
+                    {aulasGrupo.length > 0
+                      ? ` – ${aulasGrupo.length} aula${aulasGrupo.length > 1 ? 's' : ''}`
+                      : ' – Sem aulas'}
+                  </h3>
 
-                    return (
-                      <div key={i} className='crono-pill-row'>
-                        {/* Número da aula */}
-                        <span className='crono-pill-ordem'>{aula.ordem}ª aula</span>
+                  {aulasGrupo.length > 0 && (
+                    <div className='crono-lista'>
+                      {aulasGrupo.map((aula, i) => {
+                        const disc = nomeDisciplina(aula.disciplina)
+                        const semGrade = !aula.disciplina || aula.disciplina.trim() === ''
+                        const { bg, cor } = corDisciplina(disc, coresDisciplinas)
+                        const primeiraLinha = i === 0
 
-                        {/* Coluna: Disciplina */}
-                        <div className='crono-pill-col'>
-                          {primeiraLinha && <span className='crono-pill-label'>Disciplina ministrada</span>}
-                          {semGrade ? (
-                            <span className='crono-pill-sem-grade'>Sem grade</span>
-                          ) : (
-                            <span
-                              className='crono-pill-disc'
-                              style={{ background: bg, color: cor }}
-                            >
-                              {disc}
-                            </span>
-                          )}
-                        </div>
+                        return (
+                          <div key={i} className='crono-pill-row'>
+                            <span className='crono-pill-ordem'>{rotuloAulaComHorario(aula)}</span>
 
-                        {/* Coluna: Turma */}
-                        <div className='crono-pill-col'>
-                          {primeiraLinha && <span className='crono-pill-label'>Turma</span>}
-                          <span className='crono-pill-turma'>
-                            {aula.turma || '—'}
-                          </span>
-                        </div>
+                            <div className='crono-pill-col'>
+                              {primeiraLinha && <span className='crono-pill-label'>Disciplina ministrada</span>}
+                              {semGrade ? (
+                                <span className='crono-pill-sem-grade'>Sem grade</span>
+                              ) : (
+                                <span
+                                  className='crono-pill-disc'
+                                  style={{ background: bg, color: cor }}
+                                >
+                                  {disc}
+                                </span>
+                              )}
+                            </div>
 
-                        {/* Coluna: Sala */}
-                        <div className='crono-pill-col'>
-                          {primeiraLinha && <span className='crono-pill-label'>Sala</span>}
-                          <span className='crono-pill-sala'>
-                            {aula.sala || '—'}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
+                            <div className='crono-pill-col'>
+                              {primeiraLinha && <span className='crono-pill-label'>Turma</span>}
+                              <span className='crono-pill-turma'>
+                                {aula.turma || '—'}
+                              </span>
+                            </div>
+
+                            <div className='crono-pill-col'>
+                              {primeiraLinha && <span className='crono-pill-label'>Professor</span>}
+                              <span className='crono-pill-professor'>
+                                {aula.professor || 'Sem professor'}
+                              </span>
+                            </div>
+
+                            <div className='crono-pill-col'>
+                              {primeiraLinha && <span className='crono-pill-label'>Sala</span>}
+                              <span className='crono-pill-sala'>
+                                {aula.sala || '—'}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </div>
   )

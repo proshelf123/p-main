@@ -7,7 +7,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
-import { buscarPerfil, buscarCronograma, buscarEventos, atualizarConfigUser, criarPerfil } from '../firebase/estrutura'
+import {
+  buscarPerfil,
+  buscarCronograma,
+  buscarEventos,
+  atualizarConfigUser,
+  criarPerfil,
+  buscarProximaAulaDoProfessor,
+} from '../firebase/estrutura'
 import {
   aplicarTemaEscuro,
   buscarTemaLegado,
@@ -17,7 +24,7 @@ import {
   salvarTemaLocal,
 } from '../tema'
 import Logo from '../assets/Group 32 (2).png'
-import { CircleUserRound, UserRound, Settings, LogOut, Upload, Users, Menu, X } from 'lucide-react'
+import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
@@ -31,14 +38,13 @@ import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 import NotificationToast from '../notificacoes/notificacaoToast.jsx'
 import { useToastNotificacoes } from '../notificacoes/notificacaoToast.js'
 
-// ── Importações exclusivas do coordenador ──
-import UploadCronograma from '../coordenador/UploadCronograma'
 import CadastroProfessores from '../coordenador/CadastroProfessores'
+import CoresDisciplinas from '../coordenador/CoresDisciplinas'
 
 const MotionDiv = motion.div
 
 const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
-const SECOES_COORDENADOR = ['Upload Horário', 'Professores']
+const SECOES_COORDENADOR = ['Professores', 'Cores']
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -138,6 +144,11 @@ function Dashboard() {
     setCronogramasCarregados(true)
   }
 
+  const proximaAulaProfessor = buscarProximaAulaDoProfessor(cronogramas, professor)
+  const cronogramasDashboard = professor?.role === 'professor'
+    ? (proximaAulaProfessor ? [proximaAulaProfessor] : [])
+    : cronogramas
+
   function renderSecao() {
     switch (secaoAtiva) {
       case 'Início':
@@ -145,7 +156,7 @@ function Dashboard() {
           <Bemvindo
             professor={professor}
             uid={uid}
-            cronogramas={cronogramas}
+            cronogramas={cronogramasDashboard}
             eventos={eventos}
             onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
             onIrCalendario={() => setSecaoAtiva('Calendário')}
@@ -165,8 +176,8 @@ function Dashboard() {
       case 'Arquivos':       return <Arquivos uid={uid} professor={professor} />
       case 'Calendário':     return <Calendario uid={uid} professor={professor} />
       case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />
-      case 'Upload Horário': return <UploadCronograma />
       case 'Professores':    return <CadastroProfessores />
+      case 'Cores':          return <CoresDisciplinas uid={uid} professor={professor} cronogramas={cronogramas} />
       default:               return null
     }
   }
@@ -208,8 +219,8 @@ function Dashboard() {
                 className={`nav-link nav-link-coord ${secaoAtiva === s ? 'ativo' : ''}`}
                 onClick={() => { setSecaoAtiva(s); setMenuMobileAberto(false) }}
               >
-                {s === 'Upload Horário' && <Upload size={14} />}
                 {s === 'Professores'    && <Users size={14} />}
+                {s === 'Cores'          && <Palette size={14} />}
                 {s}
               </button>
             ))}
@@ -264,8 +275,8 @@ function Dashboard() {
                       className={`nav-link nav-link-coord ${secaoAtiva === s ? 'ativo' : ''}`}
                       onClick={() => setSecaoAtiva(s)}
                     >
-                      {s === 'Upload Horário' && <Upload size={13} />}
                       {s === 'Professores'    && <Users size={13} />}
+                      {s === 'Cores'          && <Palette size={13} />}
                       {s}
                     </button>
                   </li>

@@ -82,11 +82,16 @@ service cloud.firestore {
       allow read: if logado() && (eDono(uid) || eCoordenador());
       allow write: if logado() && (eDono(uid) || eCoordenador());
     }
-    // Cronograma geral da escola
+    // Cronograma geral da escola: todos os professores autenticados leem todos os horários
 
-    match /cronogramas_escola/{nomeProfessor}/{document=**} {
+    match /cronogramas_escola/{cronogramaId} {
       allow read: if logado();
       allow write: if eCoordenador();
+
+      match /aulas/{aulaId} {
+        allow read: if logado();
+        allow write: if eCoordenador();
+      }
     }
 
     // Vínculo e-mail ↔ nome no PDF
@@ -146,6 +151,11 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
     //  BLOQUEIO GLOBAL DE SEGURANÇA
     // ═══════════════════════════════════════════════════════════
+
+    match /configuracoes_escola/{docId} {
+      allow read: if logado();
+      allow create, update, delete: if eCoordenador();
+    }
 
     match /{document=**} {
       allow read, write: if false;

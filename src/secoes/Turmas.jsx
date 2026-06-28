@@ -6,6 +6,8 @@ import './secoes.css'
 import { Trash2, AlertTriangle, X } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
 import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
+import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
+import { montarCoresDisciplina } from './coresDisciplinas'
 
 const COR_DISCIPLINA = {
   'Matemática': { ativo: '#FF0000', bg: '#fff0f0', cor: '#b30000' },
@@ -33,13 +35,14 @@ const PERIODOS = ['Matutino', 'Vespertino', 'Noturno']
 const FORM_TURMA_INICIAL    = { nome: '', disciplina: '', periodo: 'Matutino', professor: '', professorId: '' }
 const FORM_REGISTRO_INICIAL = { data: '', conteudo: '', descricao: '', informacoes: '', tipo: 'teorica' }
 
-function coresDe(disciplina) {
-  return COR_DISCIPLINA[disciplina] || { ativo: '#6F3B9D', bg: '#EEEDFE', cor: '#6F3B9D' }
+function coresDe(disciplina, coresCustomizadas = {}) {
+  return montarCoresDisciplina(disciplina, coresCustomizadas)
 }
 
 // ── Modal de confirmação customizado ──────────────────────────
 function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
-  const c = coresDe(turma?.disciplina)
+  const coresDisciplinas = useCoresDisciplinas()
+  const c = coresDe(turma?.disciplina, coresDisciplinas)
   return (
     <>
       <div className='modal-confirmar-overlay' onClick={onCancelar} />
@@ -119,6 +122,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
 
 export default function Turmas({ uid, professor }) {
   const isCoordenador = professor?.role === 'coordenador'
+  const coresDisciplinas = useCoresDisciplinas()
   const [turmas, setTurmas]                   = useState([])
   const [disciplinas, setDisciplinas]         = useState([])
   const [disciplinaAtiva, setDisciplinaAtiva] = useState(null)
@@ -484,11 +488,11 @@ export default function Turmas({ uid, professor }) {
         <>
           <div className='turma-tabs' style={{ marginBottom: 20 }}>
             {disciplinas.map(d => {
-              const c = coresDe(d)
+              const c = coresDe(d, coresDisciplinas)
               const ativa = disciplinaAtiva === d
               return (
                 <button key={d} className='turma-tab-pill'
-                  style={{ background: ativa ? c.ativo : 'var(--roxo-claro)', color: ativa ? '#fff' : 'var(--texto)', borderColor: ativa ? c.ativo : 'transparent', transform: ativa ? 'scale(1.05)' : 'scale(1)' }}
+                  style={{ background: ativa ? c.ativo : 'var(--roxo-claro)', color: ativa ? c.textoSobreAtivo : 'var(--texto)', borderColor: ativa ? c.ativo : 'transparent', transform: ativa ? 'scale(1.05)' : 'scale(1)' }}
                   onClick={() => setDisciplinaAtiva(d)}>
                   {d}
                 </button>
@@ -507,7 +511,7 @@ export default function Turmas({ uid, professor }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {turmasFiltradas.map((t, idx) => {
-              const c = coresDe(t.disciplina)
+              const c = coresDe(t.disciplina, coresDisciplinas)
               return (
                 <div key={t.id} style={{ position: 'relative' }}>
                   <button className='turma-card-pill'

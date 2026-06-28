@@ -4,7 +4,7 @@ import {
   collection, addDoc, getDocs,
   collectionGroup,
   updateDoc, deleteDoc,
-  serverTimestamp, query, orderBy, where, onSnapshot
+  serverTimestamp, query, orderBy, where, onSnapshot, writeBatch
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase";
@@ -17,7 +17,12 @@ import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notif
 export async function buscarProfessores() {
   const q = query(collection(db, "users"), where("role", "==", "professor"));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, nome: d.data().nome, email: d.data().email }));
+  return snap.docs.map((d) => ({
+    id: d.id,
+    nome: d.data().nome,
+    email: d.data().email,
+    nomePDF: d.data().nomePDF,
+  }));
 }
 
 export async function criarPerfil(uid, email) {
@@ -60,6 +65,45 @@ export async function buscarPerfil(uid) {
 // ═══════════════════════════════════════════════════════════
 //  TURMAS
 // ═══════════════════════════════════════════════════════════
+
+const CORES_DISCIPLINAS_REF = doc(db, "configuracoes_escola", "cores_disciplinas");
+
+function normalizarMapaCoresDisciplinas(dados = {}) {
+  const cores = dados.cores || {};
+  return Object.entries(cores).reduce((acc, [chave, valor]) => {
+    if (typeof valor === "string") {
+      acc[chave] = { nome: chave, cor: valor };
+      return acc;
+    }
+    acc[chave] = {
+      nome: valor?.nome || chave,
+      cor: valor?.cor || "",
+    };
+    return acc;
+  }, {});
+}
+
+export async function buscarCoresDisciplinas() {
+  const snap = await getDoc(CORES_DISCIPLINAS_REF);
+  if (!snap.exists()) return {};
+  return normalizarMapaCoresDisciplinas(snap.data());
+}
+
+export function escutarCoresDisciplinas(callback, onErro = () => {}) {
+  return onSnapshot(
+    CORES_DISCIPLINAS_REF,
+    (snap) => callback(snap.exists() ? normalizarMapaCoresDisciplinas(snap.data()) : {}),
+    onErro
+  );
+}
+
+export async function salvarCoresDisciplinas(uid, cores) {
+  await setDoc(CORES_DISCIPLINAS_REF, {
+    cores: cores || {},
+    atualizadoPorUid: uid || "",
+    atualizadoEm: serverTimestamp(),
+  }, { merge: true });
+}
 
 export async function criarTurma(uid, dados) {
   const ref = collection(db, "turmas", uid, "lista");
@@ -231,6 +275,44 @@ function dadosAulaCronograma(d, origem = "") {
   };
 }
 
+async function buscarTodasAulasCronogramasEscola() {
+  const nomesCronogramas = new Set();
+  const adicionarNome = (valor) => {
+    const nome = nomeDocumentoCronograma(valor);
+    if (nome) nomesCronogramas.add(nome);
+  };
+
+  const [cronogramasSnap, professoresSnap, turmasPeriodoSnap] = await Promise.all([
+    getDocs(collection(db, "cronogramas_escola")),
+    getDocs(collection(db, "professores_escola")),
+    getDocs(collection(db, "turmas_periodo")),
+  ]);
+
+  cronogramasSnap.docs.forEach((d) => adicionarNome(d.id));
+
+  professoresSnap.docs.forEach((professorDoc) => {
+    const professor = professorDoc.data();
+    adicionarNome(professor.nomePDF);
+    adicionarNome(professor.nome);
+  });
+
+  turmasPeriodoSnap.docs.forEach((turmaDoc) => {
+    const turma = turmaDoc.data();
+    adicionarNome(turma.nomeTurma);
+    adicionarNome(turma.nome);
+    adicionarNome(turmaDoc.id);
+  });
+
+  const snaps = await Promise.allSettled(
+    [...nomesCronogramas].map((nome) => getDocs(collection(db, "cronogramas_escola", nome, "aulas")))
+  );
+
+  return snaps.flatMap((resultado) => {
+    if (resultado.status !== "fulfilled") return [];
+    return resultado.value.docs.map((d) => dadosAulaCronograma(d, "escola"));
+  });
+}
+
 function chaveAulaCronograma(aula) {
   return [
     aula.dia || "",
@@ -242,6 +324,170 @@ function chaveAulaCronograma(aula) {
   ].map(normalizarChaveCronograma).join("|");
 }
 
+export function filtrarCronogramaDoProfessor(aulas = [], perfil = null) {
+  if (normalizarChaveCronograma(perfil?.role) !== "PROFESSOR") return aulas;
+
+  const nomesProfessor = [
+    perfil?.nomePDF,
+    perfil?.nome,
+    perfil?.nomeUsuario,
+    perfil?.email,
+  ].map(normalizarChaveCronograma).filter(Boolean);
+
+  if (nomesProfessor.length === 0) return [];
+  return aulas.filter((aula) => nomesProfessor.includes(normalizarChaveCronograma(aula.professor)));
+}
+
+function idSeguroCronograma(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[/.#[\]]/g, "-")
+    .toUpperCase();
+}
+
+export async function salvarCronogramaTurmaManual({
+  uid,
+  curso,
+  ano,
+  nomeTurma,
+  periodo = "Matutino",
+  aulas = [],
+}) {
+  const turmaBase = nomeDocumentoCronograma(nomeTurma || `${ano} ${curso}`);
+  if (!turmaBase) throw new Error("Informe o curso antes de salvar.");
+  if (!Array.isArray(aulas) || aulas.length === 0) throw new Error("Adicione pelo menos uma aula.");
+
+  const batch = writeBatch(db);
+  const turmasAfetadas = new Set([turmaBase]);
+
+  aulas.forEach((aula) => {
+    if (aula?.turma) turmasAfetadas.add(nomeDocumentoCronograma(aula.turma));
+  });
+
+  for (const turma of turmasAfetadas) {
+    const aulasSnap = await getDocs(collection(db, "cronogramas_escola", turma, "aulas"));
+    aulasSnap.docs.forEach((aulaDoc) => batch.delete(aulaDoc.ref));
+  }
+
+  const agora = serverTimestamp();
+
+  turmasAfetadas.forEach((turma) => {
+    batch.set(doc(db, "cronogramas_escola", turma), {
+      tipo: "turma",
+      nomeTurma: turma,
+      turmaBase,
+      curso: String(curso || "").trim(),
+      ano: String(ano || "").trim(),
+      periodo,
+      criadoPorUid: uid || "",
+      atualizadoEm: agora,
+    }, { merge: true });
+  });
+
+  batch.set(doc(db, "turmas_periodo", idSeguroCronograma(turmaBase)), {
+    nomeTurma: turmaBase,
+    nomePeriodo: `Período ${periodo}`,
+    curso: String(curso || "").trim(),
+    ano: String(ano || "").trim(),
+    criadoPorUid: uid || "",
+    atualizadoEm: agora,
+    criadoEm: agora,
+  }, { merge: true });
+
+  aulas.forEach((aula, index) => {
+    const turma = nomeDocumentoCronograma(aula.turma || turmaBase);
+    const aulaId = idSeguroCronograma([
+      aula.dia || "Segunda",
+      aula.ordem || index + 1,
+      aula.horario || "",
+      turma,
+      aula.divisao || "",
+      aula.periodo || periodo,
+    ].join("_"));
+
+    batch.set(doc(db, "cronogramas_escola", turma, "aulas", aulaId), {
+      dia: aula.dia || "Segunda",
+      ordem: Number(aula.ordem || index + 1),
+      horario: aula.horario || "",
+      periodo: aula.periodo || periodo,
+      disciplina: aula.disciplina || "",
+      professor: aula.professor || "",
+      sala: aula.sala || "",
+      turma,
+      turmaBase,
+      divisao: aula.divisao || "",
+      atualizadoEm: agora,
+      criadoPorUid: uid || "",
+    }, { merge: true });
+  });
+
+  await batch.commit();
+
+  try {
+    await criarNotificacaoPorRole({
+      role: "professor",
+      titulo: "Cronograma atualizado",
+      mensagem: `O cronograma da turma ${turmaBase} foi atualizado pela coordenação.`,
+      tipo: "horario",
+      link: "/cronograma",
+      criadoPorUid: uid || "coordenacao",
+      criadoPorNome: "Coordenação",
+    });
+  } catch (erro) {
+    console.error("Erro ao notificar atualização de cronograma:", erro);
+  }
+
+  return { totalAulas: aulas.length, nomeTurma: turmaBase };
+}
+
+const ORDEM_DIA_CRONOGRAMA = {
+  DOMINGO: 0,
+  SEGUNDA: 1,
+  TERCA: 2,
+  QUARTA: 3,
+  QUINTA: 4,
+  SEXTA: 5,
+  SABADO: 6,
+};
+
+const HORARIOS_MATUTINO = [420, 470, 520, 590, 640, 690, 740];
+
+function minutosInicioAula(aula) {
+  const horario = String(aula.horario || "").match(/(\d{1,2}):(\d{2})/);
+  if (horario) return Number(horario[1]) * 60 + Number(horario[2]);
+
+  const ordem = Number(aula.ordem || 1);
+  const periodo = normalizarChaveCronograma(aula.periodo);
+  if (periodo.includes("MATUTINO") || periodo.includes("MANHA")) {
+    return HORARIOS_MATUTINO[Math.max(0, ordem - 1)] ?? (420 + (ordem - 1) * 50);
+  }
+  if (periodo.includes("VESPERTINO") || periodo.includes("TARDE")) return 780 + (ordem - 1) * 50;
+  if (periodo.includes("NOTURNO") || periodo.includes("NOITE")) return 1140 + (ordem - 1) * 50;
+  return 420 + (ordem - 1) * 50;
+}
+
+export function buscarProximaAulaDoProfessor(aulas = [], perfil = null, agora = new Date()) {
+  const aulasProfessor = filtrarCronogramaDoProfessor(aulas, perfil);
+  if (aulasProfessor.length === 0) return null;
+
+  const hoje = agora.getDay();
+  const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+
+  return aulasProfessor
+    .map((aula) => {
+      const dia = ORDEM_DIA_CRONOGRAMA[normalizarChaveCronograma(aula.dia)];
+      const inicio = minutosInicioAula(aula);
+      let distanciaDias = typeof dia === "number" ? (dia - hoje + 7) % 7 : 7;
+      if (distanciaDias === 0 && inicio < minutosAgora) distanciaDias = 7;
+      return { aula, distanciaDias, inicio };
+    })
+    .sort((a, b) => a.distanciaDias - b.distanciaDias || a.inicio - b.inicio || (a.aula.ordem || 0) - (b.aula.ordem || 0))[0]
+    ?.aula || null;
+}
+
 export async function buscarCronograma(uid, perfil = null) {
   const aulas = [];
   const rolePerfil = normalizarChaveCronograma(perfil?.role);
@@ -250,45 +496,49 @@ export async function buscarCronograma(uid, perfil = null) {
     aulas.push(...novasAulas);
   };
 
-  const nomesProfessorDocumento = await buscarNomesProfessorCronograma(perfil);
-  const nomesProfessorComparacao = nomesProfessorDocumento.map(normalizarChaveCronograma);
-
   const snapPessoal = await getDocs(collection(db, "cronogramas", uid, "aulas"));
   adicionar(snapPessoal.docs.map((d) => dadosAulaCronograma(d, "pessoal")));
 
-  if (rolePerfil === "PROFESSOR" && nomesProfessorDocumento.length > 0) {
-    const snapsProfessor = await Promise.allSettled(
-      nomesProfessorDocumento.map((nomePDF) => getDocs(collection(db, "cronogramas_escola", nomePDF, "aulas")))
+  if (rolePerfil === "COORDENADOR" || rolePerfil === "PROFESSOR") {
+    adicionar(await buscarTodasAulasCronogramasEscola());
+  } else {
+    const nomesProfessorDocumento = await buscarNomesProfessorCronograma(perfil);
+    const nomesProfessorComparacao = nomesProfessorDocumento.map(normalizarChaveCronograma);
+
+    if (rolePerfil === "PROFESSOR" && nomesProfessorDocumento.length > 0) {
+      const snapsProfessor = await Promise.allSettled(
+        nomesProfessorDocumento.map((nomePDF) => getDocs(collection(db, "cronogramas_escola", nomePDF, "aulas")))
+      );
+
+      snapsProfessor.forEach((resultado) => {
+        if (resultado.status === "fulfilled") {
+          adicionar(resultado.value.docs.map((d) => dadosAulaCronograma(d, "professor")));
+        }
+      });
+    }
+
+    const turmasPeriodoSnap = await getDocs(collection(db, "turmas_periodo"));
+    const nomesTurmas = [...new Set(
+      turmasPeriodoSnap.docs.map((d) => d.data().nomeTurma).filter(Boolean)
+    )];
+
+    const snapsTurmas = await Promise.allSettled(
+      nomesTurmas.map((nomeTurma) => getDocs(collection(db, "cronogramas_escola", nomeTurma, "aulas")))
     );
 
-    snapsProfessor.forEach((resultado) => {
-      if (resultado.status === "fulfilled") {
-        adicionar(resultado.value.docs.map((d) => dadosAulaCronograma(d, "professor")));
-      }
+    snapsTurmas.forEach((resultado) => {
+      if (resultado.status !== "fulfilled") return;
+
+      const aulasDaTurma = resultado.value.docs
+        .map((d) => dadosAulaCronograma(d, "turma"))
+        .filter((aula) => {
+          if (rolePerfil !== "PROFESSOR" || nomesProfessorComparacao.length === 0) return true;
+          return nomesProfessorComparacao.includes(normalizarChaveCronograma(aula.professor));
+        });
+
+      adicionar(aulasDaTurma);
     });
   }
-
-  const turmasPeriodoSnap = await getDocs(collection(db, "turmas_periodo"));
-  const nomesTurmas = [...new Set(
-    turmasPeriodoSnap.docs.map((d) => d.data().nomeTurma).filter(Boolean)
-  )];
-
-  const snapsTurmas = await Promise.allSettled(
-    nomesTurmas.map((nomeTurma) => getDocs(collection(db, "cronogramas_escola", nomeTurma, "aulas")))
-  );
-
-  snapsTurmas.forEach((resultado) => {
-    if (resultado.status !== "fulfilled") return;
-
-    const aulasDaTurma = resultado.value.docs
-      .map((d) => dadosAulaCronograma(d, "turma"))
-      .filter((aula) => {
-        if (rolePerfil !== "PROFESSOR" || nomesProfessorComparacao.length === 0) return true;
-        return nomesProfessorComparacao.includes(normalizarChaveCronograma(aula.professor));
-      });
-
-    adicionar(aulasDaTurma);
-  });
 
   const vistas = new Set();
   return aulas.filter((aula) => {
