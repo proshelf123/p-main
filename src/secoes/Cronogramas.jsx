@@ -1,10 +1,12 @@
 // src/secoes/Cronogramas.jsx
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Plus, Save, Trash2, PencilLine } from 'lucide-react'
+import { ArrowLeft, Plus, Save, Trash2, PencilLine, AlertTriangle } from 'lucide-react'
 import {
   buscarCronograma,
   buscarProfessores,
+  deletarCronogramaCursoManual,
+  escutarProfessoresDisciplinas,
   salvarCronogramaTurmaManual,
 } from '../firebase/estrutura'
 import DropdownComPortal from './DropwdownComPortal'
@@ -18,6 +20,7 @@ const MENSAGEM_SEM_HORARIO = 'Nenhum cronograma encontrado. Aguarde o coordenado
 const ANOS_CURSO = ['1', '2', '3']
 const ANOS_CURSO_LABEL = ANOS_CURSO.map((ano) => `${ano}° ano`)
 const PERIODOS_EDITOR = ['Matutino', 'Vespertino', 'Noturno']
+const FORM_CURSO_INICIAL = { curso: '', ano: '1', periodo: 'Matutino' }
 const DIAS_EDITOR = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 const CURSOS_CRONOGRAMA = {
@@ -42,6 +45,8 @@ const ANIMACAO_CARD_CURSO = {
   initial: { opacity: 0, y: 14, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
 }
+
+const MotionDiv = motion.div
 
 const DIA_LABEL = {
   DOM: 'Domingo',
@@ -79,12 +84,92 @@ function novaAulaEditor(ordem = 1) {
   }
 }
 
+function aulasEditorIniciais() {
+  return [novaAulaEditor(1)]
+}
+
 const NOMES_DISCIPLINA = {
   MAT: 'Matemática', FIS: 'Física', QUI: 'Química',
   BIO: 'Biologia', PORT: 'Português', ING: 'Inglês',
   HIS: 'História', GEO: 'Geografia', FIL: 'Filosofia',
   SOCI: 'Sociologia', ARTE: 'Artes',
   'ED. FIS': 'Ed. Física', 'ED.FIS': 'Ed. Física',
+}
+
+function ModalConfirmarCurso({ curso, onConfirmar, onCancelar, deletando = false }) {
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={deletando ? undefined : onCancelar} />
+      <div className='modal-confirmar'>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
+        </div>
+
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover curso?
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Voce esta prestes a remover o curso
+        </p>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 14px', borderRadius: 12,
+          background: '#FFF0F3', margin: '0 0 6px',
+          animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ED235C', flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#ED235C' }}>{curso?.cursoNome}</div>
+            <div style={{ fontSize: 11, color: '#ED235C', opacity: 0.7 }}>{curso?.id}</div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
+          Todas as aulas cadastradas neste curso serao removidas permanentemente.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            disabled={deletando}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: '1px solid var(--borda)', background: 'var(--branco)',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              color: 'var(--texto)', cursor: deletando ? 'wait' : 'pointer',
+              transition: 'all .15s', opacity: deletando ? 0.65 : 1,
+            }}
+            onMouseEnter={e => { if (!deletando) { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' } }}
+            onMouseLeave={e => { if (!deletando) { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555' } }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            disabled={deletando}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: deletando ? 'wait' : 'pointer',
+              transition: 'all .15s', opacity: deletando ? 0.75 : 1,
+            }}
+            onMouseEnter={e => { if (!deletando) { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' } }}
+            onMouseLeave={e => { if (!deletando) { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' } }}
+          >
+            {deletando ? 'Removendo...' : 'Sim, remover'}
+          </button>
+        </div>
+      </div>
+    </>
+  )
 }
 
 function corDisciplina(disc, coresCustomizadas = {}) {
@@ -102,6 +187,35 @@ function normalizarTextoCronograma(valor) {
     .trim()
     .replace(/\s+/g, ' ')
     .toUpperCase()
+}
+
+function chaveRascunhoCronograma(uid) {
+  return uid ? `proshelf:cronograma-editor:${uid}` : ''
+}
+
+function carregarRascunhoCronograma(uid) {
+  const chave = chaveRascunhoCronograma(uid)
+  if (!chave || typeof window === 'undefined') return null
+
+  try {
+    const salvo = window.localStorage.getItem(chave)
+    return salvo ? JSON.parse(salvo) : null
+  } catch (err) {
+    console.warn('Rascunho de cronograma invalido:', err)
+    return null
+  }
+}
+
+function salvarRascunhoCronograma(uid, rascunho) {
+  const chave = chaveRascunhoCronograma(uid)
+  if (!chave || typeof window === 'undefined') return
+  window.localStorage.setItem(chave, JSON.stringify(rascunho))
+}
+
+function limparRascunhoCronograma(uid) {
+  const chave = chaveRascunhoCronograma(uid)
+  if (!chave || typeof window === 'undefined') return
+  window.localStorage.removeItem(chave)
 }
 
 function turmaBaseCronograma(turma) {
@@ -133,6 +247,87 @@ function dadosCursoDaTurma(turma) {
     cursoNome,
     titulo: `${ano}º ${cursoNome}`,
   }
+}
+
+function formCursoDoCurso(curso) {
+  const primeiraAula = curso?.aulas?.find((aula) => aula.periodo)
+
+  return {
+    curso: curso?.cursoSigla || curso?.cursoNome || '',
+    ano: curso?.ano || '1',
+    periodo: primeiraAula?.periodo || 'Matutino',
+  }
+}
+
+function chaveLinhaEditor(aula) {
+  return [
+    aula.dia || 'Segunda',
+    aula.ordem || 1,
+    aula.horario || '',
+    aula.periodo || 'Matutino',
+  ].map(normalizarTextoCronograma).join('|')
+}
+
+function divisaoDaAula(aula) {
+  const divisao = normalizarTextoCronograma(aula.divisao)
+  if (divisao === 'A' || divisao === 'B') return divisao
+
+  const turma = normalizarTextoCronograma(aula.turma)
+  const match = turma.match(/\s([AB])$/)
+  return match?.[1] || ''
+}
+
+function montarAulasEditorDoCurso(aulas = []) {
+  if (!Array.isArray(aulas) || aulas.length === 0) return aulasEditorIniciais()
+
+  const linhas = []
+  const divididas = new Map()
+
+  aulas
+    .slice()
+    .sort((a, b) => {
+      const dia = String(a.dia || '').localeCompare(String(b.dia || ''), 'pt-BR')
+      return dia || Number(a.ordem || 0) - Number(b.ordem || 0)
+    })
+    .forEach((aula) => {
+      const divisao = divisaoDaAula(aula)
+
+      if (divisao) {
+        const chave = chaveLinhaEditor(aula)
+        if (!divididas.has(chave)) {
+          divididas.set(chave, {
+            ...novaAulaEditor(aula.ordem || 1),
+            dia: aula.dia || 'Segunda',
+            horario: aula.horario || '',
+            periodo: aula.periodo || 'Matutino',
+            dividida: true,
+          })
+        }
+
+        const linha = divididas.get(chave)
+        linha[divisao] = {
+          disciplina: aula.disciplina || '',
+          professor: aula.professor || '',
+          sala: aula.sala || '',
+        }
+        return
+      }
+
+      linhas.push({
+        ...novaAulaEditor(aula.ordem || linhas.length + 1),
+        dia: aula.dia || 'Segunda',
+        horario: aula.horario || '',
+        periodo: aula.periodo || 'Matutino',
+        disciplina: aula.disciplina || '',
+        professor: aula.professor || '',
+        sala: aula.sala || '',
+      })
+    })
+
+  const todas = [...linhas, ...divididas.values()]
+    .sort((a, b) => String(a.dia || '').localeCompare(String(b.dia || ''), 'pt-BR') || Number(a.ordem || 0) - Number(b.ordem || 0))
+
+  return todas.length > 0 ? todas : aulasEditorIniciais()
 }
 
 function agruparPorCurso(aulas) {
@@ -226,10 +421,14 @@ export default function Cronogramas({
     cronogramasCarregados && cronogramasIniciais.length === 0 ? MENSAGEM_SEM_HORARIO : ''
   )
   const [abaEditor, setAbaEditor] = useState('curso')
-  const [formCurso, setFormCurso] = useState({ curso: '', ano: '1', periodo: 'Matutino' })
-  const [aulasEditor, setAulasEditor] = useState(() => [novaAulaEditor(1)])
+  const [formCurso, setFormCurso] = useState(FORM_CURSO_INICIAL)
+  const [aulasEditor, setAulasEditor] = useState(aulasEditorIniciais)
+  const [rascunhoEditorCarregado, setRascunhoEditorCarregado] = useState(false)
   const [professoresEditor, setProfessoresEditor] = useState([])
+  const [professoresDisciplinas, setProfessoresDisciplinas] = useState({})
   const [salvandoEditor, setSalvandoEditor] = useState(false)
+  const [deletandoCursoId, setDeletandoCursoId] = useState('')
+  const [confirmarDeleteCurso, setConfirmarDeleteCurso] = useState(null)
   const [erroEditor, setErroEditor] = useState('')
   const [sucessoEditor, setSucessoEditor] = useState('')
   const [dropdownEditorAberto, setDropdownEditorAberto] = useState(null)
@@ -265,6 +464,68 @@ export default function Cronogramas({
         setProfessoresEditor([])
       })
   }, [isCoordenador])
+
+  useEffect(() => {
+    if (!isCoordenador) return
+
+    return escutarProfessoresDisciplinas(
+      setProfessoresDisciplinas,
+      (err) => {
+        console.error('Erro ao carregar professores por disciplina:', err)
+        setProfessoresDisciplinas({})
+      }
+    )
+  }, [isCoordenador])
+
+  useEffect(() => {
+    if (!uid || !isCoordenador) {
+      setRascunhoEditorCarregado(true)
+      return
+    }
+
+    const rascunho = carregarRascunhoCronograma(uid)
+    if (rascunho?.formCurso) {
+      setFormCurso({ ...FORM_CURSO_INICIAL, ...rascunho.formCurso })
+    }
+    if (Array.isArray(rascunho?.aulasEditor) && rascunho.aulasEditor.length > 0) {
+      setAulasEditor(rascunho.aulasEditor)
+    }
+    if (rascunho?.abaEditor === 'grade' && rascunho?.formCurso?.curso) {
+      setAbaEditor('grade')
+    }
+
+    setRascunhoEditorCarregado(true)
+  }, [uid, isCoordenador])
+
+  const editorTemRascunhoAtual = Boolean(
+    formCurso.curso.trim()
+    || abaEditor === 'grade'
+    || aulasEditor.some((aula) => {
+      if (aula.dividida) {
+        return ['A', 'B'].some((grupo) => (
+          aula[grupo].disciplina || aula[grupo].professor || aula[grupo].sala
+        )) || aula.horario
+      }
+
+      return aula.disciplina || aula.professor || aula.sala || aula.horario
+    })
+  )
+
+  useEffect(() => {
+    if (!uid || !isCoordenador || !rascunhoEditorCarregado) return
+
+    if (!editorTemRascunhoAtual) {
+      limparRascunhoCronograma(uid)
+      return
+    }
+
+    salvarRascunhoCronograma(uid, {
+      abaEditor,
+      formCurso,
+      aulasEditor,
+      atualizadoEm: new Date().toISOString(),
+    })
+  }, [uid, isCoordenador, rascunhoEditorCarregado, editorTemRascunhoAtual, abaEditor, formCurso, aulasEditor])
 
   async function carregarCronograma() {
     setLoading(true)
@@ -307,9 +568,20 @@ export default function Cronogramas({
   const periodos = agruparPorPeriodo(aulasDoDia)
 
   function abrirCurso(curso) {
+    if (deletandoCursoId) return
     setCursoSelecionado(curso)
+    setFormCurso(formCursoDoCurso(curso))
+    setAulasEditor(montarAulasEditorDoCurso(curso.aulas))
     setAbaEditor('grade')
+    setErroEditor('')
+    setSucessoEditor('')
     setDiaAtivo((diaAtual) => primeiroDiaComAula(curso.aulas, diaAtual))
+  }
+
+  function abrirCursoPeloTeclado(event, curso) {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    abrirCurso(curso)
   }
 
   function voltarParaCursos() {
@@ -394,6 +666,48 @@ export default function Cronogramas({
     }).filter((item) => item.valor)
   }
 
+  function professorVinculadoDisciplina(disciplina, grupo = '') {
+    const chave = normalizarTextoCronograma(disciplina)
+    const chaveGrupo = grupo && grupo !== 'A' && !chave.endsWith(` ${grupo}`)
+      ? `${chave} ${grupo}`
+      : chave
+    const vinculo = professoresDisciplinas[chaveGrupo] || professoresDisciplinas[chave]
+    return vinculo?.professorNomePDF || vinculo?.professorNome || ''
+  }
+
+  function atualizarDisciplinaAula(index, valor) {
+    const professorVinculado = professorVinculadoDisciplina(valor)
+    setAulasEditor((atuais) => atuais.map((aula, i) => (
+      i === index
+        ? {
+          ...aula,
+          disciplina: valor,
+          professor: professorVinculado || aula.professor,
+        }
+        : aula
+    )))
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
+  function atualizarDisciplinaDividida(index, grupo, valor) {
+    const professorVinculado = professorVinculadoDisciplina(valor, grupo)
+    setAulasEditor((atuais) => atuais.map((aula, i) => {
+      if (i !== index) return aula
+
+      return {
+        ...aula,
+        [grupo]: {
+          ...aula[grupo],
+          disciplina: valor,
+          professor: professorVinculado || aula[grupo].professor,
+        },
+      }
+    }))
+    setErroEditor('')
+    setSucessoEditor('')
+  }
+
   function montarAulasParaSalvar() {
     const turmaBase = nomeTurmaEditor()
     const aulasValidas = []
@@ -471,13 +785,54 @@ export default function Cronogramas({
         aulas: aulasParaSalvar,
       })
 
-      setSucessoEditor('Cronograma salvo com sucesso.')
       await carregarCronograma()
+      limparRascunhoCronograma(uid)
+      setCursoSelecionado(null)
+      setAbaEditor('curso')
+      setFormCurso(FORM_CURSO_INICIAL)
+      setAulasEditor(aulasEditorIniciais())
+      setSucessoEditor('Cronograma salvo com sucesso.')
     } catch (err) {
       console.error('Erro ao salvar cronograma manual:', err)
       setErroEditor(err.message || 'Erro ao salvar cronograma.')
     } finally {
       setSalvandoEditor(false)
+    }
+  }
+
+  function solicitarDeleteCurso(curso, event) {
+    event.stopPropagation()
+    if (!isCoordenador || deletandoCursoId) return
+    setConfirmarDeleteCurso(curso)
+  }
+
+  async function executarDeleteCurso() {
+    if (!confirmarDeleteCurso || deletandoCursoId) return
+    const curso = confirmarDeleteCurso
+
+    try {
+      setDeletandoCursoId(curso.id)
+      setErroEditor('')
+      setSucessoEditor('')
+
+      await deletarCronogramaCursoManual({ nomeTurma: curso.id })
+
+      if (normalizarTextoCronograma(nomeTurmaEditor()) === curso.id) {
+        limparRascunhoCronograma(uid)
+        setFormCurso(FORM_CURSO_INICIAL)
+        setAulasEditor(aulasEditorIniciais())
+        setAbaEditor('curso')
+      }
+
+      setCursoSelecionado(null)
+      await carregarCronograma()
+      setConfirmarDeleteCurso(null)
+      setSucessoEditor('Curso deletado com sucesso.')
+    } catch (err) {
+      console.error('Erro ao deletar curso do cronograma:', err)
+      setErroEditor(err.message || 'Erro ao deletar curso.')
+    } finally {
+      setDeletandoCursoId('')
     }
   }
 
@@ -502,20 +857,26 @@ export default function Cronogramas({
       {isCoordenador && (
         <section className='crono-editor'>
           <div className='crono-editor-tabs'>
-            {!cursoSelecionado ? (
-              <button className='crono-editor-tab ativo'>
-                Curso
-              </button>
-            ) : (
-              <button className='crono-editor-tab ativo'>
-                Grade
-              </button>
-            )}
+            <button
+              type='button'
+              className={`crono-editor-tab ${abaEditor === 'curso' ? 'ativo' : ''}`}
+              onClick={() => setAbaEditor('curso')}
+            >
+              Curso
+            </button>
+            <button
+              type='button'
+              className={`crono-editor-tab ${abaEditor === 'grade' ? 'ativo' : ''}`}
+              onClick={avancarParaGrade}
+              disabled={!formCurso.curso.trim()}
+            >
+              Aulas
+            </button>
           </div>
 
           <AnimatePresence mode='wait'>
             {abaEditor === 'curso' ? (
-              <motion.div
+              <MotionDiv
                 key='editor-curso'
                 className='crono-editor-curso'
                 {...ANIMACAO_PAINEL}
@@ -557,9 +918,9 @@ export default function Cronogramas({
                   <PencilLine size={16} />
                   Montar grade
                 </button>
-              </motion.div>
+              </MotionDiv>
             ) : (
-              <motion.div
+              <MotionDiv
                 key='editor-grade'
                 className='crono-editor-grade-wrap'
                 {...ANIMACAO_PAINEL}
@@ -571,6 +932,13 @@ export default function Cronogramas({
                   </div>
 
                   <div className='crono-editor-acoes'>
+                    <button
+                      className='crono-editor-btn secundario'
+                      onClick={() => setAbaEditor('curso')}
+                    >
+                      <ArrowLeft size={16} />
+                      Curso
+                    </button>
                     <button className='crono-editor-btn' onClick={adicionarLinhaAula}>
                       <Plus size={16} />
                       Aula
@@ -656,7 +1024,7 @@ export default function Cronogramas({
                               <input
                                 key={grupo}
                                 value={aula[grupo].disciplina}
-                                onChange={(e) => atualizarAulaDividida(index, grupo, 'disciplina', e.target.value)}
+                                onChange={(e) => atualizarDisciplinaDividida(index, grupo, e.target.value)}
                                 placeholder={`Disciplina ${grupo}`}
                               />
                             ))}
@@ -700,7 +1068,7 @@ export default function Cronogramas({
                         <>
                           <input
                             value={aula.disciplina}
-                            onChange={(e) => atualizarAulaEditor(index, 'disciplina', e.target.value)}
+                            onChange={(e) => atualizarDisciplinaAula(index, e.target.value)}
                             placeholder='Disciplina'
                           />
 
@@ -737,7 +1105,7 @@ export default function Cronogramas({
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
 
@@ -758,16 +1126,19 @@ export default function Cronogramas({
       ) : (
         <AnimatePresence mode='wait'>
           {!cursoSelecionado ? (
-            <motion.div
+            <MotionDiv
               key='cursos'
               className='crono-cursos-grid'
               {...ANIMACAO_PAINEL}
             >
               {cursos.map((curso, index) => (
-                <motion.button
+                <MotionDiv
                   key={curso.id}
-                  className='crono-curso-card'
+                  className={`crono-curso-card ${deletandoCursoId === curso.id ? 'deletando' : ''}`}
                   onClick={() => abrirCurso(curso)}
+                  onKeyDown={(event) => abrirCursoPeloTeclado(event, curso)}
+                  role='button'
+                  tabIndex={0}
                   {...ANIMACAO_CARD_CURSO}
                   transition={{
                     ...TRANSICAO_CRONOGRAMA,
@@ -776,6 +1147,18 @@ export default function Cronogramas({
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  {isCoordenador && (
+                    <button
+                      type='button'
+                      className='crono-curso-deletar'
+                      onClick={(event) => solicitarDeleteCurso(curso, event)}
+                      disabled={Boolean(deletandoCursoId)}
+                      aria-label={`Deletar curso ${curso.titulo}`}
+                      title='Deletar curso'
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                   <span className='crono-curso-ano'>{curso.ano ? `${curso.ano}º ano` : 'Curso'}</span>
                   <strong>{curso.cursoNome}</strong>
                   <span className='crono-curso-sigla'>{curso.id}</span>
@@ -785,11 +1168,11 @@ export default function Cronogramas({
                   <span className='crono-curso-meta'>
                     {curso.professores.size} professor{curso.professores.size !== 1 ? 'es' : ''}
                   </span>
-                </motion.button>
+                </MotionDiv>
               ))}
-            </motion.div>
+            </MotionDiv>
           ) : (
-            <motion.div
+            <MotionDiv
               key={`curso-${cursoSelecionado.id}`}
               {...ANIMACAO_PAINEL}
             >
@@ -875,9 +1258,18 @@ export default function Cronogramas({
                   )}
                 </div>
               ))}
-            </motion.div>
+            </MotionDiv>
           )}
         </AnimatePresence>
+      )}
+
+      {confirmarDeleteCurso && (
+        <ModalConfirmarCurso
+          curso={confirmarDeleteCurso}
+          onConfirmar={executarDeleteCurso}
+          onCancelar={() => setConfirmarDeleteCurso(null)}
+          deletando={deletandoCursoId === confirmarDeleteCurso.id}
+        />
       )}
     </div>
   )

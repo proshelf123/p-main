@@ -924,9 +924,10 @@ select.perfil-input option:checked {
 }
 
 .crono-curso-card {
+  position: relative;
   border: 1px solid #ece5f5;
   border-radius: 14px;
-  padding: 18px;
+  padding: 18px 52px 18px 18px;
   min-height: 156px;
   background: #fff;
   color: #1a1a2e;
@@ -937,10 +938,44 @@ select.perfil-input option:checked {
   transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
+.crono-curso-card.deletando {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .crono-curso-card:hover {
   transform: translateY(-2px);
   border-color: #c7a9e8;
   box-shadow: 0 14px 30px rgba(111, 59, 157, 0.13);
+}
+
+.crono-curso-deletar {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  color: #ED235C;
+  cursor: pointer;
+  opacity: 0.38;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.crono-curso-deletar:hover {
+  opacity: 0.9;
+  transform: translateY(-50%) scale(1.04);
+}
+
+.crono-curso-deletar:disabled {
+  cursor: wait;
+  opacity: 0.6;
+  transform: translateY(-50%);
 }
 
 .crono-curso-card strong {
@@ -1177,6 +1212,11 @@ select.perfil-input option:checked {
   box-shadow: 0 4px 12px rgba(111, 59, 157, 0.24);
 }
 
+.crono-editor-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .crono-editor-curso {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 150px 170px auto;
@@ -1266,6 +1306,15 @@ select.perfil-input option:checked {
 
 .crono-editor-btn.salvar:hover {
   background: #166534;
+}
+
+.crono-editor-btn.secundario {
+  background: #f0ebf8;
+  color: #5d3184;
+}
+
+.crono-editor-btn.secundario:hover {
+  background: #e4d8f1;
 }
 
 .crono-editor-btn:disabled {
@@ -1481,6 +1530,14 @@ select.perfil-input option:checked {
 
 :root.dark-mode .crono-curso-card strong {
   color: var(--texto);
+}
+
+:root.dark-mode .crono-curso-deletar {
+  color: #fca5a5;
+}
+
+:root.dark-mode .crono-curso-deletar:hover {
+  color: #fecaca;
 }
 
 :root.dark-mode .crono-curso-sigla,

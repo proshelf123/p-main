@@ -213,6 +213,72 @@ main, .pagina-conteudo {
   gap: 10px;
 }
 
+.disc-prof-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.disc-prof-item {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.8fr) minmax(180px, 1fr) minmax(220px, 1.2fr);
+  gap: 12px;
+  align-items: start;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.disc-prof-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.disc-prof-preview strong {
+  font-size: 0.9rem;
+}
+
+.disc-prof-dropdown .perfil-grupo {
+  margin: 0;
+}
+
+.disc-prof-dropdown .dropdown-trigger {
+  min-height: 42px;
+}
+
+.disc-prof-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.disc-prof-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px dashed var(--borda);
+  border-radius: 8px;
+  background: var(--branco);
+  color: var(--roxo);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.disc-prof-add:hover {
+  background: var(--roxo-claro);
+  border-color: var(--roxo);
+  transform: translateY(-1px);
+}
+
 .cores-disc-item {
   display: grid;
   grid-template-columns: minmax(210px, 0.72fr) minmax(440px, 1fr);
@@ -373,6 +439,10 @@ main, .pagina-conteudo {
   }
 
   .cores-disc-item {
+    grid-template-columns: 1fr;
+  }
+
+  .disc-prof-item {
     grid-template-columns: 1fr;
   }
 }

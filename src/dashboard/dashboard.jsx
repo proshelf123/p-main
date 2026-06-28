@@ -24,7 +24,7 @@ import {
   salvarTemaLocal,
 } from '../tema'
 import Logo from '../assets/Group 32 (2).png'
-import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette } from 'lucide-react'
+import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
@@ -40,11 +40,12 @@ import { useToastNotificacoes } from '../notificacoes/notificacaoToast.js'
 
 import CadastroProfessores from '../coordenador/CadastroProfessores'
 import CoresDisciplinas from '../coordenador/CoresDisciplinas'
+import ProfessoresDisciplinas from '../coordenador/ProfessoresDisciplinas'
 
 const MotionDiv = motion.div
 
 const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
-const SECOES_COORDENADOR = ['Professores', 'Cores']
+const SECOES_COORDENADOR = ['Professores', 'Cores', 'Disciplinas']
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -178,6 +179,7 @@ function Dashboard() {
       case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />
       case 'Professores':    return <CadastroProfessores />
       case 'Cores':          return <CoresDisciplinas uid={uid} professor={professor} cronogramas={cronogramas} />
+      case 'Disciplinas':    return <ProfessoresDisciplinas uid={uid} />
       default:               return null
     }
   }
@@ -221,6 +223,7 @@ function Dashboard() {
               >
                 {s === 'Professores'    && <Users size={14} />}
                 {s === 'Cores'          && <Palette size={14} />}
+                {s === 'Disciplinas'    && <BookOpenCheck size={14} />}
                 {s}
               </button>
             ))}
@@ -277,6 +280,7 @@ function Dashboard() {
                     >
                       {s === 'Professores'    && <Users size={13} />}
                       {s === 'Cores'          && <Palette size={13} />}
+                      {s === 'Disciplinas'    && <BookOpenCheck size={13} />}
                       {s}
                     </button>
                   </li>

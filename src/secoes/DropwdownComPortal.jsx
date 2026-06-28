@@ -113,17 +113,17 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {opcoes.map((opt) => (
+          {opcoesNormalizadas.map((opt, index) => (
             <button
-              key={opt}
+              key={opt.valor || opt.label}
               className='dropdown-item'
               onClick={() => handleSelectItem(opt)}
               style={{
                 width: '100%',
                 padding: '12px 14px',
                 border: 'none',
-                background: valor === opt ? 'var(--roxo)' : 'var(--branco)',
-                color: valor === opt ? 'white' : 'var(--texto)',
+                background: valor === opt.valor ? 'var(--roxo)' : 'var(--branco)',
+                color: valor === opt.valor ? 'white' : 'var(--texto)',
                 fontSize: '13px',
                 fontFamily: "'Poppins', sans-serif",
                 cursor: 'pointer',
@@ -131,17 +131,17 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
                 display: 'flex',
                 alignItems: 'center',
                 whiteSpace: 'nowrap',
-                borderRadius: opt === opcoes[0] ? '7px 7px 0 0' : opt === opcoes[opcoes.length - 1] ? '0 0 7px 7px' : '0',
+                borderRadius: index === 0 ? '7px 7px 0 0' : index === opcoesNormalizadas.length - 1 ? '0 0 7px 7px' : '0',
               }}
               onMouseEnter={(e) => {
-                if (valor !== opt) e.target.style.backgroundColor = '#F1EDF4'
+                if (valor !== opt.valor) e.target.style.backgroundColor = '#F1EDF4'
               }}
               onMouseLeave={(e) => {
-                if (valor !== opt) e.target.style.backgroundColor = 'var(--branco)'
+                if (valor !== opt.valor) e.target.style.backgroundColor = 'var(--branco)'
               }}
             >
-              {valor === opt && <span style={{ marginRight: '8px' }}>✓</span>}
-              {opt}
+              {valor === opt.valor && <span style={{ marginRight: '8px' }}>✓</span>}
+              {opt.label}
             </button>
           ))}
         </div>,

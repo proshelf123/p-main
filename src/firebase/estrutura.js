@@ -67,6 +67,7 @@ export async function buscarPerfil(uid) {
 // ═══════════════════════════════════════════════════════════
 
 const CORES_DISCIPLINAS_REF = doc(db, "configuracoes_escola", "cores_disciplinas");
+const PROFESSORES_DISCIPLINAS_REF = doc(db, "configuracoes_escola", "professores_disciplinas");
 
 function normalizarMapaCoresDisciplinas(dados = {}) {
   const cores = dados.cores || {};
@@ -100,6 +101,22 @@ export function escutarCoresDisciplinas(callback, onErro = () => {}) {
 export async function salvarCoresDisciplinas(uid, cores) {
   await setDoc(CORES_DISCIPLINAS_REF, {
     cores: cores || {},
+    atualizadoPorUid: uid || "",
+    atualizadoEm: serverTimestamp(),
+  }, { merge: true });
+}
+
+export function escutarProfessoresDisciplinas(callback, onErro = () => {}) {
+  return onSnapshot(
+    PROFESSORES_DISCIPLINAS_REF,
+    (snap) => callback(snap.exists() ? (snap.data().vinculos || {}) : {}),
+    onErro
+  );
+}
+
+export async function salvarProfessoresDisciplinas(uid, vinculos) {
+  await setDoc(PROFESSORES_DISCIPLINAS_REF, {
+    vinculos: vinculos || {},
     atualizadoPorUid: uid || "",
     atualizadoEm: serverTimestamp(),
   }, { merge: true });
@@ -387,16 +404,6 @@ export async function salvarCronogramaTurmaManual({
     }, { merge: true });
   });
 
-  batch.set(doc(db, "turmas_periodo", idSeguroCronograma(turmaBase)), {
-    nomeTurma: turmaBase,
-    nomePeriodo: `Período ${periodo}`,
-    curso: String(curso || "").trim(),
-    ano: String(ano || "").trim(),
-    criadoPorUid: uid || "",
-    atualizadoEm: agora,
-    criadoEm: agora,
-  }, { merge: true });
-
   aulas.forEach((aula, index) => {
     const turma = nomeDocumentoCronograma(aula.turma || turmaBase);
     const aulaId = idSeguroCronograma([
@@ -441,6 +448,50 @@ export async function salvarCronogramaTurmaManual({
   }
 
   return { totalAulas: aulas.length, nomeTurma: turmaBase };
+}
+
+export async function deletarCronogramaCursoManual({ nomeTurma }) {
+  const turmaBase = nomeDocumentoCronograma(nomeTurma);
+  if (!turmaBase) throw new Error("Informe o curso para deletar.");
+
+  const cronogramasRef = collection(db, "cronogramas_escola");
+  const turmasParaRemover = new Map();
+  const adicionarTurma = (turmaDoc) => {
+    turmasParaRemover.set(turmaDoc.ref.path, turmaDoc);
+  };
+
+  const turmasSnap = await getDocs(query(cronogramasRef, where("turmaBase", "==", turmaBase)));
+  turmasSnap.docs.forEach(adicionarTurma);
+
+  await Promise.all(
+    [turmaBase, `${turmaBase} A`, `${turmaBase} B`].map(async (turma) => {
+      const turmaSnap = await getDoc(doc(db, "cronogramas_escola", turma));
+      if (turmaSnap.exists()) adicionarTurma(turmaSnap);
+    })
+  );
+
+  const batch = writeBatch(db);
+
+  for (const turmaDoc of turmasParaRemover.values()) {
+    const aulasSnap = await getDocs(collection(turmaDoc.ref, "aulas"));
+    aulasSnap.docs.forEach((aulaDoc) => batch.delete(aulaDoc.ref));
+    batch.delete(turmaDoc.ref);
+  }
+
+  const turmasPeriodoParaRemover = new Map();
+  const turmaPeriodoRef = doc(db, "turmas_periodo", idSeguroCronograma(turmaBase));
+  turmasPeriodoParaRemover.set(turmaPeriodoRef.path, turmaPeriodoRef);
+  const turmasPeriodoSnap = await getDocs(query(
+    collection(db, "turmas_periodo"),
+    where("nomeTurma", "==", turmaBase)
+  ));
+  turmasPeriodoSnap.docs.forEach((turmaDoc) => {
+    turmasPeriodoParaRemover.set(turmaDoc.ref.path, turmaDoc.ref);
+  });
+  turmasPeriodoParaRemover.forEach((turmaRef) => batch.delete(turmaRef));
+
+  await batch.commit();
+  return { nomeTurma: turmaBase, totalTurmas: turmasParaRemover.size };
 }
 
 const ORDEM_DIA_CRONOGRAMA = {

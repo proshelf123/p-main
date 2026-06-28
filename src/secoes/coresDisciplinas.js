@@ -85,6 +85,12 @@ export function resolverHexDisciplina(disciplina, coresCustomizadas = {}) {
   const chave = normalizarDisciplina(disciplina)
   const customizada = coresCustomizadas?.[chave]?.cor || coresCustomizadas?.[chave]
   if (hexValido(customizada)) return normalizarHex(customizada)
+  if (chave.endsWith(' B')) {
+    const chaveBase = chave.replace(/\s+B$/, '')
+    const customizadaBase = coresCustomizadas?.[chaveBase]?.cor || coresCustomizadas?.[chaveBase]
+    if (hexValido(customizadaBase)) return normalizarHex(customizadaBase)
+    if (CORES_PADRAO_DISCIPLINAS[chaveBase]) return CORES_PADRAO_DISCIPLINAS[chaveBase]
+  }
   return CORES_PADRAO_DISCIPLINAS[chave] || '#6F3B9D'
 }
 
