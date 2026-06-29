@@ -18,6 +18,8 @@ import {
 import ColorPickerDisciplina from '../componentes/ColorPickerDisciplina'
 import './coordenador.css'
 
+const MotionDiv = motion.div
+
 function coletarDisciplinasDasAulas(aulas = []) {
   const nomes = []
   aulas.forEach((aula) => {
@@ -98,16 +100,36 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
     const nome = novaDisciplina.trim()
     const chave = normalizarDisciplina(nome)
     if (!chave) return
+    const corInicial = resolverHexDisciplina(nome, coresDraft)
+
     setDisciplinas((atuais) => (
       atuais.some((disciplina) => normalizarDisciplina(disciplina) === chave)
         ? atuais
         : [...atuais, nome].sort((a, b) => a.localeCompare(b, 'pt-BR'))
     ))
+    setCoresDraft((atual) => ({
+      ...atual,
+      [chave]: atual[chave] || { nome, cor: corInicial },
+    }))
     setNovaDisciplina('')
   }
 
   async function salvarCores() {
-    const entradaInvalida = Object.values(coresDraft).find((item) => item?.cor && !hexValido(item.cor))
+    const coresParaSalvar = disciplinasVisiveis.reduce((mapa, disciplina) => {
+      const chave = normalizarDisciplina(disciplina)
+      if (!chave) return mapa
+
+      const atual = coresDraft[chave]
+      return {
+        ...mapa,
+        [chave]: {
+          nome: atual?.nome || disciplina,
+          cor: atual?.cor || resolverHexDisciplina(disciplina, coresDraft),
+        },
+      }
+    }, { ...coresDraft })
+
+    const entradaInvalida = Object.values(coresParaSalvar).find((item) => item?.cor && !hexValido(item.cor))
     if (entradaInvalida) {
       setErro(`A cor de ${entradaInvalida.nome} precisa estar no formato #RRGGBB.`)
       return
@@ -117,7 +139,8 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
     setErro('')
     setStatus('')
     try {
-      await salvarCoresDisciplinas(uid, coresDraft)
+      await salvarCoresDisciplinas(uid, coresParaSalvar)
+      setCoresDraft(coresParaSalvar)
       setStatus('Cores das disciplinas atualizadas.')
     } catch (err) {
       console.error('Erro ao salvar cores das disciplinas:', err)
@@ -198,7 +221,7 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
               const preview = montarCoresDisciplina(disciplina, coresDraft)
 
               return (
-                <motion.div
+                <MotionDiv
                   key={chave}
                   className='cores-disc-item'
                   initial={{ opacity: 0, y: 8 }}
@@ -220,7 +243,7 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
                       disciplina={disciplina}
                     />
                   </div>
-                </motion.div>
+                </MotionDiv>
               )
             })}
           </div>

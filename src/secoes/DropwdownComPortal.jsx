@@ -18,13 +18,23 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
   useEffect(() => {
     if (dropdownAberto === id && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
+      const margem = 12
+      const espacoAbaixo = window.innerHeight - rect.bottom - margem
+      const espacoAcima = rect.top - margem
+      const abrirAcima = espacoAbaixo < 220 && espacoAcima > espacoAbaixo
+      const espacoDisponivel = abrirAcima ? espacoAcima : espacoAbaixo
+      const maxHeight = Math.max(140, Math.min(300, espacoDisponivel - 8))
+
       setPosicao({
-        top: rect.top + rect.height + 8,
+        top: abrirAcima
+          ? Math.max(margem, rect.top - maxHeight - 8)
+          : Math.min(rect.bottom + 8, window.innerHeight - margem - maxHeight),
         left: rect.left,
         width: rect.width,
+        maxHeight,
       })
     }
-  }, [dropdownAberto, id])
+  }, [dropdownAberto, id, opcoesNormalizadas.length])
 
   useEffect(() => {
     if (dropdownAberto !== id) return
@@ -107,7 +117,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
             borderRadius: '8px',
             zIndex: 999999,
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-            maxHeight: '300px',
+            maxHeight: `${posicao.maxHeight}px`,
             overflowY: 'auto',
             animation: 'slideDown 0.15s ease-out',
           }}

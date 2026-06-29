@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, Save, UsersRound } from 'lucide-react'
+import { Plus, Save, Trash2, UsersRound } from 'lucide-react'
 import {
   buscarProfessores,
   escutarProfessoresDisciplinas,
@@ -7,6 +7,7 @@ import {
 } from '../firebase/estrutura'
 import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
 import { montarCoresDisciplina, normalizarDisciplina } from '../secoes/coresDisciplinas'
+import { ehDisciplinaComSufixo } from '../secoes/vinculosDisciplinas'
 import DropdownComPortal from '../secoes/DropwdownComPortal'
 import './coordenador.css'
 
@@ -78,16 +79,18 @@ export default function ProfessoresDisciplinas({ uid }) {
       .filter(Boolean)
 
     return [...new Set(nomes)]
-      .filter((nome) => !normalizarDisciplina(nome).endsWith(' B'))
+      .filter((nome) => !ehDisciplinaComSufixo(nome))
       .sort((a, b) => a.localeCompare(b, 'pt-BR'))
   }, [coresDisciplinas])
 
   const opcoesProfessores = useMemo(() => ([
     { valor: '', label: 'Sem professor' },
-    ...professores.map((professor) => ({
-      valor: valorProfessor(professor),
-      label: professor.nomePDF || professor.nome || professor.email || 'Professor',
-    })),
+    ...professores
+      .map((professor) => ({
+        valor: valorProfessor(professor),
+        label: professor.nomePDF || professor.nome || professor.email || 'Professor',
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
   ]), [professores])
 
   function letrasVisiveis(disciplina) {
@@ -115,6 +118,23 @@ export default function ProfessoresDisciplinas({ uid }) {
       ...atual,
       [chaveBase]: [...new Set([...(atual[chaveBase] || []), proxima])],
     }))
+  }
+
+  function removerProfessorExtra(disciplina, letra) {
+    const chaveBase = normalizarDisciplina(disciplina)
+    const chaveLetra = normalizarDisciplina(`${disciplina} ${letra}`)
+
+    setStatus('')
+    setErro('')
+    setProfessoresExtras((atual) => ({
+      ...atual,
+      [chaveBase]: (atual[chaveBase] || []).filter((item) => item !== letra),
+    }))
+    setVinculosDraft((atual) => {
+      const proximo = { ...atual }
+      delete proximo[chaveLetra]
+      return proximo
+    })
   }
 
   function atualizarVinculo(disciplina, professorValor, sufixo = '') {
@@ -221,16 +241,30 @@ export default function ProfessoresDisciplinas({ uid }) {
                       ]
 
                       return (
-                        <div key={letra} className='disc-prof-dropdown'>
-                          <DropdownComPortal
-                            label={`Professor ${letra}`}
-                            opcoes={opcoesLetra}
-                            valor={valorLetra}
-                            onChange={(valor) => atualizarVinculo(disciplina, valor, letra)}
-                            id={`disc-prof-${letra.toLowerCase()}-${chave}`}
-                            dropdownAberto={dropdownAberto}
-                            setDropdownAberto={setDropdownAberto}
-                          />
+                        <div key={letra} className='disc-prof-extra-linha'>
+                          <div className='disc-prof-dropdown'>
+                            <DropdownComPortal
+                              label={`Professor ${letra}`}
+                              opcoes={opcoesLetra}
+                              valor={valorLetra}
+                              onChange={(valor) => atualizarVinculo(disciplina, valor, letra)}
+                              id={`disc-prof-${letra.toLowerCase()}-${chave}`}
+                              dropdownAberto={dropdownAberto}
+                              setDropdownAberto={setDropdownAberto}
+                            />
+                          </div>
+
+                          {letra !== 'B' && (
+                            <button
+                              type='button'
+                              className='disc-prof-remover'
+                              onClick={() => removerProfessorExtra(disciplina, letra)}
+                              title={`Remover professor ${letra}`}
+                              aria-label={`Remover professor ${letra}`}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </div>
                       )
                     })}

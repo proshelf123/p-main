@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { buscarTurmas, criarTurma, deletarTurma,
-  buscarRegistros, criarRegistroAula, deletarRegistro, buscarProfessores
+  buscarRegistros, criarRegistroAula, deletarRegistro, buscarProfessores, escutarProfessoresDisciplinas
 } from '../firebase/estrutura'
 import './secoes.css'
 import { Trash2, AlertTriangle, X } from 'lucide-react'
 import CustomDatePicker from './dropdown-calendario'
 import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
 import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
-import { montarCoresDisciplina } from './coresDisciplinas'
+import { montarCoresDisciplina, normalizarDisciplina } from './coresDisciplinas'
+import DropdownComPortal from './DropwdownComPortal'
+import { listarDisciplinasComCor, listarVinculosDisciplina } from './vinculosDisciplinas'
 
 const COR_DISCIPLINA = {
   'Matemática': { ativo: '#FF0000', bg: '#fff0f0', cor: '#b30000' },
@@ -139,8 +141,9 @@ export default function Turmas({ uid, professor }) {
   const [dropdownAberto, setDropdownAberto]   = useState(null)
   const [confirmarDelete, setConfirmarDelete] = useState(null) // objeto { id, nome, disciplina, periodo }
 
-  const [professores, setProfessores]           = useState([])
-  const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
+  const [professores, setProfessores]             = useState([])
+  const [mostrarSugestoes, setMostrarSugestoes]   = useState(false)
+  const [professoresDisciplinas, setProfessoresDisciplinas] = useState({})
 
   useEffect(() => { if (uid) carregarTurmas() }, [uid, professor?.role])
 
@@ -150,6 +153,18 @@ export default function Turmas({ uid, professor }) {
     }
   }, [uid, isCoordenador])
 
+  useEffect(() => {
+    if (!uid || !isCoordenador) return
+
+    return escutarProfessoresDisciplinas(
+      setProfessoresDisciplinas,
+      (err) => {
+        console.error('Erro ao carregar professores por disciplina:', err)
+        setProfessoresDisciplinas({})
+      }
+    )
+  }, [uid, isCoordenador])
+
   async function carregarTurmas() {
     setLoading(true)
     setErroTurma('')
@@ -157,9 +172,13 @@ export default function Turmas({ uid, professor }) {
     try {
       const dados = await buscarTurmas(uid, professor)
       setTurmas(dados)
-      const discs = [...new Set(dados.map(t => t.disciplina))].filter(Boolean)
+      const discs = [...new Set(dados.map(t => t.disciplina))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'))
       setDisciplinas(discs)
-      if (discs.length > 0) setDisciplinaAtiva(discs[0])
+      if (discs.length > 0) {
+        setDisciplinaAtiva((atual) => discs.includes(atual) ? atual : discs[0])
+      }
     } catch (erro) {
       console.error('Erro ao carregar turmas:', erro)
       setTurmas([])
@@ -288,6 +307,13 @@ export default function Turmas({ uid, professor }) {
   }
 
   function DropdownCustomizado({ label, opcoes, valor, onChange, id }) {
+    void label
+    void opcoes
+    void valor
+    void onChange
+    void id
+    return null
+  /*
     return (
       <div className='perfil-grupo' style={{ position: 'relative', zIndex: dropdownAberto === id ? 99999 : 'auto' }}>
         {label && <label className='perfil-label'>{label}</label>}
@@ -320,13 +346,97 @@ export default function Turmas({ uid, professor }) {
         )}
       </div>
     )
+  */
   }
 
   const turmasFiltradas = turmas.filter(t => t.disciplina === disciplinaAtiva)
 
   const professoresFiltrados = formTurma.professor.trim() === ''
     ? professores
-    : professores.filter(p => p.nome.toLowerCase().includes(formTurma.professor.toLowerCase()))
+    : professores.filter((p) => (
+      String(p.nome || p.nomePDF || p.email || '')
+        .toLowerCase()
+        .includes(formTurma.professor.toLowerCase())
+    ))
+
+  const disciplinasCadastradas = useMemo(() => listarDisciplinasComCor(coresDisciplinas), [coresDisciplinas])
+
+  const opcoesDisciplinasTurma = useMemo(() => {
+    const opcoes = disciplinasCadastradas.map((disciplina) => ({
+      valor: disciplina,
+      label: disciplina,
+    }))
+
+    if (formTurma.disciplina && !opcoes.some((opcao) => normalizarDisciplina(opcao.valor) === normalizarDisciplina(formTurma.disciplina))) {
+      opcoes.push({ valor: formTurma.disciplina, label: formTurma.disciplina })
+    }
+
+    return [
+      { valor: '', label: 'Selecione a disciplina' },
+      ...opcoes.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    ]
+  }, [disciplinasCadastradas, formTurma.disciplina])
+
+  const professoresOrdenados = useMemo(() => (
+    professores
+      .map((professorItem) => ({
+        valor: professorItem.id || professorItem.email || professorItem.nomePDF || professorItem.nome || '',
+        label: professorItem.nomePDF || professorItem.nome || professorItem.email || 'Professor',
+        professor: professorItem.nomePDF || professorItem.nome || professorItem.email || '',
+        professorId: professorItem.id || '',
+      }))
+      .filter((item) => item.valor && item.professor)
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+  ), [professores])
+
+  const opcoesProfessoresTurma = useMemo(() => {
+    const vinculados = listarVinculosDisciplina(formTurma.disciplina, professoresDisciplinas)
+      .map((vinculo) => ({
+        valor: vinculo.professorId || vinculo.professorEmail || vinculo.nome,
+        label: vinculo.nome,
+        professor: vinculo.nome,
+        professorId: vinculo.professorId || '',
+      }))
+      .filter((item) => item.valor && item.professor)
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+
+    const base = vinculados.length > 0 ? vinculados : professoresOrdenados
+
+    return [
+      { valor: '', label: 'Sem professor', professor: '', professorId: '' },
+      ...base,
+    ]
+  }, [formTurma.disciplina, professoresDisciplinas, professoresOrdenados])
+
+  function selecionarDisciplinaTurma(disciplina) {
+    const professoresDaDisciplina = listarVinculosDisciplina(disciplina, professoresDisciplinas)
+      .map((vinculo) => ({
+        professor: vinculo.nome,
+        professorId: vinculo.professorId || '',
+      }))
+      .filter((item) => item.professor)
+      .sort((a, b) => a.professor.localeCompare(b.professor, 'pt-BR'))
+
+    const professorSelecionado = professoresDaDisciplina[0] || { professor: '', professorId: '' }
+
+    setFormTurma((atual) => ({
+      ...atual,
+      disciplina,
+      professor: professorSelecionado.professor,
+      professorId: professorSelecionado.professorId,
+    }))
+    setErroTurma('')
+  }
+
+  function selecionarProfessorTurma(valor) {
+    const opcao = opcoesProfessoresTurma.find((item) => item.valor === valor)
+    setFormTurma((atual) => ({
+      ...atual,
+      professor: opcao?.professor || '',
+      professorId: opcao?.professorId || '',
+    }))
+    setErroTurma('')
+  }
 
   // ══════════════════════════════════════
   //  TELA: registros de uma turma
@@ -560,13 +670,33 @@ export default function Turmas({ uid, professor }) {
               <input className='perfil-input' value={formTurma.nome} onChange={e => setFormTurma({ ...formTurma, nome: e.target.value })} placeholder='Ex: 1º RH, 2º Eletrônica' autoFocus />
             </div>
 
-            <div className='perfil-grupo'>
+            <DropdownComPortal
+              label='Disciplina'
+              opcoes={opcoesDisciplinasTurma}
+              valor={formTurma.disciplina}
+              onChange={selecionarDisciplinaTurma}
+              id='disciplina-turma'
+              dropdownAberto={dropdownAberto}
+              setDropdownAberto={setDropdownAberto}
+            />
+
+            <div className='perfil-grupo' style={{ display: 'none' }}>
               <label className='perfil-label'>Disciplina</label>
               <input className='perfil-input' value={formTurma.disciplina} onChange={e => setFormTurma({ ...formTurma, disciplina: e.target.value })} placeholder='Ex: Matemática, Física, Química' />
             </div>
 
+            <DropdownComPortal
+              label='Professor'
+              opcoes={opcoesProfessoresTurma}
+              valor={formTurma.professorId || formTurma.professor}
+              onChange={selecionarProfessorTurma}
+              id='professor-turma'
+              dropdownAberto={dropdownAberto}
+              setDropdownAberto={setDropdownAberto}
+            />
+
             {/* Campo Autocomplete de Professor */}
-            <div className='perfil-grupo' style={{ position: 'relative', zIndex: mostrarSugestoes ? 99999 : 'auto' }}>
+            <div className='perfil-grupo' style={{ display: 'none', position: 'relative', zIndex: mostrarSugestoes ? 99999 : 'auto' }}>
               <label className='perfil-label'>Professor</label>
               <input
                 className='perfil-input'
@@ -609,6 +739,16 @@ export default function Turmas({ uid, professor }) {
             </div>
 
             <DropdownCustomizado label='Período' opcoes={PERIODOS} valor={formTurma.periodo} onChange={periodo => setFormTurma({ ...formTurma, periodo })} id='periodo-turma' />
+
+            <DropdownComPortal
+              label='Período'
+              opcoes={PERIODOS}
+              valor={formTurma.periodo}
+              onChange={periodo => setFormTurma({ ...formTurma, periodo })}
+              id='periodo-turma'
+              dropdownAberto={dropdownAberto}
+              setDropdownAberto={setDropdownAberto}
+            />
 
             {erroTurma && <p style={{ color: '#c0392b', fontSize: 12, margin: '4px 0' }}>{erroTurma}</p>}
 

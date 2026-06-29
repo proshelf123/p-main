@@ -1078,10 +1078,11 @@ select.perfil-input option:checked {
 /* Linha de cada aula */
 .crono-pill-row {
   display: grid;
-  grid-template-columns: 96px 2fr 1fr 1.2fr 1fr;
+  grid-template-columns: 96px 260px 260px 150px 120px;
   align-items: end;
   column-gap: 18px;
   row-gap: 10px;
+  justify-content: start;
 }
 
 /* "Nª aula" — alinhado ao centro verticalmente */
@@ -1094,11 +1095,16 @@ select.perfil-input option:checked {
   padding-right: 8px;
 }
 
+.crono-pill-ordem.vazia {
+  visibility: hidden;
+}
+
 /* Wrapper de cada coluna com label acima */
 .crono-pill-col {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  min-width: 0;
 }
 
 /* Label acima da pílula */
@@ -1121,12 +1127,15 @@ select.perfil-input option:checked {
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-height: 42px;
   padding: 10px 18px;
   border-radius: 999px;
   font-size: 0.86rem;
   font-weight: 600;
   white-space: nowrap;
   box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -1344,6 +1353,13 @@ select.perfil-input option:checked {
   flex-wrap: wrap;
 }
 
+.crono-editor-dia-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+
 .crono-editor-planilha {
   overflow-x: auto;
   border: 1px solid #e8def3;
@@ -1354,9 +1370,9 @@ select.perfil-input option:checked {
 .crono-editor-head,
 .crono-editor-row {
   display: grid;
-  grid-template-columns: 130px 70px 110px 130px 80px minmax(170px, 1.2fr) minmax(190px, 1.3fr) 110px 44px;
+  grid-template-columns: 70px 110px 130px 80px minmax(170px, 1.2fr) minmax(190px, 1.3fr) 110px 44px;
   gap: 1px;
-  min-width: 1080px;
+  min-width: 950px;
   background: #e8def3;
 }
 

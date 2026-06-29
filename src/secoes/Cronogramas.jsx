@@ -12,6 +12,11 @@ import {
 import DropdownComPortal from './DropwdownComPortal'
 import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
 import { montarGradienteDisciplina } from './coresDisciplinas'
+import {
+  listarDisciplinasComCor,
+  montarOpcoesProfessoresDisciplina,
+  professorPadraoDisciplina,
+} from './vinculosDisciplinas'
 import '../dashboard/dashboard.css'
 import './secoes.css'
 
@@ -21,6 +26,7 @@ const ANOS_CURSO = ['1', '2', '3']
 const ANOS_CURSO_LABEL = ANOS_CURSO.map((ano) => `${ano}° ano`)
 const PERIODOS_EDITOR = ['Matutino', 'Vespertino', 'Noturno']
 const FORM_CURSO_INICIAL = { curso: '', ano: '1', periodo: 'Matutino' }
+const DIAS_EDITOR_CHAVES = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
 const DIAS_EDITOR = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 const CURSOS_CRONOGRAMA = {
@@ -68,10 +74,10 @@ const DIA_LABEL_COMPLETO = {
   SAB: 'Sábado',
 }
 
-function novaAulaEditor(ordem = 1) {
+function novaAulaEditor(ordem = 1, dia = 'Segunda') {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    dia: 'Segunda',
+    dia,
     ordem,
     horario: '',
     periodo: 'Matutino',
@@ -86,6 +92,21 @@ function novaAulaEditor(ordem = 1) {
 
 function aulasEditorIniciais() {
   return [novaAulaEditor(1)]
+}
+
+function proximaOrdemAulaDia(aulas = [], dia = 'Segunda') {
+  const ordens = aulas
+    .filter((aula) => aula.dia === dia)
+    .map((aula) => Number(aula.ordem || 0))
+
+  return Math.max(0, ...ordens) + 1
+}
+
+function reordenarAulasDoDia(aulas = [], dia = 'Segunda') {
+  let ordem = 1
+  return aulas.map((aula) => (
+    aula.dia === dia ? { ...aula, ordem: ordem++ } : aula
+  ))
 }
 
 const NOMES_DISCIPLINA = {
@@ -566,6 +587,22 @@ export default function Cronogramas({
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
 
   const periodos = agruparPorPeriodo(aulasDoDia)
+  const diaEditorAtivo = DIAS_EDITOR.includes(DIA_LABEL[diaAtivo])
+    ? DIA_LABEL[diaAtivo]
+    : 'Segunda'
+  const aulasEditorDoDia = aulasEditor
+    .map((aula, index) => ({ aula, index }))
+    .filter(({ aula }) => aula.dia === diaEditorAtivo)
+
+  useEffect(() => {
+    if (!isCoordenador || abaEditor !== 'grade') return
+
+    setAulasEditor((atuais) => (
+      atuais.some((aula) => aula.dia === diaEditorAtivo)
+        ? atuais
+        : [...atuais, novaAulaEditor(proximaOrdemAulaDia(atuais, diaEditorAtivo), diaEditorAtivo)]
+    ))
+  }, [isCoordenador, abaEditor, diaEditorAtivo])
 
   function abrirCurso(curso) {
     if (deletandoCursoId) return
@@ -609,6 +646,7 @@ export default function Cronogramas({
 
     setErroEditor('')
     setSucessoEditor('')
+    if (!DIAS_EDITOR_CHAVES.includes(diaAtivo)) setDiaAtivo('SEG')
     setAbaEditor('grade')
   }
 
@@ -631,17 +669,28 @@ export default function Cronogramas({
   }
 
   function adicionarLinhaAula() {
-    setAulasEditor((atuais) => [...atuais, novaAulaEditor(atuais.length + 1)])
+    setAulasEditor((atuais) => [
+      ...atuais,
+      novaAulaEditor(proximaOrdemAulaDia(atuais, diaEditorAtivo), diaEditorAtivo),
+    ])
     setErroEditor('')
     setSucessoEditor('')
   }
 
   function removerLinhaAula(index) {
-    setAulasEditor((atuais) => (
-      atuais.length === 1
-        ? [novaAulaEditor(1)]
-        : atuais.filter((_, i) => i !== index).map((aula, i) => ({ ...aula, ordem: i + 1 }))
-    ))
+    setAulasEditor((atuais) => {
+      const aulaRemovida = atuais[index]
+      const dia = aulaRemovida?.dia || diaEditorAtivo
+      const aulasDoDiaAtual = atuais.filter((aula) => aula.dia === dia)
+
+      if (aulasDoDiaAtual.length <= 1) {
+        return atuais.map((aula, i) => (
+          i === index ? novaAulaEditor(1, dia) : aula
+        ))
+      }
+
+      return reordenarAulasDoDia(atuais.filter((_, i) => i !== index), dia)
+    })
     setErroEditor('')
     setSucessoEditor('')
   }
@@ -663,16 +712,54 @@ export default function Cronogramas({
         ? `${professorItem.nome}${professorItem.nomePDF ? ` (${professorItem.nomePDF})` : ''}`
         : valor
       return { valor, label }
-    }).filter((item) => item.valor)
+    })
+      .filter((item) => item.valor)
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+  }
+
+  function opcoesDisciplinasEditor(valorAtual = '') {
+    const disciplinasCadastradas = listarDisciplinasComCor(coresDisciplinas)
+    const opcoes = disciplinasCadastradas.map((disciplina) => ({
+      valor: disciplina,
+      label: disciplina,
+    }))
+
+    if (valorAtual && !opcoes.some((opcao) => normalizarTextoCronograma(opcao.valor) === normalizarTextoCronograma(valorAtual))) {
+      opcoes.push({ valor: valorAtual, label: valorAtual })
+    }
+
+    return [
+      { valor: '', label: 'Selecione a disciplina' },
+      ...opcoes.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    ]
+  }
+
+  function opcoesProfessoresDaAula(disciplina, rotuloSemProfessor = 'Sem professor') {
+    const vinculados = montarOpcoesProfessoresDisciplina(disciplina, professoresDisciplinas, {
+      incluirSemProfessor: true,
+      rotuloSemProfessor,
+    })
+
+    if (vinculados.length > 1) return vinculados
+
+    return [
+      { valor: '', label: rotuloSemProfessor },
+      ...professorOpcoes(),
+    ]
+  }
+
+  function opcoesProfessoresComValor(disciplina, valorAtual = '', rotuloSemProfessor = 'Sem professor') {
+    const opcoes = opcoesProfessoresDaAula(disciplina, rotuloSemProfessor)
+
+    if (valorAtual && !opcoes.some((opcao) => opcao.valor === valorAtual || opcao.label === valorAtual)) {
+      return [...opcoes, { valor: valorAtual, label: valorAtual }]
+    }
+
+    return opcoes
   }
 
   function professorVinculadoDisciplina(disciplina, grupo = '') {
-    const chave = normalizarTextoCronograma(disciplina)
-    const chaveGrupo = grupo && grupo !== 'A' && !chave.endsWith(` ${grupo}`)
-      ? `${chave} ${grupo}`
-      : chave
-    const vinculo = professoresDisciplinas[chaveGrupo] || professoresDisciplinas[chave]
-    return vinculo?.professorNomePDF || vinculo?.professorNome || ''
+    return professorPadraoDisciplina(disciplina, professoresDisciplinas, grupo)
   }
 
   function atualizarDisciplinaAula(index, valor) {
@@ -682,7 +769,7 @@ export default function Cronogramas({
         ? {
           ...aula,
           disciplina: valor,
-          professor: professorVinculado || aula.professor,
+          professor: professorVinculado,
         }
         : aula
     )))
@@ -700,7 +787,7 @@ export default function Cronogramas({
         [grupo]: {
           ...aula[grupo],
           disciplina: valor,
-          professor: professorVinculado || aula[grupo].professor,
+          professor: professorVinculado,
         },
       }
     }))
@@ -954,9 +1041,21 @@ export default function Cronogramas({
                   </div>
                 </div>
 
+                <div className='crono-editor-dia-tabs'>
+                  {DIAS_EDITOR_CHAVES.map((dia) => (
+                    <button
+                      key={dia}
+                      type='button'
+                      className={`crono-dia-btn ${DIA_LABEL[dia] === diaEditorAtivo ? 'ativo' : ''}`}
+                      onClick={() => setDiaAtivo(dia)}
+                    >
+                      {dia}
+                    </button>
+                  ))}
+                </div>
+
                 <div className='crono-editor-planilha'>
                   <div className='crono-editor-head'>
-                    <span>Dia</span>
                     <span>Aula</span>
                     <span>Horário</span>
                     <span>Período</span>
@@ -967,22 +1066,11 @@ export default function Cronogramas({
                     <span />
                   </div>
 
-                  {aulasEditor.map((aula, index) => (
+                  {aulasEditorDoDia.map(({ aula, index }) => (
                     <div
                       key={aula.id}
                       className={`crono-editor-row ${aula.dividida ? 'dividida' : ''}`}
                     >
-                      <div className='crono-editor-grade-dropdown'>
-                        <DropdownComPortal
-                          opcoes={DIAS_EDITOR}
-                          valor={aula.dia}
-                          onChange={(valor) => atualizarAulaEditor(index, 'dia', valor)}
-                          id={`crono-dia-${aula.id}`}
-                          dropdownAberto={dropdownEditorAberto}
-                          setDropdownAberto={setDropdownEditorAberto}
-                        />
-                      </div>
-
                       <input
                         type='number'
                         min='1'
@@ -1021,12 +1109,19 @@ export default function Cronogramas({
                         <>
                           <div className='crono-editor-stack'>
                             {['A', 'B'].map((grupo) => (
-                              <input
+                              <div
                                 key={grupo}
-                                value={aula[grupo].disciplina}
-                                onChange={(e) => atualizarDisciplinaDividida(index, grupo, e.target.value)}
-                                placeholder={`Disciplina ${grupo}`}
-                              />
+                                className='crono-editor-grade-dropdown'
+                              >
+                                <DropdownComPortal
+                                  opcoes={opcoesDisciplinasEditor(aula[grupo].disciplina)}
+                                  valor={aula[grupo].disciplina}
+                                  onChange={(valor) => atualizarDisciplinaDividida(index, grupo, valor)}
+                                  id={`crono-disc-${grupo}-${aula.id}`}
+                                  dropdownAberto={dropdownEditorAberto}
+                                  setDropdownAberto={setDropdownEditorAberto}
+                                />
+                              </div>
                             ))}
                           </div>
 
@@ -1037,13 +1132,17 @@ export default function Cronogramas({
                                 className='crono-editor-grade-dropdown'
                               >
                                 <DropdownComPortal
-                                  opcoes={[`Sem professor ${grupo}`, ...professorOpcoes().map((opcao) => opcao.valor)]}
-                                  valor={aula[grupo].professor || `Sem professor ${grupo}`}
+                                  opcoes={opcoesProfessoresComValor(
+                                    aula[grupo].disciplina,
+                                    aula[grupo].professor,
+                                    `Sem professor ${grupo}`
+                                  )}
+                                  valor={aula[grupo].professor}
                                   onChange={(valor) => atualizarAulaDividida(
                                     index,
                                     grupo,
                                     'professor',
-                                    valor === `Sem professor ${grupo}` ? '' : valor
+                                    valor
                                   )}
                                   id={`crono-prof-${grupo}-${aula.id}`}
                                   dropdownAberto={dropdownEditorAberto}
@@ -1066,20 +1165,25 @@ export default function Cronogramas({
                         </>
                       ) : (
                         <>
-                          <input
-                            value={aula.disciplina}
-                            onChange={(e) => atualizarDisciplinaAula(index, e.target.value)}
-                            placeholder='Disciplina'
-                          />
+                          <div className='crono-editor-grade-dropdown'>
+                            <DropdownComPortal
+                              opcoes={opcoesDisciplinasEditor(aula.disciplina)}
+                              valor={aula.disciplina}
+                              onChange={(valor) => atualizarDisciplinaAula(index, valor)}
+                              id={`crono-disc-${aula.id}`}
+                              dropdownAberto={dropdownEditorAberto}
+                              setDropdownAberto={setDropdownEditorAberto}
+                            />
+                          </div>
 
                           <div className='crono-editor-grade-dropdown'>
                             <DropdownComPortal
-                              opcoes={['Sem professor', ...professorOpcoes().map((opcao) => opcao.valor)]}
-                              valor={aula.professor || 'Sem professor'}
+                              opcoes={opcoesProfessoresComValor(aula.disciplina, aula.professor)}
+                              valor={aula.professor}
                               onChange={(valor) => atualizarAulaEditor(
                                 index,
                                 'professor',
-                                valor === 'Sem professor' ? '' : valor
+                                valor
                               )}
                               id={`crono-prof-${aula.id}`}
                               dropdownAberto={dropdownEditorAberto}
@@ -1212,10 +1316,13 @@ export default function Cronogramas({
                         const semGrade = !aula.disciplina || aula.disciplina.trim() === ''
                         const { bg, cor } = corDisciplina(disc, coresDisciplinas)
                         const primeiraLinha = i === 0
+                        const ocultarOrdem = divisaoDaAula(aula) === 'B'
 
                         return (
                           <div key={i} className='crono-pill-row'>
-                            <span className='crono-pill-ordem'>{rotuloAulaComHorario(aula)}</span>
+                            <span className={`crono-pill-ordem ${ocultarOrdem ? 'vazia' : ''}`}>
+                              {ocultarOrdem ? '' : rotuloAulaComHorario(aula)}
+                            </span>
 
                             <div className='crono-pill-col'>
                               {primeiraLinha && <span className='crono-pill-label'>Disciplina ministrada</span>}

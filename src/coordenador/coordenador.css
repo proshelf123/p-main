@@ -256,6 +256,34 @@ main, .pagina-conteudo {
   gap: 10px;
 }
 
+.disc-prof-extra-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 8px;
+  align-items: end;
+}
+
+.disc-prof-remover {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #ED235C;
+  cursor: pointer;
+  opacity: 0.42;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.disc-prof-remover:hover {
+  background: #FFF0F3;
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 .disc-prof-add {
   display: inline-flex;
   align-items: center;
