@@ -1,11 +1,11 @@
 /* src/dashboard/dashboard.css */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
 :root {
-  --roxo: #6F3B9D;
-  --roxo-claro: #EEEDFE;
-  --roxo-medio: #AFA9EC;
-  --laranja: #FF9D00;
+  --roxo: #6f3b9d;
+  --roxo-claro: #eeedfe;
+  --roxo-medio: #afa9ec;
+  --laranja: #ff9d00;
   --bg: #f8f7fc;
   --branco: #ffffff;
   --texto: #1a1a1a;
@@ -13,8 +13,8 @@
   --borda: #e8e4f0;
 }
 
-* { 
-  box-sizing: border-box; 
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
@@ -22,7 +22,7 @@
 .dash-wrapper {
   background: var(--bg);
   min-height: 100vh;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 /* ── Tamanhos de Fonte — escopo restrito ao dashboard ── */
@@ -31,9 +31,15 @@
   --font-size-base: 1;
 }
 
-:root.font-size-pequeno { --font-size-base: 0.88; }
-:root.font-size-medio   { --font-size-base: 1;    }
-:root.font-size-grande  { --font-size-base: 1.12; }
+:root.font-size-pequeno {
+  --font-size-base: 0.88;
+}
+:root.font-size-medio {
+  --font-size-base: 1;
+}
+:root.font-size-grande {
+  --font-size-base: 1.12;
+}
 
 /* Fora do dashboard, força sempre 1 — protege Login, Início, etc. */
 body > *:not(.dash-wrapper) {
@@ -41,23 +47,55 @@ body > *:not(.dash-wrapper) {
 }
 
 /* Aplicar APENAS dentro do dashboard */
-.dash-wrapper h1 { font-size: calc(22px * var(--font-size-base)); }
-.dash-wrapper h2 { font-size: calc(18px * var(--font-size-base)); }
-.dash-wrapper h3 { font-size: calc(16px * var(--font-size-base)); }
-.dash-wrapper h4 { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper p       { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper span    { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper button  { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper input   { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper label   { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper a       { font-size: calc(14px * var(--font-size-base)); }
+.dash-wrapper h1 {
+  font-size: calc(22px * var(--font-size-base));
+}
+.dash-wrapper h2 {
+  font-size: calc(18px * var(--font-size-base));
+}
+.dash-wrapper h3 {
+  font-size: calc(16px * var(--font-size-base));
+}
+.dash-wrapper h4 {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper p {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper span {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper button {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper input {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper label {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper a {
+  font-size: calc(14px * var(--font-size-base));
+}
 
-.dash-wrapper .nav-link      { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper .card-titulo   { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper .bv-texto h2   { font-size: calc(16px * var(--font-size-base)); }
-.dash-wrapper .bv-texto p    { font-size: calc(12px * var(--font-size-base)); }
-.dash-wrapper .dropdown-item { font-size: calc(14px * var(--font-size-base)); }
-.dash-wrapper .dropdown-nome { font-size: calc(12px * var(--font-size-base)); }
+.dash-wrapper .nav-link {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper .card-titulo {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper .bv-texto h2 {
+  font-size: calc(16px * var(--font-size-base));
+}
+.dash-wrapper .bv-texto p {
+  font-size: calc(12px * var(--font-size-base));
+}
+.dash-wrapper .dropdown-item {
+  font-size: calc(14px * var(--font-size-base));
+}
+.dash-wrapper .dropdown-nome {
+  font-size: calc(12px * var(--font-size-base));
+}
 
 /* ── Header com altura responsiva ao tamanho da fonte ── */
 .cabecalho-dashboard {
@@ -88,7 +126,7 @@ body > *:not(.dash-wrapper) {
   margin-right: 40px;
 }
 
-#logo { 
+#logo {
   height: 60px;
 }
 
@@ -135,7 +173,7 @@ body > *:not(.dash-wrapper) {
   border: none;
   background: none;
   font-size: 14px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   color: var(--texto-sec);
   cursor: pointer;
   transition: all 0.15s;
@@ -147,22 +185,97 @@ body > *:not(.dash-wrapper) {
   font-weight: 500;
 }
 
-.nav-link:hover { 
-  background: var(--roxo-claro); 
-  color: var(--roxo); 
+.nav-link:hover {
+  background: var(--roxo-claro);
+  color: var(--roxo);
 }
 
-.nav-link.ativo { 
-  background: var(--roxo); 
-  color: #fff; 
+.nav-link.ativo {
+  background: var(--roxo);
+  color: #fff;
   font-weight: 600;
+}
+
+/* ── Menu Coordenador com dropdown no hover ── */
+.nav-coord-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 36px;
+}
+
+.nav-coord-chevron {
+  transition: transform 0.2s ease;
+}
+.nav-coord-wrapper:hover .nav-coord-chevron {
+  transform: rotate(180deg);
+}
+
+/* top:100% + padding-top faz uma "ponte" transparente:
+   evita o gap que fecharia o dropdown ao mover o mouse */
+.nav-coord-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  padding-top: 8px;
+  min-width: 190px;
+  z-index: 200;
+}
+
+.nav-coord-dropdown-card {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-coord-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  color: #ba7517;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-coord-item:hover {
+  background: #faeeda;
+  color: #ba7517;
+}
+.nav-coord-item.ativo {
+  background: #ba7517;
+  color: #fff;
+}
+
+/* Dark mode */
+:root.dark-mode .nav-coord-dropdown-card {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+:root.dark-mode .nav-coord-item {
+  color: #ffc56f;
+}
+:root.dark-mode .nav-coord-item:hover {
+  background: #3a2c18;
+  color: #ffd28f;
 }
 
 /* ── Perfil / dropdown ── */
 
-.perfil-icone { 
-  width: 60px; 
-  height: 60px; 
+.perfil-icone {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   max-width: 60px;
   max-height: 60px;
@@ -175,70 +288,78 @@ body > *:not(.dash-wrapper) {
   gap: 8px;
 }
 
-.perfil-wrapper { position: relative; }
+.perfil-wrapper {
+  position: relative;
+}
 
 .perfil-btn {
-  background: none; 
-  border: none; 
+  background: none;
+  border: none;
   cursor: pointer;
-  display: flex; 
+  display: flex;
   align-items: center;
-  padding: 4px; 
+  padding: 4px;
   border-radius: 50%;
   transition: background 0.15s;
 }
 
-.perfil-btn:hover { background: var(--roxo-claro); }
+.perfil-btn:hover {
+  background: var(--roxo-claro);
+}
 
 .dropdown {
-  position: absolute; 
-  top: calc(100% + 10px); 
+  position: absolute;
+  top: calc(100% + 10px);
   right: 0;
-  background: var(--branco); 
+  background: var(--branco);
   border: 1px solid var(--borda);
-  border-radius: 12px; 
-  padding: 8px; 
+  border-radius: 12px;
+  padding: 8px;
   min-width: 190px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   z-index: 100;
 }
 
 .dropdown-nome {
-  font-size: 12px; 
-  font-weight: 500; 
+  font-size: 12px;
+  font-weight: 500;
   color: #999;
   padding: 4px 10px 8px;
 }
 
 .dropdown-item {
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   gap: 10px;
-  width: 100%; 
-  padding: 9px 12px; 
+  width: 100%;
+  padding: 9px 12px;
   border: none;
-  background: none; 
+  background: none;
   border-radius: 8px;
-  font-family: 'Poppins', sans-serif; 
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
-  color: var(--texto); 
-  cursor: pointer; 
+  color: var(--texto);
+  cursor: pointer;
   text-align: left;
   transition: background 0.12s, color 0.12s;
 }
 
-.dropdown-item:hover { 
-  background: var(--roxo-claro); 
-  color: var(--roxo); 
+.dropdown-item:hover {
+  background: var(--roxo-claro);
+  color: var(--roxo);
 }
 
-.dropdown-item.sair { color: #c0392b; }
-.dropdown-item.sair:hover { background: #fdf0ef; }
+.dropdown-item.sair {
+  color: #c0392b;
+}
+.dropdown-item.sair:hover {
+  background: #fdf0ef;
+}
 
-.dropdown-divisor { 
-  height: 1px; 
-  background: var(--borda); 
-  margin: 6px 0; 
+.dropdown-divisor {
+  height: 1px;
+  background: var(--borda);
+  margin: 6px 0;
 }
 
 /* ── Conteúdo principal ── */
@@ -285,88 +406,105 @@ body > *:not(.dash-wrapper) {
 }
 
 .bv-avatar {
-  width: 54px; 
-  height: 54px; 
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  background: var(--roxo); 
+  background: var(--roxo);
   color: #fff;
-  font-size: 22px; 
+  font-size: 22px;
   font-weight: 600;
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.bv-texto h2 { 
-  font-size: 16px; 
-  font-weight: 600; 
-  color: var(--texto); 
-  margin-bottom: 3px; 
+.bv-texto h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 3px;
 }
 
-.bv-texto p  { 
-  font-size: 12px; 
-  color: var(--texto-sec); 
+.bv-texto p {
+  font-size: 12px;
+  color: var(--texto-sec);
 }
 
-.bv-stats { 
-  margin-left: auto; 
-  display: flex; 
-  gap: 12px; 
+.bv-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
 }
 
 .bv-stat {
-  text-align: center; 
+  text-align: center;
   padding: 8px 18px;
-  background: var(--roxo-claro); 
+  background: var(--roxo-claro);
   border-radius: 10px;
 }
 
-.bv-stat-num { 
-  font-size: 20px; 
-  font-weight: 600; 
-  color: var(--roxo); 
+.bv-stat-num {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--roxo);
 }
 
-.bv-stat-label { 
-  font-size: 10px; 
-  color: #7c5cbf; 
+.bv-stat-label {
+  font-size: 10px;
+  color: #7c5cbf;
 }
 
 /* ── Botão adicionar (flutuante) ── */
 .btn-adicionar {
-  position: fixed; 
-  bottom: 88px; 
+  position: fixed;
+  bottom: 88px;
   right: 24px;
-  width: 48px; 
-  height: 48px; 
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: var(--roxo); 
-  border: none; 
+  background: var(--roxo);
+  border: none;
   cursor: pointer;
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(111,59,157,.35);
-  transition: background 0.15s; 
-  z-index: 40; 
-  color: #fff; 
+  box-shadow: 0 4px 16px rgba(111, 59, 157, 0.35);
+  transition: background 0.15s;
+  z-index: 40;
+  color: #fff;
   font-size: 24px;
 }
 
-.btn-adicionar:hover { background: #5a2f85; }
+.btn-adicionar:hover {
+  background: #5a2f85;
+}
 
 /* ── Grids ── */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
 
 @media (max-width: 768px) {
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  .bv-stats { display: none; }
-  .lista-nav { gap: 6px; }
-  .nav-link { 
-    font-size: 12px; 
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .bv-stats {
+    display: none;
+  }
+  .lista-nav {
+    gap: 6px;
+  }
+  .nav-link {
+    font-size: 12px;
     padding: 0 12px;
   }
 }
@@ -385,16 +523,16 @@ body > *:not(.dash-wrapper) {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #BA7517 !important;
+  color: #ba7517 !important;
 }
 
 .nav-link-coord:hover {
-  background: #FAEEDA !important;
-  color: #BA7517 !important;
+  background: #faeeda !important;
+  color: #ba7517 !important;
 }
 
 .nav-link-coord.ativo {
-  background: #BA7517 !important;
+  background: #ba7517 !important;
   color: #fff !important;
 }
 /* ══════════════════════════════════════════════════════════════
@@ -414,18 +552,22 @@ body > *:not(.dash-wrapper) {
   transition: background 0.15s;
   z-index: 10001;
 }
-.nav-hamburger:hover { background: var(--roxo-claro); }
+.nav-hamburger:hover {
+  background: var(--roxo-claro);
+}
 
 /* ── Overlay do menu mobile ── */
 .nav-mobile-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   z-index: 10000;
   backdrop-filter: blur(2px);
 }
-.nav-mobile-overlay.aberto { display: block; }
+.nav-mobile-overlay.aberto {
+  display: block;
+}
 
 /* ── Gaveta lateral mobile ── */
 .nav-mobile-drawer {
@@ -440,12 +582,14 @@ body > *:not(.dash-wrapper) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
   transform: translateX(-100%);
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
 }
-.nav-mobile-drawer.aberto { transform: translateX(0); }
+.nav-mobile-drawer.aberto {
+  transform: translateX(0);
+}
 
 /* Tema escuro: superfícies e estados com contraste consistente */
 :root.dark-mode body {
@@ -528,17 +672,36 @@ body > *:not(.dash-wrapper) {
     padding: 0 12px;
     font-size: 13px;
   }
-  .lista-nav { gap: 4px; }
-  #logo, .logo-claro, .logo-escuro { height: 50px; }
-  .perfil-icone { width: 48px; height: 48px; }
+  .lista-nav {
+    gap: 4px;
+  }
+  #logo,
+  .logo-claro,
+  .logo-escuro {
+    height: 50px;
+  }
+  .perfil-icone {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 /* ── 768px: esconde nav horizontal, mostra hambúrguer ── */
 @media (max-width: 768px) {
+  
+  body:has(.dash-wrapper) {
+    overflow: auto !important;
+    height: auto !important;
+  }
+
   .cabecalho-dashboard {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto 1fr;
     padding: 0 16px;
     min-height: 64px;
+  }
+
+  .cabecalho-logo {
+    margin-right: 12px;
   }
 
   /* Esconde a nav central */
@@ -551,11 +714,18 @@ body > *:not(.dash-wrapper) {
     display: flex;
     align-items: center;
     justify-content: center;
-    justify-self: center;
+    justify-self: start;   /* era center */
   }
 
-  #logo, .logo-claro, .logo-escuro { height: 44px; }
-  .perfil-icone { width: 42px; height: 42px; }
+  #logo,
+  .logo-claro,
+  .logo-escuro {
+    height: 44px;
+  }
+  .perfil-icone {
+    width: 42px;
+    height: 42px;
+  }
 
   /* Conteúdo principal */
   .dash-conteudo {
@@ -566,33 +736,66 @@ body > *:not(.dash-wrapper) {
   }
 
   /* Cards e grids */
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  .bv-stats { display: none; }
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .bv-stats {
+    display: none;
+  }
 
   /* Boas-vindas */
-  .boas-vindas { flex-wrap: wrap; }
+  .boas-vindas {
+    flex-wrap: wrap;
+  }
 
   /* Botão flutuante sobe do bottom nav se houver */
-  .btn-adicionar { bottom: 24px; }
+  .btn-adicionar {
+    bottom: 24px;
+  }
 
   /* Dropdown de perfil */
-  .dropdown { min-width: 170px; }
+  .dropdown {
+    min-width: 170px;
+  }
 }
 
 /* ── 480px: mobile pequeno ── */
 @media (max-width: 480px) {
-  .cabecalho-dashboard { padding: 0 12px; }
-  .dash-conteudo { padding: 72px 12px 28px; }
+  .cabecalho-dashboard {
+    padding: 0 12px;
+  }
+  .dash-conteudo {
+    padding: 72px 12px 28px;
+  }
 
-  .card { padding: 16px; }
-  .boas-vindas { padding: 16px; }
-  .bv-avatar { width: 44px; height: 44px; font-size: 18px; }
-  .bv-texto h2 { font-size: 14px; }
-  .bv-texto p  { font-size: 11px; }
+  .card {
+    padding: 16px;
+  }
+  .boas-vindas {
+    padding: 16px;
+  }
+  .bv-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  .bv-texto h2 {
+    font-size: 14px;
+  }
+  .bv-texto p {
+    font-size: 11px;
+  }
 
-  .nav-mobile-drawer { width: 240px; }
+  .nav-mobile-drawer {
+    width: 240px;
+  }
 
   /* Font overrides para mobile */
-  .dash-wrapper h1 { font-size: calc(18px * var(--font-size-base)); }
-  .dash-wrapper h2 { font-size: calc(15px * var(--font-size-base)); }
+  .dash-wrapper h1 {
+    font-size: calc(18px * var(--font-size-base));
+  }
+  .dash-wrapper h2 {
+    font-size: calc(15px * var(--font-size-base));
+  }
 }

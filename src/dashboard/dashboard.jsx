@@ -24,7 +24,7 @@ import {
   salvarTemaLocal,
 } from '../tema'
 import Logo from '../assets/Group 32 (2).png'
-import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck } from 'lucide-react'
+import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck, ChevronDown } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
@@ -36,11 +36,12 @@ import NotificationBell from '../notificacoes/notificacoes.jsx'
 import IconePerfil from '../assets/Frame 4.png'
 import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 import NotificationToast from '../notificacoes/notificacaoToast.jsx'
-import { useToastNotificacoes } from '../notificacoes/notificacaoToast.js'
-
+import useNotificacoes from "../hooks/useNotificacoes"
 import CadastroProfessores from '../coordenador/CadastroProfessores'
 import CoresDisciplinas from '../coordenador/CoresDisciplinas'
 import ProfessoresDisciplinas from '../coordenador/ProfessoresDisciplinas'
+const { notificacoes } = useNotificacoes(uid)
+
 
 const MotionDiv = motion.div
 
@@ -58,6 +59,7 @@ function Dashboard() {
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const [perfilAberto, setPerfilAberto]     = useState(false)
   const [menuMobileAberto, setMenuMobileAberto] = useState(false)
+  const [coordAberto, setCoordAberto] = useState(false)
   const dropdownRef = useRef(null)
 
   const eCoordenador = professor?.role === 'coordenador'
@@ -269,29 +271,56 @@ function Dashboard() {
               </li>
             ))}
 
-            {eCoordenador && (
-              <>
-                <li className='nav-divisor' />
-                {SECOES_COORDENADOR.map(s => (
-                  <li key={s}>
-                    <button
-                      className={`nav-link nav-link-coord ${secaoAtiva === s ? 'ativo' : ''}`}
-                      onClick={() => setSecaoAtiva(s)}
-                    >
-                      {s === 'Professores'    && <Users size={13} />}
-                      {s === 'Cores'          && <Palette size={13} />}
-                      {s === 'Disciplinas'    && <BookOpenCheck size={13} />}
-                      {s}
-                    </button>
-                  </li>
-                ))}
-              </>
-            )}
+{eCoordenador && (
+  <>
+    <li className='nav-divisor' />
+    <li
+      className='nav-coord-wrapper'
+      onMouseEnter={() => setCoordAberto(true)}
+      onMouseLeave={() => setCoordAberto(false)}
+    >
+      <button
+        className={`nav-link nav-link-coord ${SECOES_COORDENADOR.includes(secaoAtiva) ? 'ativo' : ''}`}
+      >
+        <Users size={13} /> Coordenador
+        <ChevronDown size={13} className='nav-coord-chevron' />
+      </button>
+
+      <AnimatePresence>
+        {coordAberto && (
+          <MotionDiv
+            className='nav-coord-dropdown'
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className='nav-coord-dropdown-card'>
+              {SECOES_COORDENADOR.map(s => (
+                <button
+                  key={s}
+                  className={`nav-coord-item ${secaoAtiva === s ? 'ativo' : ''}`}
+                  onClick={() => { setSecaoAtiva(s); setCoordAberto(false) }}
+                >
+                  {s === 'Professores' && <Users size={15} />}
+                  {s === 'Cores'       && <Palette size={15} />}
+                  {s === 'Disciplinas' && <BookOpenCheck size={15} />}
+                  {s}
+                </button>
+              ))}
+            </div>
+          </MotionDiv>
+        )}
+      </AnimatePresence>
+    </li>
+  </>
+)}
           </ul>
         </nav>
 
         <div className='cabecalho-acoes'>
-          {uid && <NotificationBell uid={uid} />}
+<NotificationBell uid={uid} notificacoes={notificacoes} />
+<NotificationToast />
           <div className='perfil-wrapper' ref={dropdownRef}>
             <button
               className='perfil-btn'

@@ -1,16 +1,18 @@
-// src/components/NotificationBell.jsx
+// src/notificacoes/notificacoes.jsx  (NotificationBell)
+//
+// MUDANÇAS:
+//  - Não abre mais o próprio onSnapshot. A lista chega via prop `notificacoes`,
+//    vinda do hook useNotificacoes(uid) chamado no root do dashboard.
+//    (Se preferir manter compatível, ele ainda funciona se `notificacoes`
+//     não for passado — só fica vazio até você ligar o hook.)
+//  - Clique na notificação usa navigate() do react-router em vez de
+//    window.location.href (não recarrega a página inteira).
+
 import { useState, useEffect, useRef } from "react"
 import ReactDOM from "react-dom"
+import { useNavigate } from "react-router-dom"
 import { Bell, Check } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  limit,
-} from "firebase/firestore"
-import { db } from "../firebase"
 import {
   marcarComoLida,
   marcarTodasComoLidas,
@@ -24,41 +26,11 @@ const ICONES_TIPO = {
   aviso: "📢",
 }
 
-export default function NotificationBell({ uid }) {
+export default function NotificationBell({ uid, notificacoes = [] }) {
   const [aberto, setAberto] = useState(false)
-  const [notificacoes, setNotificacoes] = useState([])
   const [posicao, setPosicao] = useState({ top: 0, left: 0 })
   const botaoRef = useRef(null)
-
-  useEffect(() => {
-    if (!uid) return
-
-    const baseRef = collection(db, "users", uid, "notificacoes")
-    const ordenarNotificacoes = (lista) =>
-      lista.sort((a, b) => {
-        const dataA = a.criadoEm?.toMillis?.() || 0
-        const dataB = b.criadoEm?.toMillis?.() || 0
-        return dataB - dataA
-      })
-
-    const atualizarLista = (snapshot) => {
-      const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setNotificacoes(ordenarNotificacoes(lista).slice(0, 30))
-    }
-
-    let unsubscribe = onSnapshot(
-      query(baseRef, orderBy("criadoEm", "desc"), limit(30)),
-      atualizarLista,
-      (erro) => {
-        console.error("Erro ao escutar notificações ordenadas:", erro)
-        unsubscribe = onSnapshot(baseRef, atualizarLista, (fallbackErro) => {
-          console.error("Erro ao escutar notificações:", fallbackErro)
-        })
-      }
-    )
-
-    return () => unsubscribe()
-  }, [uid])
+  const navigate = useNavigate()
 
   const naoLidas = notificacoes.filter((n) => !n.lida).length
 
@@ -78,7 +50,7 @@ export default function NotificationBell({ uid }) {
       await marcarComoLida(uid, notif.id)
     }
     if (notif.link) {
-      window.location.href = notif.link // troque por navigate() do react-router se preferir
+      navigate(notif.link)
     }
     setAberto(false)
   }

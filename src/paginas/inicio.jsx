@@ -7,11 +7,10 @@ import Logo from '../assets/Group 32 (2).png';
 import LogoMobile from '../assets/Group 44.png'
 import Porta from '../assets/Union.png'
 import Mariana from '../assets/mariana-removebg-preview (1) 1.png'
-import Background from '../assets/image 18.png'
+import Background from '../assets/background.webp'
 import { useNavigate } from 'react-router'
 
 
-const text = "Quero cadastrar a minha escola";
 const text1 = "Já estamos cadastrados";
 
 const container = {
@@ -64,34 +63,6 @@ function Inicio() {
         transition={{ duration: 0.2, ease: "easeOut" }}
         style={{ cursor: "pointer" }}
     >
-<Link to="/cadastrar-escola" style={{textDecoration:"none"}}>
-  <motion.span
-    variants={container}
-    initial="hidden"
-    animate="visible"
-    style={{
-      textDecoration: "none",
-      color: "black",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      userSelect: "none"
-    }}>
-    {text.split("").map((char, index) => (
-      <motion.span key={index} variants={letter}>
-        {char === " " ? "\u00A0" : char}
-      </motion.span>
-    ))}
-  </motion.span>
-</Link>
-
-        <motion.div
-            initial={{ opacity: 0, x: -10, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ duration: 1.0, ease: "easeOut" }}>
-            <a href='#'><img src={Porta} id='porta-icone' /></a>
-        </motion.div>
-        <a href='#' style={{ textDecoration: "none", color: "black" }}><img src={Porta} id='porta-icone-mobile' /></a>
     </motion.li>
 
     <motion.li id='menu1'
