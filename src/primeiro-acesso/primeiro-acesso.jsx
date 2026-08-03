@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router';
-import './primeiro-acesso.css';
+import styles from './primeiro-acesso.module.css';
 import LogoMetade from '../assets/Group 28.png'
 import LogoIcone from "../assets/Group 32 (2).png"
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
 
-// ─── Partículas e brilhos (idênticos ao login) ───────────────────────────────
 function LadoRoxo() {
     return (
-        <div className="lado-roxo">
-            <img src={LogoMetade} className="icone-login" alt="Ícone" />
-            <div className="icone-login-placeholder" aria-hidden="true" />
+        <div className={styles['lado-roxo']}>
+            <img src={LogoMetade} className={styles['icone-login']} alt="Ícone" />
+            <div className={styles['icone-login-placeholder']} aria-hidden="true" />
 
             {[...Array(12)].map((_, i) => (
                 <span
                     key={`p${i}`}
-                    className="particula"
+                    className={styles.particula}
                     style={{
                         left: `${8 + i * 7.5}%`,
                         width:  i % 3 === 0 ? '5px' : '3px',
@@ -31,7 +30,7 @@ function LadoRoxo() {
             {[20, 45, 70].map((y, i) => (
                 <span
                     key={`b${i}`}
-                    className="brilho-linha"
+                    className={styles['brilho-linha']}
                     style={{
                         top: `${y}%`,
                         animationDelay:    `${i * 3}s`,
@@ -43,7 +42,6 @@ function LadoRoxo() {
     );
 }
 
-// ─── Validação da senha ───────────────────────────────────────────────────────
 function validarSenha(senha) {
     return {
         minLength:   senha.length >= 8,
@@ -52,21 +50,19 @@ function validarSenha(senha) {
     };
 }
 
-// ─── Regra individual ─────────────────────────────────────────────────────────
 function RegraItem({ ok, texto }) {
     return (
         <motion.li
-            className={`regra-item ${ok ? 'regra-ok' : ''}`}
+            className={`${styles['regra-item']} ${ok ? styles['regra-ok'] : ''}`}
             animate={{ color: ok ? '#6F3B9D' : '#888' }}
             transition={{ duration: 0.3 }}
         >
-            <span className="regra-icone">{ok ? '✓' : '•'}</span>
+            <span className={styles['regra-icone']}>{ok ? '✓' : '•'}</span>
             {texto}
         </motion.li>
     );
 }
 
-// ─── ETAPA 1 — credenciais temporárias ───────────────────────────────────────
 function Etapa1({ onProximo }) {
     const [identificador, setIdentificador] = useState('');
     const [senhaTemp, setSenhaTemp]         = useState('');
@@ -85,7 +81,6 @@ function Etapa1({ onProximo }) {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, identificador, senhaTemp);
             onProximo(userCredential.user);
-            onProximo({ email: identificador }); // passe o user real do Firebase
         } catch (error) {
             if (error.code === 'auth/invalid-credential') {
                 setErro('E-mail/usuário ou senha temporária incorretos.');
@@ -99,21 +94,21 @@ function Etapa1({ onProximo }) {
 
     return (
         <motion.div
-            className="lado-branco"
+            className={styles['lado-branco']}
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.4, ease: 'easeInOut' }}
         >
-            <img src={LogoIcone} className="logo-login" alt="Logo" />
-            <div className="logo-placeholder" aria-label="Logo ProShelf" />
+            <img src={LogoIcone} className={styles['logo-login']} alt="Logo" />
+            <div className={styles['logo-placeholder']} aria-label="Logo ProShelf" />
 
             <h2 id="acessar">Primeiro acesso</h2>
-            <p className="subtitulo">Acesso disponibilizado pela coordenação</p>
+            <p className={styles.subtitulo}>Acesso disponibilizado pela coordenação</p>
 
             {erro && (
                 <motion.p
-                    className="msg-erro"
+                    className={styles['msg-erro']}
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
@@ -121,7 +116,7 @@ function Etapa1({ onProximo }) {
                 </motion.p>
             )}
 
-            <div className="campo">
+            <div className={styles.campo}>
                 <label>E-mail ou nome de usuário</label>
                 <input
                     type="text"
@@ -133,7 +128,7 @@ function Etapa1({ onProximo }) {
                 />
             </div>
 
-            <div className="campo">
+            <div className={styles.campo}>
                 <label>Senha (disponibilizada pela coordenação)</label>
                 <input
                     type="password"
@@ -146,20 +141,19 @@ function Etapa1({ onProximo }) {
             </div>
 
             <button
-                className="btn-entrar"
+                className={styles['btn-entrar']}
                 onClick={handleSubmit}
                 disabled={carregando}
             >
                 {carregando ? 'Verificando…' : 'Entrar'}
-                {!carregando && <span className="arrow">›</span>}
+                {!carregando && <span className={styles.arrow}>›</span>}
             </button>
 
-            <Link to="/login" className="link-voltar">Voltar</Link>
+            <Link to="/login" className={styles['link-voltar']}>Voltar</Link>
         </motion.div>
     );
 }
 
-// ─── ETAPA 2 — redefinição de senha ──────────────────────────────────────────
 function Etapa2({ user, onConcluido }) {
     const [novaSenha,       setNovaSenha]       = useState('');
     const [confirmaSenha,   setConfirmaSenha]   = useState('');
@@ -185,6 +179,7 @@ function Etapa2({ user, onConcluido }) {
 
         try {
             await updatePassword(user, novaSenha);
+            onConcluido();
         } catch (error) {
             setErro('Não foi possível redefinir a senha. Tente novamente.');
         } finally {
@@ -194,20 +189,20 @@ function Etapa2({ user, onConcluido }) {
 
     return (
         <motion.div
-            className="lado-branco"
+            className={styles['lado-branco']}
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.4, ease: 'easeInOut' }}
         >
-         <img src={LogoIcone} className="logo-login" alt="Logo" /> 
-            <div className="logo-placeholder" aria-label="Logo ProShelf" />
+           <img src={LogoIcone} className={styles['logo-login']} alt="Logo" /> 
+            <div className={styles['logo-placeholder']} aria-label="Logo ProShelf" />
 
             <h2 id="acessar">Primeiro acesso</h2>
 
             {erro && (
                 <motion.p
-                    className="msg-erro"
+                    className={styles['msg-erro']}
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
@@ -215,7 +210,7 @@ function Etapa2({ user, onConcluido }) {
                 </motion.p>
             )}
 
-            <div className="campo">
+            <div className={styles.campo}>
                 <label>Redefina sua senha</label>
                 <input
                     type="password"
@@ -227,7 +222,7 @@ function Etapa2({ user, onConcluido }) {
                 />
             </div>
 
-            <div className="campo">
+            <div className={styles.campo}>
                 <label>Confirme a senha</label>
                 <input
                     type="password"
@@ -236,12 +231,12 @@ function Etapa2({ user, onConcluido }) {
                     onChange={e => setConfirmaSenha(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleRedefinir()}
                     autoComplete="new-password"
-                    className={confirmaSenha.length > 0 ? (senhasIguais ? 'input-ok' : 'input-erro') : ''}
+                    className={confirmaSenha.length > 0 ? (senhasIguais ? styles['input-ok'] : styles['input-erro']) : ''}
                 />
 
                 {confirmaSenha.length > 0 && !senhasIguais && (
                     <motion.span
-                        className="aviso-inline"
+                        className={styles['aviso-inline']}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                     >
@@ -250,39 +245,38 @@ function Etapa2({ user, onConcluido }) {
                 )}
             </div>
 
-            <ul className="regras-lista">
-                <li className="regras-titulo">Sua senha deve ter:</li>
+            <ul className={styles['regras-lista']}>
+                <li className={styles['regras-titulo']}>Sua senha deve ter:</li>
                 <RegraItem ok={regras.minLength} texto="No mínimo 8 caracteres" />
                 <RegraItem ok={regras.maiuscula}  texto="Sendo uma letra maiúscula" />
                 <RegraItem ok={regras.numero}     texto="Número(s)" />
             </ul>
 
             <button
-                className="btn-entrar"
+                className={styles['btn-entrar']}
                 onClick={handleRedefinir}
                 disabled={carregando || !tudo_ok || !senhasIguais}
             >
                 {carregando ? 'Salvando…' : 'Entrar'}
-                {!carregando && <span className="arrow">›</span>}
+                {!carregando && <span className={styles.arrow}>›</span>}
             </button>
 
-            <Link to="/login" className="link-voltar">Voltar</Link>
+            <Link to="/login" className={styles['link-voltar']}>Voltar</Link>
         </motion.div>
     );
 }
 
-// ─── ETAPA 3 — confirmação de sucesso ────────────────────────────────────────
 function Etapa3() {
     return (
         <motion.div
-            className="lado-branco"
+            className={styles['lado-branco']}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-            <div className="logo-placeholder" aria-label="Logo ProShelf" />
+            <div className={styles['logo-placeholder']} aria-label="Logo ProShelf" />
             <motion.div
-                className="icone-sucesso"
+                className={styles['icone-sucesso']}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
@@ -290,23 +284,22 @@ function Etapa3() {
                 ✓
             </motion.div>
             <h2 id="acessar">Senha redefinida!</h2>
-            <p className="subtitulo">Seu acesso está pronto. Faça login com a nova senha.</p>
+            <p className={styles.subtitulo}>Seu acesso está pronto. Faça login com a nova senha.</p>
             <Link to="/login">
-                <button className="btn-entrar" style={{ marginTop: 20 }}>
-                    Ir para o login <span className="arrow">›</span>
+                <button className={styles['btn-entrar']} style={{ marginTop: 20 }}>
+                    Ir para o login <span className={styles.arrow}>›</span>
                 </button>
             </Link>
         </motion.div>
     );
 }
 
-// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 function PrimeiroAcesso() {
-    const [etapa, setEtapa] = useState(1); // 1 | 2 | 3
+    const [etapa, setEtapa] = useState(1);
     const [user,  setUser]  = useState(null);
 
     return (
-        <div className="pagina-login">
+        <div className={styles['pagina-login']}>
             <LadoRoxo />
 
             <AnimatePresence mode="wait">

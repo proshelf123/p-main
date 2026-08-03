@@ -2,7 +2,7 @@ import './inicio-celular.css'
 import { motion } from "framer-motion";
 import { useNavigate } from 'react-router';
 import LogoMobile from '../assets/Group 44.png'
-import Background from '../assets/image 18.png'
+import Background from '../assets/background.webp'
 import { Link } from "react-router"
 
 export default function InicioMobile() {

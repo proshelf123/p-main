@@ -4,6 +4,7 @@ import { Route, BrowserRouter, Routes, useLocation } from "react-router"
 import { AnimatePresence } from 'framer-motion'
 import PageTransition from './transicao-de-paginas.jsx/transicao'
 import { removerTemaVisual } from './tema'
+import './global.css';
 
 // Cada página vira um chunk separado — só é baixada quando a rota é acessada.
 const Inicio          = lazy(() => import('./paginas/inicio'))

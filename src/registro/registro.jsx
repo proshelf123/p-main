@@ -5,7 +5,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { Link, useNavigate } from 'react-router'
-import './registro.css'
+import './registro.module.css'
 
 function Registro() {
   const navigate = useNavigate()

@@ -10,7 +10,22 @@ export default defineConfig({
     host: true, // Ou '0.0.0.0'
   },
 
-  esbuild: { drop: ['console', 'debugger'] }
-
+  build: {
+    rollupOptions: {
+      output: {
+        // Separa dependências grandes em chunks próprios: mudam pouco entre
+        // deploys, então o navegador reaproveita o cache e só rebaixa o app.
+        // Obs.: o Vite 8 usa rolldown, que exige manualChunks como FUNÇÃO.
+        manualChunks(id) {
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'firebase'
+          }
+          if (id.includes('node_modules/framer-motion') || id.includes('node_modules/motion-dom') || id.includes('node_modules/motion-utils')) {
+            return 'motion'
+          }
+        },
+      },
+    },
+  },
 
 })

@@ -36,11 +36,10 @@ import NotificationBell from '../notificacoes/notificacoes.jsx'
 import IconePerfil from '../assets/Frame 4.png'
 import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 import NotificationToast from '../notificacoes/notificacaoToast.jsx'
-import useNotificacoes from "../hooks/useNotificacoes"
+import useNotificacoes from "../notificacoes/useNotificacoes"
 import CadastroProfessores from '../coordenador/CadastroProfessores'
 import CoresDisciplinas from '../coordenador/CoresDisciplinas'
 import ProfessoresDisciplinas from '../coordenador/ProfessoresDisciplinas'
-const { notificacoes } = useNotificacoes(uid)
 
 
 const MotionDiv = motion.div
@@ -64,8 +63,8 @@ function Dashboard() {
 
   const eCoordenador = professor?.role === 'coordenador'
 
-  // ── Toast de notificações em tempo real ──
-  useToastNotificacoes(uid)
+  // ── Listener único: alimenta o sino e dispara os toasts em tempo real ──
+  const { notificacoes } = useNotificacoes(uid)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -320,7 +319,6 @@ function Dashboard() {
 
         <div className='cabecalho-acoes'>
 <NotificationBell uid={uid} notificacoes={notificacoes} />
-<NotificationToast />
           <div className='perfil-wrapper' ref={dropdownRef}>
             <button
               className='perfil-btn'

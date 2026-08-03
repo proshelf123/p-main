@@ -18,16 +18,29 @@ const firebaseConfig = {
 // 1. Inicializa o app primeiro
 const app = initializeApp(firebaseConfig);
 
-// 2. Debug token só em desenvolvimento
+// 2. App Check — só inicializa com uma chave reCAPTCHA v3 REAL.
+//    A chave vem de VITE_RECAPTCHA_SITE_KEY (.env). reCAPTCHA site keys são
+//    públicas (usadas no cliente), então podem ser commitadas. Sem chave válida
+//    pulamos a inicialização, evitando erros e requisições falhas em toda página.
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+// Debug token só em desenvolvimento (permite testar App Check em localhost)
 if (import.meta.env.DEV) {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 
-// 3. App Check depois do app, antes de qualquer uso de Firestore/Auth/Functions
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("SUA_SITE_KEY_AQUI"),
-  isTokenAutoRefreshEnabled: true,
-});
+if (RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== "SUA_SITE_KEY_AQUI") {
+  // App Check depois do app, antes de qualquer uso de Firestore/Auth/Functions
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+  });
+} else if (import.meta.env.DEV) {
+  console.warn(
+    "[App Check] VITE_RECAPTCHA_SITE_KEY ausente — App Check desativado. " +
+    "Defina a chave reCAPTCHA v3 no arquivo .env para ativar."
+  );
+}
 
 export const auth = getAuth(app);
 
