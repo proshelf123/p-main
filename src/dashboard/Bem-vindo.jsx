@@ -1,195 +1,234 @@
 // src/secoes/Bemvindo.jsx
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { BookOpen, Clock, Calendar, ChevronRight, Layers } from 'lucide-react'
-import './Bem-vindo.css'
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { BookOpen, Clock, Calendar, ChevronRight, Layers } from "lucide-react";
+import "./Bem-vindo.css";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MESES = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
-]
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+// NOVO: Resolve o bug de fuso horário separando ano, mês e dia
+function converterData(dataStr) {
+  if (!dataStr) return new Date();
+  const [ano, mes, dia] = dataStr.split("-");
+  return new Date(ano, mes - 1, dia); // mes - 1 porque no JS janeiro é 0
+}
 
 function hoje() {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0) // Garante que a comparação seja feita apenas por dia
-  return d
+  const d = new Date();
+  d.setHours(0, 0, 0, 0); // Garante que a comparação seja feita apenas por dia
+  return d;
 }
 
 function saudacao(nome) {
-  const h = new Date().getHours()
-  const primeiro = nome?.split(' ')[0] ?? ''
-  if (h < 12) return `Bom dia, ${primeiro}!`
-  if (h < 18) return `Boa tarde, ${primeiro}!`
-  return `Boa noite, ${primeiro}!`
+  const h = new Date().getHours();
+  const primeiro = nome?.split(" ")[0] ?? "";
+  if (h < 12) return `Bom dia, ${primeiro}!`;
+  if (h < 18) return `Boa tarde, ${primeiro}!`;
+  return `Boa noite, ${primeiro}!`;
 }
 
 // Gera os dias do mês atual para o mini-calendário
 function diasDoMes(ano, mes) {
-  const primeiro = new Date(ano, mes, 1).getDay()
-  const total    = new Date(ano, mes + 1, 0).getDate()
-  const cells    = []
-  for (let i = 0; i < primeiro; i++) cells.push(null)
-  for (let d = 1; d <= total; d++) cells.push(d)
-  return cells
+  const primeiro = new Date(ano, mes, 1).getDay();
+  const total = new Date(ano, mes + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < primeiro; i++) cells.push(null);
+  for (let d = 1; d <= total; d++) cells.push(d);
+  return cells;
 }
 
 // ── Sub-componente: Mini Calendário ──────────────────────────────────────────
 
 function MiniCalendario({ eventos = [] }) {
-  const agora    = hoje()
-  const [ano,  setAno]  = useState(agora.getFullYear())
-  const [mes,  setMes]  = useState(agora.getMonth())
-  const diaHoje = agora.getDate()
-  const mesHoje = agora.getMonth()
-  const anoHoje = agora.getFullYear()
+  const agora = hoje();
+  const [ano, setAno] = useState(agora.getFullYear());
+  const [mes, setMes] = useState(agora.getMonth());
+  const diaHoje = agora.getDate();
+  const mesHoje = agora.getMonth();
+  const anoHoje = agora.getFullYear();
 
-  const dias = diasDoMes(ano, mes)
+  const dias = diasDoMes(ano, mes);
 
   // dias com evento no mês atual
   const diasComEvento = new Set(
     eventos
-      .filter(e => {
-        const d = new Date(e.data)
-        return d.getFullYear() === ano && d.getMonth() === mes
+      .filter((e) => {
+        const d = converterData(e.data); // ANTES ERA: new Date(e.data)
+        return d.getFullYear() === ano && d.getMonth() === mes;
       })
-      .map(e => new Date(e.data).getDate())
-  )
+      .map((e) => converterData(e.data).getDate()) // ANTES ERA: new Date(e.data).getDate()
+  );
 
   const navMes = (dir) => {
-    setMes(m => {
-      const nm = m + dir
-      if (nm < 0)  { setAno(a => a - 1); return 11 }
-      if (nm > 11) { setAno(a => a + 1); return 0  }
-      return nm
-    })
-  }
+    setMes((m) => {
+      const nm = m + dir;
+      if (nm < 0) {
+        setAno((a) => a - 1);
+        return 11;
+      }
+      if (nm > 11) {
+        setAno((a) => a + 1);
+        return 0;
+      }
+      return nm;
+    });
+  };
 
   return (
-    <div className='bv-calendario'>
-      <div className='bv-cal-header'>
-        <button className='bv-cal-nav' onClick={() => navMes(-1)}>‹</button>
-        <span className='bv-cal-titulo'>{MESES[mes]} {ano}</span>
-        <button className='bv-cal-nav' onClick={() => navMes(1)}>›</button>
+    <div className="bv-calendario">
+      <div className="bv-cal-header">
+        <button className="bv-cal-nav" onClick={() => navMes(-1)}>
+          ‹
+        </button>
+        <span className="bv-cal-titulo">
+          {MESES[mes]} {ano}
+        </span>
+        <button className="bv-cal-nav" onClick={() => navMes(1)}>
+          ›
+        </button>
       </div>
 
-      <div className='bv-cal-grid-header'>
-        {DIAS_SEMANA.map(d => <span key={d}>{d}</span>)}
+      <div className="bv-cal-grid-header">
+        {DIAS_SEMANA.map((d) => (
+          <span key={d}>{d}</span>
+        ))}
       </div>
 
-      <div className='bv-cal-grid'>
+      <div className="bv-cal-grid">
         {dias.map((dia, i) => {
-          if (!dia) return <span key={`v-${i}`} />
-          const isHoje   = dia === diaHoje && mes === mesHoje && ano === anoHoje
-          const temEvento = diasComEvento.has(dia)
+          if (!dia) return <span key={`v-${i}`} />;
+          const isHoje = dia === diaHoje && mes === mesHoje && ano === anoHoje;
+          const temEvento = diasComEvento.has(dia);
           return (
             <span
               key={dia}
-              className={`bv-cal-dia ${isHoje ? 'hoje' : ''} ${temEvento ? 'tem-evento' : ''}`}
+              className={`bv-cal-dia ${isHoje ? "hoje" : ""} ${
+                temEvento ? "tem-evento" : ""
+              }`}
             >
               {dia}
-              {temEvento && <span className='bv-cal-dot' />}
+              {temEvento && <span className="bv-cal-dot" />}
             </span>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 // ── Sub-componente: Card de Cronograma ───────────────────────────────────────
 
-const CORES_TURMA = ['#7C3FBD', '#2E7D9C', '#C05621', '#2D6A4F', '#9B2335']
+const CORES_TURMA = ["#7C3FBD", "#2E7D9C", "#C05621", "#2D6A4F", "#9B2335"];
 
 function formatarHorarioCurto(horario) {
-  const texto = String(horario || '').trim()
-  const match = texto.match(/^(\d{1,2}):(\d{2})/)
-  if (!match) return texto
+  const texto = String(horario || "").trim();
+  const match = texto.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return texto;
 
-  const hora = Number(match[1])
-  const minutos = match[2]
-  return minutos === '00' ? `${hora}h` : `${hora}h${minutos}`
+  const hora = Number(match[1]);
+  const minutos = match[2];
+  return minutos === "00" ? `${hora}h` : `${hora}h${minutos}`;
 }
 
 function descricaoHorarioCronograma(item) {
-  const partes = []
-  if (item.dia) partes.push(item.dia)
+  const partes = [];
+  if (item.dia) partes.push(item.dia);
   if (item.ordem) {
-    const horario = formatarHorarioCurto(item.horario)
-    partes.push(horario ? `${item.ordem}ª aula (${horario})` : `${item.ordem}ª aula`)
+    const horario = formatarHorarioCurto(item.horario);
+    partes.push(
+      horario ? `${item.ordem}ª aula (${horario})` : `${item.ordem}ª aula`
+    );
   } else if (item.horario) {
-    partes.push(formatarHorarioCurto(item.horario))
+    partes.push(formatarHorarioCurto(item.horario));
   }
-  return partes.join(' • ') || 'Horário não definido'
+  return partes.join(" • ") || "Horário não definido";
 }
 
 function CardCronograma({ item, index, onClick }) {
-  const cor = CORES_TURMA[index % CORES_TURMA.length]
+  const cor = CORES_TURMA[index % CORES_TURMA.length];
   return (
     <motion.div
-      className='bv-card-crono'
+      className="bv-card-crono"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07 }}
       onClick={onClick}
-      style={{ '--acento': cor }}
+      style={{ "--acento": cor }}
     >
-      <div className='bv-crono-faixa' />
-      <div className='bv-crono-body'>
-        <p className='bv-crono-turma'>{item.turma ?? 'Turma'}</p>
-        <p className='bv-crono-disciplina'>{item.disciplina ?? item.nome ?? '—'}</p>
-        <div className='bv-crono-meta'>
+      <div className="bv-crono-faixa" />
+      <div className="bv-crono-body">
+        <p className="bv-crono-turma">{item.turma ?? "Turma"}</p>
+        <p className="bv-crono-disciplina">
+          {item.disciplina ?? item.nome ?? "—"}
+        </p>
+        <div className="bv-crono-meta">
           <Clock size={12} />
           <span>{descricaoHorarioCronograma(item)}</span>
         </div>
       </div>
-      <ChevronRight size={15} className='bv-crono-seta' />
+      <ChevronRight size={15} className="bv-crono-seta" />
     </motion.div>
-  )
+  );
 }
 
 // ── Sub-componente: Próximos Eventos ─────────────────────────────────────────
 
 function ProximosEventos({ eventos = [] }) {
-  const agora   = hoje()
+  const agora = hoje();
   const proximos = eventos
-    .filter(e => new Date(e.data) >= agora)
-    .sort((a, b) => new Date(a.data) - new Date(b.data))
-    .slice(0, 4)
+    .filter((e) => converterData(e.data) >= agora) // ANTES ERA: new Date(e.data)
+    .sort((a, b) => converterData(a.data) - converterData(b.data)) // ANTES ERA: new Date...
+    .slice(0, 4);
 
   if (!proximos.length) {
-    return <p className='bv-vazio'>Nenhum evento próximo.</p>
+    return <p className="bv-vazio">Nenhum evento próximo.</p>;
   }
 
   return (
-    <ul className='bv-eventos-lista'>
+    <ul className="bv-eventos-lista">
       {proximos.map((ev, i) => {
-        const d   = new Date(ev.data)
-        const dia = String(d.getDate()).padStart(2, '0')
-        const mes = MESES[d.getMonth()].slice(0, 3)
+        const d = converterData(ev.data); // ANTES ERA: new Date(ev.data)
+        const dia = String(d.getDate()).padStart(2, "0");
+        const mes = MESES[d.getMonth()].slice(0, 3);
         return (
           <motion.li
             key={i}
-            className='bv-evento-item'
+            className="bv-evento-item"
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
           >
-            <div className='bv-evento-data'>
-              <span className='bv-evento-dia'>{dia}</span>
-              <span className='bv-evento-mes'>{mes}</span>
+            <div className="bv-evento-data">
+              <span className="bv-evento-dia">{dia}</span>
+              <span className="bv-evento-mes">{mes}</span>
             </div>
-            <div className='bv-evento-info'>
-              <p className='bv-evento-titulo'>{ev.titulo ?? ev.nome ?? 'Evento'}</p>
-              {ev.descricao && <p className='bv-evento-desc'>{ev.descricao}</p>}
+            <div className="bv-evento-info">
+              <p className="bv-evento-titulo">
+                {ev.titulo ?? ev.nome ?? "Evento"}
+              </p>
+              {ev.descricao && <p className="bv-evento-desc">{ev.descricao}</p>}
             </div>
           </motion.li>
-        )
+        );
       })}
     </ul>
-  )
+  );
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -206,79 +245,92 @@ export default function Bemvindo({
   professor,
   uid,
   cronogramas = [],
-  eventos     = [],
+  eventos = [],
   onIrCronogramas,
   onIrCalendario,
 }) {
-  const eCoordenador = professor?.role === 'coordenador'
-  const nome = professor?.nome ?? ''
-  const tituloCronogramas = eCoordenador ? 'Cronogramas' : 'Próxima aula'
+  const eCoordenador = professor?.role === "coordenador";
+  const nome = professor?.nome ?? "";
+  const tituloCronogramas = eCoordenador ? "Cronogramas" : "Próxima aula";
   const textoVazioCronogramas = eCoordenador
-    ? 'Nenhum cronograma encontrado.'
-    : 'Nenhuma próxima aula encontrada.'
+    ? "Nenhum cronograma encontrado."
+    : "Nenhuma próxima aula encontrada.";
 
   return (
-    <div className='bv-wrapper'>
-
+    <div className="bv-wrapper">
       {/* ── Cabeçalho de boas-vindas ── */}
       <motion.div
-        className='bv-header'
+        className="bv-header"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className='bv-header-texto'>
-          <h1 className='bv-saudacao'>
-            {eCoordenador ? ' ' : ''}
+        <div className="bv-header-texto">
+          <h1 className="bv-saudacao">
+            {eCoordenador ? " " : ""}
             {saudacao(nome)}
           </h1>
-          <p className='bv-subtitulo'>
-            {new Date().toLocaleDateString('pt-BR', {
-              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+          <p className="bv-subtitulo">
+            {new Date().toLocaleDateString("pt-BR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
             })}
           </p>
         </div>
 
         {/* Chips de resumo */}
-        <div className='bv-chips'>
-          <div className='bv-chip'>
+        <div className="bv-chips">
+          <div className="bv-chip">
             <Layers size={14} />
             <span>
               {eCoordenador
-                ? `${cronogramas.length} cronograma${cronogramas.length !== 1 ? 's' : ''}`
-                : (cronogramas.length > 0 ? '1 próxima aula' : 'Sem próxima aula')}
+                ? `${cronogramas.length} cronograma${
+                    cronogramas.length !== 1 ? "s" : ""
+                  }`
+                : cronogramas.length > 0
+                ? "1 próxima aula"
+                : "Sem próxima aula"}
             </span>
           </div>
-          <div className='bv-chip'>
+          <div className="bv-chip">
             <Calendar size={14} />
             <span>
-              {eventos.filter(e => new Date(e.data) >= hoje()).length} evento{
-                eventos.filter(e => new Date(e.data) >= hoje()).length !== 1 ? 's' : ''
-              } próximo{eventos.filter(e => new Date(e.data) >= hoje()).length !== 1 ? 's' : ''}
+              {eventos.filter((e) => converterData(e.data) >= hoje()).length}{" "}
+              evento
+              {eventos.filter((e) => converterData(e.data) >= hoje()).length !==
+              1
+                ? "s"
+                : ""}{" "}
+              próximo
+              {eventos.filter((e) => converterData(e.data) >= hoje()).length !==
+              1
+                ? "s"
+                : ""}
             </span>
           </div>
         </div>
       </motion.div>
 
       {/* ── Corpo ── */}
-      <div className='bv-corpo'>
-
+      <div className="bv-corpo">
         {/* Coluna esquerda: cronogramas */}
-        <section className='bv-secao'>
-          <div className='bv-secao-header'>
-            <div className='bv-secao-titulo'>
+        <section className="bv-secao">
+          <div className="bv-secao-header">
+            <div className="bv-secao-titulo">
               <BookOpen size={15} />
               <h2>{tituloCronogramas}</h2>
             </div>
-            <button className='bv-link' onClick={onIrCronogramas}>
+            <button className="bv-link" onClick={onIrCronogramas}>
               Ver todos <ChevronRight size={13} />
             </button>
           </div>
 
           {cronogramas.length === 0 ? (
-            <p className='bv-vazio'>{textoVazioCronogramas}</p>
+            <p className="bv-vazio">{textoVazioCronogramas}</p>
           ) : (
-            <div className='bv-crono-lista'>
+            <div className="bv-crono-lista">
               {cronogramas.slice(0, 5).map((c, i) => (
                 <CardCronograma
                   key={c.id ?? i}
@@ -292,24 +344,22 @@ export default function Bemvindo({
         </section>
 
         {/* Coluna direita: calendário + próximos eventos */}
-        <aside className='bv-aside'>
-
+        <aside className="bv-aside">
           {/* Mini calendário */}
-          <div className='bv-card-aside'>
-            <div className='bv-secao-header'>
-              <div className='bv-secao-titulo'>
+          <div className="bv-card-aside">
+            <div className="bv-secao-header">
+              <div className="bv-secao-titulo">
                 <Calendar size={15} />
                 <h2>Calendário</h2>
               </div>
-              <button className='bv-link' onClick={onIrCalendario}>
+              <button className="bv-link" onClick={onIrCalendario}>
                 Abrir <ChevronRight size={13} />
               </button>
             </div>
             <MiniCalendario eventos={eventos} />
           </div>
-
         </aside>
       </div>
     </div>
-  )
+  );
 }

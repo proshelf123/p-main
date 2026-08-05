@@ -10,6 +10,7 @@ import './global.css';
 const Inicio          = lazy(() => import('./paginas/inicio'))
 const InicioCelular   = lazy(() => import('./inicio-celular/inicio-celular'))
 const Login           = lazy(() => import('./login/login'))
+const LoginCelular    = lazy(() => import('./login/loginMobile')) // <-- Importe o login mobile (ajuste o caminho se necessário)
 const Dashboard       = lazy(() => import('./dashboard/dashboard'))
 const EsqueciSenha    = lazy(() => import('./esqueci-senha/esqueci-senha'))
 const CadastrarEscola = lazy(() => import('./cadastrar-escola/cadastrar-escola'))
@@ -17,7 +18,6 @@ const Registro        = lazy(() => import('./registro/registro'))
 const PrimeiroAcesso  = lazy(() => import('./primeiro-acesso/primeiro-acesso'))
 
 // Fallback simples enquanto o chunk da rota carrega.
-// Troque por um spinner/skeleton do seu design quando quiser.
 function Carregando() {
   return <div style={{ minHeight: '100vh' }} />
 }
@@ -50,7 +50,16 @@ function AnimatedRoutes() {
             }
           />
 
-          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+          {/* Rota de login adaptativa para mobile e desktop */}
+          <Route 
+            path="/login" 
+            element={
+              <PageTransition>
+                {isMobile ? <LoginCelular /> : <Login />}
+              </PageTransition>
+            } 
+          />
+
           <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
           <Route path="/esqueci-senha" element={<PageTransition><EsqueciSenha /></PageTransition>} />
           <Route path="/cadastrar-escola" element={<PageTransition><CadastrarEscola /></PageTransition>} />

@@ -2125,3 +2125,88 @@ select.perfil-input option:checked {
     min-width: 980px;
   }
 }
+
+/* =======================================================
+   CRONOGRAMAS - LAYOUT EM CARDS PARA MOBILE
+   ======================================================= */
+@media (max-width: 768px) {
+  /* Transforma a linha horizontal em um Card com Grid 2x2 */
+  .crono-pill-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-areas:
+      "ordem ordem"
+      "disc turma"
+      "prof sala";
+    gap: 10px !important;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--borda, #ece5f5);
+    margin-bottom: 12px;
+  }
+
+  /* Aplica o fundo escuro do card caso o Dark Mode esteja ativo */
+  :root.dark-mode .crono-pill-row {
+    background: var(--branco, #242936);
+    border-color: var(--borda, #30273d);
+  }
+
+  /* O cabeçalho da Aula/Horário ocupa o topo do Card */
+  .crono-pill-ordem {
+    grid-area: ordem;
+    font-size: 14px !important;
+    font-weight: 700;
+    color: var(--texto, #1a1a2e);
+    border-bottom: 1px solid var(--borda, #f0ebf8);
+    padding-bottom: 10px !important;
+    margin-bottom: 4px;
+    text-align: left;
+  }
+
+  /* Se a ordem estiver vazia (ex: Turma B), não gera espaço sobrando */
+  .crono-pill-ordem.vazia {
+    display: none !important;
+  }
+
+  /* Posiciona os itens no Grid */
+  .crono-pill-col:nth-child(2) { grid-area: disc; }
+  .crono-pill-col:nth-child(3) { grid-area: turma; }
+  .crono-pill-col:nth-child(4) { grid-area: prof; }
+  .crono-pill-col:nth-child(5) { grid-area: sala; }
+
+  /* Traz a Sala de volta (estava com display: none no seu CSS antigo) */
+  .crono-pill-col:last-child {
+    display: flex !important;
+  }
+
+  /* Oculta as labels "Disciplina", "Professor" (poluem visualmente o mobile) */
+  .crono-pill-label {
+    display: none !important;
+  }
+
+  /* Deixa as pílulas mais retangulares para caberem melhor lado a lado */
+  .crono-pill-disc,
+  .crono-pill-turma,
+  .crono-pill-professor,
+  .crono-pill-sala {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    min-height: 38px;
+    width: 100%;
+  }
+}
+
+/* Em celulares MUITO pequenos, empilha tudo em 1 coluna para não quebrar */
+@media (max-width: 480px) {
+  .crono-pill-row {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "ordem"
+      "disc"
+      "turma"
+      "prof"
+      "sala";
+  }
+}

@@ -37,6 +37,7 @@
 .notif-dropdown {
   position: fixed;
   width: 340px;
+  max-width: calc(100vw - 32px); /* NOVO: Garante 16px de margem em cada lado em telas muito pequenas */
   max-height: 420px;
   background: #fff;
   border-radius: 12px;
@@ -46,6 +47,7 @@
   flex-direction: column;
   overflow: hidden;
 }
+
 
 /* Ajuste o seletor abaixo para a classe de dark mode real do projeto,
    se não for ".dark-mode" */
@@ -82,6 +84,9 @@
 .notif-lista {
   overflow-y: auto;
   max-height: 360px;
+  overflow-x: hidden; /* Evita scroll horizontal durante a animação de deslize lateral */
+  display: flex;
+  flex-direction: column;
 }
 
 .notif-item {
@@ -92,6 +97,9 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   transition: background 0.15s ease;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  will-change: transform, opacity; /* Otimização de performance para animações */
 }
 
 .notif-item:hover {
@@ -112,6 +120,11 @@
 
 .notif-item-icone {
   font-size: 18px;
+}
+
+.notif-item-conteudo {
+  flex: 1;
+  min-width: 0;
 }
 
 .notif-item-conteudo strong {
@@ -142,4 +155,74 @@
   text-align: center;
   font-size: 13px;
   opacity: 0.6;
+}
+
+.notif-acoes-topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notif-acao-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--roxo);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.notif-acao-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.notif-btn-perigo {
+  color: #ef4444; /* Vermelho padrão para apagar */
+}
+
+/* Lixeira Individual (Aparece no Hover) */
+.notif-btn-excluir {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0; /* Escondido por padrão */
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
+  margin-left: auto;
+}
+
+/* Mostra a lixeira quando passa o mouse no item da notificação */
+.notif-item:hover .notif-btn-excluir {
+  opacity: 1;
+}
+
+.notif-btn-excluir:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.dark-mode .notif-btn-excluir:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Ajuste na bolinha de não-lida para não encavalar com a lixeira */
+.notif-dot {
+  position: absolute;
+  top: 14px;
+  left: 8px; /* Mudando da direita para a esquerda para ter espaço para a lixeira */
+  right: auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--laranja);
 }

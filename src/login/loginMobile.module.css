@@ -1,0 +1,299 @@
+/* ── Estrutura Base Mobile ── */
+.pagina-login {
+    display: flex;
+    flex-direction: column; /* Empilha o roxo em cima e o branco embaixo */
+    min-height: 100vh; /* min-height é melhor no mobile por causa da barra de navegação */
+    background-color: #fff;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Topo Roxo ── */
+.lado-roxo {
+    width: 100%;
+    height: 240px; /* Altura fixa para o cabeçalho no mobile */
+    background-color: #6F3B9D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.lado-roxo::before {
+    content: '';
+    position: absolute;
+    width: 250px; /* Reduzido para caber melhor na tela do celular */
+    height: 250px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulso 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.lado-roxo::after {
+    content: '';
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(180,130,255,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+    top: -20px;
+    right: -20px;
+    animation: brilhoTopo 6s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes pulso {
+    0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.6; }
+    50%       { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+}
+
+@keyframes brilhoTopo {
+    0%   { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.3) translate(-10px, 10px); }
+}
+
+.icone-login {
+    width: 180px; /* Tamanho ajustado para celular */
+    z-index: 1;
+}
+
+/* ── Animações do Fundo Roxo ── */
+.particula {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    animation: flutuar linear infinite;
+    pointer-events: none;
+    z-index: 0;
+    box-shadow: 0 0 6px 2px rgba(220, 180, 255, 0.4);
+}
+
+@keyframes flutuar {
+    0%   { transform: translateY(240px) translateX(0px);  opacity: 0; }
+    10%  { opacity: 0.8; }
+    50%  { transform: translateY(120px) translateX(15px); }
+    90%  { opacity: 0.8; }
+    100% { transform: translateY(-20px) translateX(-5px); opacity: 0; }
+}
+
+.brilho-linha {
+    position: absolute;
+    left: -100%;
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: deslizar linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes deslizar {
+    0%   { left: -60%; }
+    100% { left: 160%; }
+}
+
+/* ── Corpo Branco (Formulário) ── */
+.lado-branco {
+    width: 100%;
+    flex: 1; /* Faz ocupar o resto da tela */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Alinha mais pro topo no mobile */
+    gap: 20px;
+    padding: 32px 24px; /* Padding ideal para mobile */
+}
+
+.logo-login {
+    width: 220px; /* Ajustado para celular */
+    height: auto;
+    margin-bottom: 4px;
+}
+
+.acessar {
+    font-weight: bold;
+    font-size: 20px; /* Levemente menor para caber melhor na tela */
+    margin-bottom: 12px;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Campos ── */
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%; /* Ocupa toda a largura disponível do padding */
+    max-width: 400px; /* Limite máximo caso seja um tablet pequeno */
+}
+
+.campo label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.campo input {
+    padding: 14px 16px;
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px; /* 16px evita que o iOS dê zoom automático ao focar no input */
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    color: #222;
+    box-sizing: border-box; /* Garante que o padding não quebre a largura */
+}
+
+.campo input:focus {
+    border-color: #6F3B9D;
+    box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
+}
+
+.campo input.input-login-erro {
+    border-color: #d93025;
+    background-color: #fff7f6;
+    animation: tremerErro 0.35s ease;
+}
+
+.mensagem-login-erro {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(217, 48, 37, 0.25);
+    border-radius: 8px;
+    background-color: #fff3f1;
+    color: #b42318;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    animation: aparecerErro 0.35s ease both;
+    box-sizing: border-box;
+}
+
+.mensagem-login-erro span {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: #d93025;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+@keyframes aparecerErro {
+    0% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+    70% { opacity: 1; transform: translateY(2px) scale(1); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tremerErro {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+/* ── Links e Botões ── */
+.esqueci {
+    color: #6F3B9D;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    align-self: flex-start;
+    margin-top: 5px;
+    padding: 5px 0; /* Aumenta a área de toque no celular */
+}
+
+.esqueci:active, .aqui:active {
+    opacity: 0.7; /* Feedback visual ao tocar na tela */
+}
+
+.btn-entrar {
+    width: 100%;
+    max-width: 250px;
+    padding: 16px 20px; /* Um pouco mais alto para o dedo no celular */
+    background-color: #6F3B9D;
+    color: white;
+    border: none;
+    border-radius: 18px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 12px;
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(111, 59, 157, 0.2);
+    -webkit-tap-highlight-color: transparent; /* Remove marcação azul no mobile */
+}
+
+.btn-entrar:active {
+    transform: scale(0.98); /* Feedback de clique no mobile (encolhe) em vez de crescer do hover */
+}
+
+.btn-entrar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    animation: shimmer 2.2s ease-in-out infinite;
+}
+
+.btn-entrar .arrow {
+    display: inline-block;
+    opacity: 0;
+    transform: translateX(-6px);
+    animation: arrowSlide 2.2s ease-in-out infinite;
+    font-size: 28px;
+    line-height: 1;
+}
+
+@keyframes shimmer {
+    0%   { left: -70%; opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { left: 110%; opacity: 0; }
+}
+
+@keyframes arrowSlide {
+    0%   { opacity: 0; transform: translateX(-6px); }
+    30%  { opacity: 1; transform: translateX(0); }
+    70%  { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(6px); }
+}
+
+.texto-rodape {
+    font-size: 14px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.aqui {
+    color: #6F3B9D;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 5px; /* Maior área de toque */
+}

@@ -5,7 +5,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 200;
+  z-index: 10005; /* <-- ALTERE APENAS ESTA LINHA (antes era 200) */
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,8 +1,11 @@
 .pagina-login {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
 }
 
+/* ── Lado Roxo ─────────────────────────────────────────────────────────────── */
 .lado-roxo {
     width: 50%;
     background-color: #6F3B9D;
@@ -11,6 +14,9 @@
     justify-content: center;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
+    height: 250px;
+    max-height: 100%;
 }
 
 .lado-roxo::before {
@@ -93,7 +99,9 @@
     z-index: 1;
 }
 
+/* ── Lado Branco ───────────────────────────────────────────────────────────── */
 .lado-branco {
+    --form-width: 380px;
     width: 50%;
     display: flex;
     flex-direction: column;
@@ -101,54 +109,65 @@
     justify-content: center;
     gap: 20px;
     padding: 60px;
+    box-sizing: border-box;
+}
+
+.logo-login {
+    width: 300px;
+    height: 85px;
+    margin-bottom: 8px;
+    object-fit: contain;
 }
 
 #acessar {
     font-weight: 400;
     font-size: 28px;
+    margin-bottom: 4px;
+    text-align: center;
 }
 
-.logo-login {
-    position: relative;
-    bottom: 30px;
-    width: 300px;
-    height: 85px;
-}
-
+/* ── Campos ────────────────────────────────────────────────────────────────── */
 .campo {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 60%;
+    width: var(--form-width);
+}
+
+.campo label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
 }
 
 .campo input {
-    padding: 16px;
-    border: 1px solid #ccc;
+    padding: 14px 16px;
+    border: 1.5px solid #ccc;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 16px; /* 16px previne zoom automático no mobile */
     outline: none;
     width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    color: #222;
 }
 
-.esqueci {
-    position: relative;
-    right: 160px;
-    color: #6F3B9D;
-    font-weight: 600;
-    text-decoration: none;
+.campo input:focus {
+    border-color: #6F3B9D;
+    box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
 }
 
+/* ── Botão ─────────────────────────────────────────────────────────────────── */
 .btn-entrar {
-    width: 30%;
-    padding: 10px 20px;
+    width: var(--form-width);
+    padding: 14px 20px;
     background-color: #6F3B9D;
     color: white;
     border: none;
     border-radius: 18px;
     font-size: 18px;
     cursor: pointer;
-    margin-top: 40px;
+    margin-top: 8px;
     position: relative;
     overflow: hidden;
     display: inline-flex;
@@ -156,10 +175,12 @@
     justify-content: center;
     gap: 8px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
 }
 
 .btn-entrar:hover {
-    transform: scale(1.06);
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(111, 59, 157, 0.35);
 }
 
 .btn-entrar::before {
@@ -200,23 +221,45 @@
 .aqui {
     color: #6F3B9D;
     font-weight: 600;
+    text-decoration: none;
 }
-/* ══════════════════════════════════════════════════════════════
-   RESPONSIVIDADE esqueci-senha.css — desktop-first
-   ══════════════════════════════════════════════════════════════ */
+
+.aqui:hover {
+    text-decoration: underline;
+}
+
+/* ── Responsividade ────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .lado-branco {
+        --form-width: 320px;
+    }
+}
 
 @media (max-width: 768px) {
-  .pagina-login    { flex-direction: column; }
-  .lado-roxo       { width: 100%; height: 200px; flex-shrink: 0; }
-  .icone-login     { width: 200px; }
-  .lado-branco     { width: 100%; padding: 32px 24px; }
-  .campo           { width: 90%; }
-  .btn-entrar      { width: 60%; }
+    .pagina-login {
+        flex-direction: column; /* Empilha o layout: roxo em cima, branco embaixo */
+    }
+    .lado-roxo {
+        width: 100%;
+        height: 220px;
+        flex-shrink: 0;
+    }
+    .icone-login {
+        width: 200px;
+    }
+    .lado-branco {
+        width: 100%;
+        --form-width: 100%; /* O formulário ocupa toda a largura útil no mobile */
+        padding: 32px 24px;
+        justify-content: flex-start;
+    }
+
+    .btn-entrar {
+    max-width: 250px;
+    width: 100%;
 }
 
-@media (max-width: 480px) {
-  .lado-roxo  { height: 160px; }
-  .campo      { width: 100%; }
-  .btn-entrar { width: 80%; }
-  #acessar    { font-size: 22px; }
+#acessar {
+    font-size: 20px;
+}
 }

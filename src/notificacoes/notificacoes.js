@@ -9,6 +9,7 @@ import {
   query,
   where,
   getDocs,
+  deleteDoc
 } from "firebase/firestore"
 
 import { db, defaultDb } from "../firebase"
@@ -346,5 +347,38 @@ export async function marcarTodasComoLidas(uid, notificacoes = []) {
     await batch.commit()
   } catch (erro) {
     console.error("Erro ao marcar todas as notificações como lidas:", erro)
+  }
+}
+
+/**
+ * Exclui uma notificação específica.
+ */
+export async function excluirNotificacao(uid, notifId) {
+  try {
+    if (!uid || !notifId) return
+    const notifRef = doc(db, "users", uid, "notificacoes", notifId)
+    await deleteDoc(notifRef)
+  } catch (erro) {
+    console.error("Erro ao excluir notificação:", erro)
+  }
+}
+
+/**
+ * Exclui todas as notificações da lista atual.
+ */
+export async function limparTodasNotificacoes(uid, notificacoes = []) {
+  try {
+    if (!uid || notificacoes.length === 0) return
+    
+    const batch = writeBatch(db)
+
+    notificacoes.forEach((notificacao) => {
+      const notifRef = doc(db, "users", uid, "notificacoes", notificacao.id)
+      batch.delete(notifRef)
+    })
+
+    await batch.commit()
+  } catch (erro) {
+    console.error("Erro ao limpar notificações:", erro)
   }
 }

@@ -16,8 +16,8 @@
 }
 
 html, body {
-    height: 100%;
     width: 100%;
-    /* O overflow-x hidden evita que o site crie barra de rolagem horizontal */
-    overflow-x: hidden; 
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
