@@ -1066,136 +1066,141 @@ export default function Cronogramas({
                     <span />
                   </div>
 
-                  {aulasEditorDoDia.map(({ aula, index }) => (
+{aulasEditorDoDia.map(({ aula, index }) => (
                     <div
                       key={aula.id}
                       className={`crono-editor-row ${aula.dividida ? 'dividida' : ''}`}
                     >
-                      <input
-                        type='number'
-                        min='1'
-                        max='9'
-                        value={aula.ordem}
-                        onChange={(e) => atualizarAulaEditor(index, 'ordem', e.target.value)}
-                      />
-
-                      <input
-                        type='time'
-                        value={aula.horario}
-                        onChange={(e) => atualizarAulaEditor(index, 'horario', e.target.value)}
-                      />
-
-                      <div className='crono-editor-grade-dropdown'>
-                        <DropdownComPortal
-                          opcoes={PERIODOS_EDITOR}
-                          valor={aula.periodo}
-                          onChange={(valor) => atualizarAulaEditor(index, 'periodo', valor)}
-                          id={`crono-periodo-${aula.id}`}
-                          dropdownAberto={dropdownEditorAberto}
-                          setDropdownAberto={setDropdownEditorAberto}
+                      <div className="crono-celula" data-label="Aula">
+                        <input
+                          type='number'
+                          min='1'
+                          max='9'
+                          value={aula.ordem}
+                          onChange={(e) => atualizarAulaEditor(index, 'ordem', e.target.value)}
                         />
                       </div>
 
-                      <label className='crono-editor-toggle'>
+                      <div className="crono-celula" data-label="Horário">
                         <input
-                          type='checkbox'
-                          checked={aula.dividida}
-                          onChange={(e) => atualizarAulaEditor(index, 'dividida', e.target.checked)}
+                          type='time'
+                          value={aula.horario}
+                          onChange={(e) => atualizarAulaEditor(index, 'horario', e.target.value)}
                         />
-                        <span>{aula.dividida ? 'Sim' : 'Não'}</span>
-                      </label>
+                      </div>
+
+                      <div className="crono-celula" data-label="Período">
+                        <div className='crono-editor-grade-dropdown'>
+                          <DropdownComPortal
+                            opcoes={PERIODOS_EDITOR}
+                            valor={aula.periodo}
+                            onChange={(valor) => atualizarAulaEditor(index, 'periodo', valor)}
+                            id={`crono-periodo-${aula.id}`}
+                            dropdownAberto={dropdownEditorAberto}
+                            setDropdownAberto={setDropdownEditorAberto}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="crono-celula" data-label="Turma Dividida (A/B)">
+                        <label className='crono-editor-toggle'>
+                          <input
+                            type='checkbox'
+                            checked={aula.dividida}
+                            onChange={(e) => atualizarAulaEditor(index, 'dividida', e.target.checked)}
+                          />
+                          <span>{aula.dividida ? 'Sim (A/B)' : 'Não'}</span>
+                        </label>
+                      </div>
 
                       {aula.dividida ? (
                         <>
-                          <div className='crono-editor-stack'>
-                            {['A', 'B'].map((grupo) => (
-                              <div
-                                key={grupo}
-                                className='crono-editor-grade-dropdown'
-                              >
-                                <DropdownComPortal
-                                  opcoes={opcoesDisciplinasEditor(aula[grupo].disciplina)}
-                                  valor={aula[grupo].disciplina}
-                                  onChange={(valor) => atualizarDisciplinaDividida(index, grupo, valor)}
-                                  id={`crono-disc-${grupo}-${aula.id}`}
-                                  dropdownAberto={dropdownEditorAberto}
-                                  setDropdownAberto={setDropdownEditorAberto}
-                                />
-                              </div>
-                            ))}
+                          <div className="crono-celula" data-label="Disciplina">
+                            <div className='crono-editor-stack'>
+                              {['A', 'B'].map((grupo) => (
+                                <div key={grupo} className='crono-editor-grade-dropdown'>
+                                  <DropdownComPortal
+                                    opcoes={opcoesDisciplinasEditor(aula[grupo].disciplina)}
+                                    valor={aula[grupo].disciplina}
+                                    onChange={(valor) => atualizarDisciplinaDividida(index, grupo, valor)}
+                                    id={`crono-disc-${grupo}-${aula.id}`}
+                                    dropdownAberto={dropdownEditorAberto}
+                                    setDropdownAberto={setDropdownEditorAberto}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
 
-                          <div className='crono-editor-stack'>
-                            {['A', 'B'].map((grupo) => (
-                              <div
-                                key={grupo}
-                                className='crono-editor-grade-dropdown'
-                              >
-                                <DropdownComPortal
-                                  opcoes={opcoesProfessoresComValor(
-                                    aula[grupo].disciplina,
-                                    aula[grupo].professor,
-                                    `Sem professor ${grupo}`
-                                  )}
-                                  valor={aula[grupo].professor}
-                                  onChange={(valor) => atualizarAulaDividida(
-                                    index,
-                                    grupo,
-                                    'professor',
-                                    valor
-                                  )}
-                                  id={`crono-prof-${grupo}-${aula.id}`}
-                                  dropdownAberto={dropdownEditorAberto}
-                                  setDropdownAberto={setDropdownEditorAberto}
-                                />
-                              </div>
-                            ))}
+                          <div className="crono-celula" data-label="Professor">
+                            <div className='crono-editor-stack'>
+                              {['A', 'B'].map((grupo) => (
+                                <div key={grupo} className='crono-editor-grade-dropdown'>
+                                  <DropdownComPortal
+                                    opcoes={opcoesProfessoresComValor(
+                                      aula[grupo].disciplina,
+                                      aula[grupo].professor,
+                                      `Sem professor ${grupo}`
+                                    )}
+                                    valor={aula[grupo].professor}
+                                    onChange={(valor) => atualizarAulaDividida(index, grupo, 'professor', valor)}
+                                    id={`crono-prof-${grupo}-${aula.id}`}
+                                    dropdownAberto={dropdownEditorAberto}
+                                    setDropdownAberto={setDropdownEditorAberto}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
 
-                          <div className='crono-editor-stack'>
-                            {['A', 'B'].map((grupo) => (
-                              <input
-                                key={grupo}
-                                value={aula[grupo].sala}
-                                onChange={(e) => atualizarAulaDividida(index, grupo, 'sala', e.target.value)}
-                                placeholder={`Sala ${grupo}`}
-                              />
-                            ))}
+                          <div className="crono-celula" data-label="Sala">
+                            <div className='crono-editor-stack'>
+                              {['A', 'B'].map((grupo) => (
+                                <input
+                                  key={grupo}
+                                  value={aula[grupo].sala}
+                                  onChange={(e) => atualizarAulaDividida(index, grupo, 'sala', e.target.value)}
+                                  placeholder={`Sala ${grupo}`}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </>
                       ) : (
                         <>
-                          <div className='crono-editor-grade-dropdown'>
-                            <DropdownComPortal
-                              opcoes={opcoesDisciplinasEditor(aula.disciplina)}
-                              valor={aula.disciplina}
-                              onChange={(valor) => atualizarDisciplinaAula(index, valor)}
-                              id={`crono-disc-${aula.id}`}
-                              dropdownAberto={dropdownEditorAberto}
-                              setDropdownAberto={setDropdownEditorAberto}
-                            />
+                          <div className="crono-celula" data-label="Disciplina">
+                            <div className='crono-editor-grade-dropdown'>
+                              <DropdownComPortal
+                                opcoes={opcoesDisciplinasEditor(aula.disciplina)}
+                                valor={aula.disciplina}
+                                onChange={(valor) => atualizarDisciplinaAula(index, valor)}
+                                id={`crono-disc-${aula.id}`}
+                                dropdownAberto={dropdownEditorAberto}
+                                setDropdownAberto={setDropdownEditorAberto}
+                              />
+                            </div>
                           </div>
 
-                          <div className='crono-editor-grade-dropdown'>
-                            <DropdownComPortal
-                              opcoes={opcoesProfessoresComValor(aula.disciplina, aula.professor)}
-                              valor={aula.professor}
-                              onChange={(valor) => atualizarAulaEditor(
-                                index,
-                                'professor',
-                                valor
-                              )}
-                              id={`crono-prof-${aula.id}`}
-                              dropdownAberto={dropdownEditorAberto}
-                              setDropdownAberto={setDropdownEditorAberto}
-                            />
+                          <div className="crono-celula" data-label="Professor">
+                            <div className='crono-editor-grade-dropdown'>
+                              <DropdownComPortal
+                                opcoes={opcoesProfessoresComValor(aula.disciplina, aula.professor)}
+                                valor={aula.professor}
+                                onChange={(valor) => atualizarAulaEditor(index, 'professor', valor)}
+                                id={`crono-prof-${aula.id}`}
+                                dropdownAberto={dropdownEditorAberto}
+                                setDropdownAberto={setDropdownEditorAberto}
+                              />
+                            </div>
                           </div>
 
-                          <input
-                            value={aula.sala}
-                            onChange={(e) => atualizarAulaEditor(index, 'sala', e.target.value)}
-                            placeholder='Sala'
-                          />
+                          <div className="crono-celula" data-label="Sala">
+                            <input
+                              value={aula.sala}
+                              onChange={(e) => atualizarAulaEditor(index, 'sala', e.target.value)}
+                              placeholder='Sala'
+                            />
+                          </div>
                         </>
                       )}
 

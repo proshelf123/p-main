@@ -40,7 +40,8 @@ import useNotificacoes from "../notificacoes/useNotificacoes"
 import CadastroProfessores from '../coordenador/CadastroProfessores'
 import CoresDisciplinas from '../coordenador/CoresDisciplinas'
 import ProfessoresDisciplinas from '../coordenador/ProfessoresDisciplinas'
-
+import { Plus } from 'lucide-react'
+import ModalNovaTurmaUnificada from '../coordenador/ModalNovaTurmaUnificada'
 
 const MotionDiv = motion.div
 
@@ -60,7 +61,7 @@ function Dashboard() {
   const [menuMobileAberto, setMenuMobileAberto] = useState(false)
   const [coordAberto, setCoordAberto] = useState(false)
   const dropdownRef = useRef(null)
-
+const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
   const eCoordenador = professor?.role === 'coordenador'
 
   // ── Listener único: alimenta o sino e dispara os toasts em tempo real ──
@@ -196,7 +197,7 @@ function Dashboard() {
         onClick={() => setMenuMobileAberto(false)}
       />
       <div className={`nav-mobile-drawer ${menuMobileAberto ? 'aberto' : ''}`}>
-        <span className='nav-mobile-secao-label'>Menu</span>
+        <span className='nav-mobile-secao-label'>Menu - Mobile</span>
         <button
           className={`nav-link ${secaoAtiva === 'Início' ? 'ativo' : ''}`}
           onClick={() => { setSecaoAtiva('Início'); setMenuMobileAberto(false) }}
@@ -215,8 +216,16 @@ function Dashboard() {
         {eCoordenador && (
           <>
             <div className='nav-divisor' />
-            <span className='nav-mobile-secao-label'>Coordenador</span>
-            {SECOES_COORDENADOR.map(s => (
+<span className='nav-mobile-secao-label'>Coordenador</span>
+{/* NOVO BOTÃO NO MOBILE */}
+<button
+  className="nav-link nav-link-coord"
+  onClick={() => { setModalNovaTurmaAberto(true); setMenuMobileAberto(false); }}
+>
+  <Plus size={14} /> Nova Turma
+</button>
+
+{SECOES_COORDENADOR.map(s => (
               <button
                 key={s}
                 className={`nav-link nav-link-coord ${secaoAtiva === s ? 'ativo' : ''}`}
@@ -294,8 +303,17 @@ function Dashboard() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
           >
-            <div className='nav-coord-dropdown-card'>
-              {SECOES_COORDENADOR.map(s => (
+<div className='nav-coord-dropdown-card'>
+  {/* NOVO BOTÃO DE CRIAR TURMA */}
+  <button
+    className="nav-coord-item"
+    onClick={() => { setModalNovaTurmaAberto(true); setCoordAberto(false); }}
+  >
+    <Plus size={15} /> Nova Turma
+  </button>
+  <div className="dropdown-divisor" style={{ margin: '4px 0', background: 'var(--borda)' }} />
+  
+  {SECOES_COORDENADOR.map(s => (
                 <button
                   key={s}
                   className={`nav-coord-item ${secaoAtiva === s ? 'ativo' : ''}`}
@@ -397,8 +415,18 @@ function Dashboard() {
       {/* ── Toasts de notificação em tempo real ── */}
       <NotificationToast />
 
+{modalNovaTurmaAberto && uid && (
+        <ModalNovaTurmaUnificada 
+          uid={uid} 
+          professorLogado={professor} 
+          onClose={() => setModalNovaTurmaAberto(false)} 
+        />
+      )}
+
     </div>
   )
 }
+
+
 
 export default Dashboard

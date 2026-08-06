@@ -79,7 +79,7 @@ body {
     flex-wrap: nowrap; 
 }
 
-.menu1 {
+.menu, .menu1 {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,11 +88,6 @@ body {
     white-space: nowrap; 
 }
 
-/*Por enquanto, ficaremos sem o botão de cadastar escola, caso mudemos de ideia, apenas apagar essa linha de código do #menu, e colocá-la junto com o #menu1 com a ,*/
-
-.menu {
-    display: none;
-}
 
 .porta-icone {
     display: flex;

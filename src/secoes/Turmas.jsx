@@ -1,441 +1,572 @@
-import { useState, useEffect, useMemo } from 'react'
-import { buscarTurmas, criarTurma, deletarTurma,
-  buscarRegistros, criarRegistroAula, deletarRegistro, buscarProfessores, escutarProfessoresDisciplinas
-} from '../firebase/estrutura'
-import './secoes.css'
-import { Trash2, AlertTriangle, X } from 'lucide-react'
-import CustomDatePicker from './dropdown-calendario'
-import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
-import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
-import { montarCoresDisciplina, normalizarDisciplina } from './coresDisciplinas'
-import DropdownComPortal from './DropwdownComPortal'
-import { listarDisciplinasComCor, listarVinculosDisciplina } from './vinculosDisciplinas'
+// src/components/Turmas.jsx
+import { useState, useEffect, useMemo } from "react";
+import {
+  buscarTurmas,
+  criarTurma,
+  deletarTurma,
+  buscarRegistros,
+  criarRegistroAula,
+  deletarRegistro,
+  buscarProfessores,
+  escutarProfessoresDisciplinas,
+} from "../firebase/estrutura";
+import "./secoes.css";
+import { Trash2, AlertTriangle, X } from "lucide-react";
+import CustomDatePicker from "./dropdown-calendario";
+import {
+  criarNotificacao,
+  criarNotificacaoPorRole,
+} from "../notificacoes/notificacoes";
+import useCoresDisciplinas from "../hooks/useCoresDisciplinas";
+import {
+  montarCoresDisciplina,
+  normalizarDisciplina,
+} from "./coresDisciplinas";
+import DropdownComPortal from "./DropwdownComPortal";
+import {
+  listarDisciplinasComCor,
+  listarVinculosDisciplina,
+} from "./vinculosDisciplinas";
 
 const COR_DISCIPLINA = {
-  'Matemática': { ativo: '#FF0000', bg: '#fff0f0', cor: '#b30000' },
-  'Física':     { ativo: '#188AF5', bg: '#e3f0fe', cor: '#0a5eaa' },
-  'Química':    { ativo: '#FFE100', bg: '#fffbe0 ', cor: '#8a7200' },
-  'Biologia':    { ativo: '#0BDB23', bg: '#e6fbed ', cor: '#057d19' },
-  'História':    { ativo: '#AA6803', bg: '#f5ece0 ', cor: '#7a4b02' },
-  'Geografia':    { ativo: '#006500', bg: '#e0f0e0 ', cor: '#004500' },
-  'Português':    { ativo: '#00D5ED', bg: '#e0fafd ', cor: '#007f8f' },
-  'Artes':    { ativo: '#FF00AA', bg: '#ffe8f6 ', cor: '#a80070' },
-  'Filosofia':    { ativo: '#760507', bg: '#f2e5e6 ', cor: '#520305' },
-  'Inglês':    { ativo: '#2F00FF', bg: '#eaebff ', cor: '#1e00b3' },
-  'Educação Física':    { ativo: '#FF6A00', bg: '#fff0e5 ', cor: '#b34900' },
-}
+  Matemática: { ativo: "#FF0000", bg: "#fff0f0", cor: "#b30000" },
+  Física: { ativo: "#188AF5", bg: "#e3f0fe", cor: "#0a5eaa" },
+  Química: { ativo: "#FFE100", bg: "#fffbe0 ", cor: "#8a7200" },
+  Biologia: { ativo: "#0BDB23", bg: "#e6fbed ", cor: "#057d19" },
+  História: { ativo: "#AA6803", bg: "#f5ece0 ", cor: "#7a4b02" },
+  Geografia: { ativo: "#006500", bg: "#e0f0e0 ", cor: "#004500" },
+  Português: { ativo: "#00D5ED", bg: "#e0fafd ", cor: "#007f8f" },
+  Artes: { ativo: "#FF00AA", bg: "#ffe8f6 ", cor: "#a80070" },
+  Filosofia: { ativo: "#760507", bg: "#f2e5e6 ", cor: "#520305" },
+  Inglês: { ativo: "#2F00FF", bg: "#eaebff ", cor: "#1e00b3" },
+  "Educação Física": { ativo: "#FF6A00", bg: "#fff0e5 ", cor: "#b34900" },
+};
 
 const COR_TIPO = {
-  teorica:   { bg: '#0BDB23', cor: '#fff', label: 'Aula teórica'  },
-  pratica:   { bg: '#ED235C', cor: '#fff', label: 'Aula Prática'  },
-  atividade: { bg: '#FFBB00', cor: '#fff', label: 'Atividades'    },
-  avaliacao: { bg: '#188AF5', cor: '#fff', label: 'Avaliações'    },
-}
+  teorica: { bg: "#0BDB23", cor: "#fff", label: "Aula teórica" },
+  pratica: { bg: "#ED235C", cor: "#fff", label: "Aula Prática" },
+  atividade: { bg: "#FFBB00", cor: "#fff", label: "Atividades" },
+  avaliacao: { bg: "#188AF5", cor: "#fff", label: "Avaliações" },
+};
 
-const PERIODOS = ['Matutino', 'Vespertino', 'Noturno']
+const PERIODOS = ["Matutino", "Vespertino", "Noturno"];
 
-const FORM_TURMA_INICIAL    = { nome: '', disciplina: '', periodo: 'Matutino', professor: '', professorId: '' }
-const FORM_REGISTRO_INICIAL = { data: '', conteudo: '', descricao: '', informacoes: '', tipo: 'teorica' }
+const FORM_TURMA_INICIAL = {
+  nome: "",
+  disciplina: "",
+  periodo: "Matutino",
+  professor: "",
+  professorId: "",
+};
+const FORM_REGISTRO_INICIAL = {
+  data: "",
+  conteudo: "",
+  descricao: "",
+  informacoes: "",
+  tipo: "teorica",
+};
 
 function coresDe(disciplina, coresCustomizadas = {}) {
-  return montarCoresDisciplina(disciplina, coresCustomizadas)
+  return montarCoresDisciplina(disciplina, coresCustomizadas);
 }
 
 // ── Modal de confirmação customizado ──────────────────────────
 function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
-  const coresDisciplinas = useCoresDisciplinas()
-  const c = coresDe(turma?.disciplina, coresDisciplinas)
+  const coresDisciplinas = useCoresDisciplinas();
+  const c = coresDe(turma?.disciplina, coresDisciplinas);
   return (
     <>
-      <div className='modal-confirmar-overlay' onClick={onCancelar} />
-      <div className='modal-confirmar'>
+      <div className="modal-confirmar-overlay" onClick={onCancelar} />
+      <div className="modal-confirmar">
         {/* Ícone */}
-        <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: '#FFF0F3',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 16px',
-          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
-        }}>
-          <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
+        <div
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: "50%",
+            background: "#FFF0F3",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+            animation:
+              "confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",
+          }}
+        >
+          <AlertTriangle size={26} color="#ED235C" strokeWidth={2.2} />
         </div>
 
         {/* Texto */}
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+        <h3
+          style={{
+            fontSize: 16,
+            fontWeight: 700,
+            color: "var(--texto)",
+            margin: "0 0 8px",
+            textAlign: "center",
+          }}
+        >
           Remover turma?
         </h3>
-        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--texto-sec)",
+            margin: "0 0 6px",
+            textAlign: "center",
+            lineHeight: 1.5,
+          }}
+        >
           Você está prestes a remover a turma
         </p>
 
         {/* Card da turma */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 14px', borderRadius: 12,
-          background: c.bg, margin: '0 0 6px',
-          animation: 'confirm-card-slide 0.3s ease 0.15s both'
-        }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.ativo, flexShrink: 0 }} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 14px",
+            borderRadius: 12,
+            background: c.bg,
+            margin: "0 0 6px",
+            animation: "confirm-card-slide 0.3s ease 0.15s both",
+          }}
+        >
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: c.ativo,
+              flexShrink: 0,
+            }}
+          />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: c.cor }}>{turma?.nome}</div>
-            <div style={{ fontSize: 11, color: c.cor, opacity: 0.7 }}>{turma?.disciplina} · {turma?.periodo}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: c.cor }}>
+              {turma?.nome}
+            </div>
+            <div style={{ fontSize: 11, color: c.cor, opacity: 0.7 }}>
+              {turma?.disciplina} · {turma?.periodo}
+            </div>
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
+        <p
+          style={{
+            fontSize: 12,
+            color: "var(--texto-sec)",
+            margin: "0 0 20px",
+            textAlign: "center",
+          }}
+        >
           Todos os registros de aula serão removidos permanentemente.
         </p>
 
         {/* Botões */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={onCancelar}
             style={{
-              flex: 1, padding: '11px', borderRadius: 10,
-              border: '1px solid var(--borda)', background: 'var(--branco)',
-              fontSize: 13, fontFamily: "'Poppins', sans-serif",
-              color: 'var(--texto)', cursor: 'pointer',
-              transition: 'all .15s',
+              flex: 1,
+              padding: "11px",
+              borderRadius: 10,
+              border: "1px solid var(--borda)",
+              background: "var(--branco)",
+              fontSize: 13,
+              fontFamily: "'Poppins', sans-serif",
+              color: "var(--texto)",
+              cursor: "pointer",
+              transition: "all .15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "var(--roxo)";
+              e.currentTarget.style.color = "var(--roxo)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e0e0e0";
+              e.currentTarget.style.color = "#555";
+            }}
           >
             Cancelar
           </button>
           <button
             onClick={onConfirmar}
             style={{
-              flex: 1, padding: '11px', borderRadius: 10,
-              border: 'none', background: '#ED235C',
-              fontSize: 13, fontFamily: "'Poppins', sans-serif",
-              fontWeight: 600, color: '#fff', cursor: 'pointer',
-              transition: 'all .15s',
+              flex: 1,
+              padding: "11px",
+              borderRadius: 10,
+              border: "none",
+              background: "#ED235C",
+              fontSize: 13,
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600,
+              color: "#fff",
+              cursor: "pointer",
+              transition: "all .15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#c71b4d";
+              e.currentTarget.style.transform = "scale(1.02)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ED235C";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
           >
             Sim, remover
           </button>
         </div>
       </div>
     </>
-  )
+  );
 }
 
 export default function Turmas({ uid, professor }) {
-  const isCoordenador = professor?.role === 'coordenador'
-  const coresDisciplinas = useCoresDisciplinas()
-  const [turmas, setTurmas]                   = useState([])
-  const [disciplinas, setDisciplinas]         = useState([])
-  const [disciplinaAtiva, setDisciplinaAtiva] = useState(null)
-  const [turmaAberta, setTurmaAberta]         = useState(null)
-  const [registros, setRegistros]             = useState([])
-  const [loading, setLoading]                 = useState(true)
-  const [modalTurma, setModalTurma]           = useState(false)
-  const [painelRegistro, setPainelRegistro]   = useState(false)
-  const [formTurma, setFormTurma]             = useState(FORM_TURMA_INICIAL)
-  const [formRegistro, setFormRegistro]       = useState(FORM_REGISTRO_INICIAL)
-  const [salvando, setSalvando]               = useState(false)
-  const [erroTurma, setErroTurma]             = useState('')
-  const [erroRegistro, setErroRegistro]       = useState('')
-  const [dropdownAberto, setDropdownAberto]   = useState(null)
-  const [confirmarDelete, setConfirmarDelete] = useState(null) // objeto { id, nome, disciplina, periodo }
+  const isCoordenador = professor?.role === "coordenador";
+  const coresDisciplinas = useCoresDisciplinas();
+  const [turmas, setTurmas] = useState([]);
+  const [disciplinas, setDisciplinas] = useState([]);
+  const [disciplinaAtiva, setDisciplinaAtiva] = useState(null);
+  const [turmaAberta, setTurmaAberta] = useState(null);
+  const [registros, setRegistros] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalTurma, setModalTurma] = useState(false);
+  const [painelRegistro, setPainelRegistro] = useState(false);
+  const [registroAberto, setRegistroAberto] = useState(null);
+  const [formTurma, setFormTurma] = useState(FORM_TURMA_INICIAL);
+  const [formRegistro, setFormRegistro] = useState(FORM_REGISTRO_INICIAL);
+  const [salvando, setSalvando] = useState(false);
+  const [erroTurma, setErroTurma] = useState("");
+  const [erroRegistro, setErroRegistro] = useState("");
+  const [dropdownAberto, setDropdownAberto] = useState(null);
+  const [confirmarDelete, setConfirmarDelete] = useState(null);
 
-  const [professores, setProfessores]             = useState([])
-  const [mostrarSugestoes, setMostrarSugestoes]   = useState(false)
-  const [professoresDisciplinas, setProfessoresDisciplinas] = useState({})
+  const [professores, setProfessores] = useState([]);
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const [professoresDisciplinas, setProfessoresDisciplinas] = useState({});
 
-  useEffect(() => { if (uid) carregarTurmas() }, [uid, professor?.role])
+  useEffect(() => {
+    if (uid) carregarTurmas();
+  }, [uid, professor?.role]);
 
   useEffect(() => {
     if (uid && isCoordenador) {
-      buscarProfessores().then(dados => setProfessores(dados))
+      buscarProfessores().then((dados) => setProfessores(dados));
     }
-  }, [uid, isCoordenador])
+  }, [uid, isCoordenador]);
 
   useEffect(() => {
-    if (!uid || !isCoordenador) return
+    if (!uid || !isCoordenador) return;
 
-    return escutarProfessoresDisciplinas(
-      setProfessoresDisciplinas,
-      (err) => {
-        console.error('Erro ao carregar professores por disciplina:', err)
-        setProfessoresDisciplinas({})
-      }
-    )
-  }, [uid, isCoordenador])
+    return escutarProfessoresDisciplinas(setProfessoresDisciplinas, (err) => {
+      console.error("Erro ao carregar professores por disciplina:", err);
+      setProfessoresDisciplinas({});
+    });
+  }, [uid, isCoordenador]);
 
   async function carregarTurmas() {
-    setLoading(true)
-    setErroTurma('')
+    setLoading(true);
+    setErroTurma("");
 
     try {
-      const dados = await buscarTurmas(uid, professor)
-      setTurmas(dados)
-      const discs = [...new Set(dados.map(t => t.disciplina))]
+      const dados = await buscarTurmas(uid, professor);
+      setTurmas(dados);
+      const discs = [...new Set(dados.map((t) => t.disciplina))]
         .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b, 'pt-BR'))
-      setDisciplinas(discs)
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
+      setDisciplinas(discs);
       if (discs.length > 0) {
-        setDisciplinaAtiva((atual) => discs.includes(atual) ? atual : discs[0])
+        setDisciplinaAtiva((atual) =>
+          discs.includes(atual) ? atual : discs[0]
+        );
       }
     } catch (erro) {
-      console.error('Erro ao carregar turmas:', erro)
-      setTurmas([])
-      setDisciplinas([])
-      setDisciplinaAtiva(null)
-      setErroTurma('Nao foi possivel carregar suas turmas. Verifique as permissoes do Firestore.')
+      console.error("Erro ao carregar turmas:", erro);
+      setTurmas([]);
+      setDisciplinas([]);
+      setDisciplinaAtiva(null);
+      setErroTurma(
+        "Nao foi possivel carregar suas turmas. Verifique as permissoes do Firestore."
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function abrirTurma(turma) {
-    setTurmaAberta(turma)
-    setErroRegistro('')
+    setTurmaAberta(turma);
+    setErroRegistro("");
 
     try {
-      const regs = await buscarRegistros(turma.ownerUid || uid, turma.id)
-      setRegistros(regs)
+      const regs = await buscarRegistros(turma.ownerUid || uid, turma.id);
+      setRegistros(regs);
     } catch (erro) {
-      console.error('Erro ao carregar registros da turma:', erro)
-      setRegistros([])
-      setErroRegistro('Nao foi possivel carregar os registros desta turma.')
+      console.error("Erro ao carregar registros da turma:", erro);
+      setRegistros([]);
+      setErroRegistro("Nao foi possivel carregar os registros desta turma.");
     }
   }
 
   async function handleSalvarTurma() {
-    if (!isCoordenador) return
-    if (!formTurma.nome.trim())       { setErroTurma('Informe o nome da turma.'); return }
-    if (!formTurma.disciplina.trim()) { setErroTurma('Informe a disciplina.'); return }
-    setSalvando(true)
+    if (!isCoordenador) return;
+    if (!formTurma.nome.trim()) {
+      setErroTurma("Informe o nome da turma.");
+      return;
+    }
+    if (!formTurma.disciplina.trim()) {
+      setErroTurma("Informe a disciplina.");
+      return;
+    }
+    setSalvando(true);
     try {
-      await criarTurma(uid, formTurma)
+      await criarTurma(uid, formTurma);
       if (formTurma.professorId) {
-    try {
-      await criarNotificacao({
-        titulo: "Nova Turma Vinculada",
-        mensagem: `Você foi associado à turma "${formTurma.nome}" no período ${formTurma.periodo}.`,
-        tipo: "turma", // Renderiza o emoji 🏫 conforme seu ICONES_TIPO
-        link: "/turmas", // Direciona o professor para o painel de turmas dele
-        destinatarioUids: [formTurma.professorId], // UID direto do professor associado
-        criadoPorNome: "Coordenação"
-      })
-    } catch (notifErr) {
-      console.error("Erro ao enviar notificação de vínculo de turma:", notifErr)
+        try {
+          await criarNotificacao({
+            titulo: "Nova Turma Vinculada",
+            mensagem: `Você foi associado à turma "${formTurma.nome}" no período ${formTurma.periodo}.`,
+            tipo: "turma",
+            link: "/turmas",
+            destinatarioUids: [formTurma.professorId],
+            criadoPorNome: "Coordenação",
+          });
+        } catch (notifErr) {
+          console.error(
+            "Erro ao enviar notificação de vínculo de turma:",
+            notifErr
+          );
+        }
+      }
+      await carregarTurmas();
+      setModalTurma(false);
+      setFormTurma(FORM_TURMA_INICIAL);
+    } catch {
+      setErroTurma("Erro ao salvar. Tente novamente.");
+    } finally {
+      setSalvando(false);
     }
   }
-      await carregarTurmas()
-      setModalTurma(false)
-      setFormTurma(FORM_TURMA_INICIAL)
-    } catch { setErroTurma('Erro ao salvar. Tente novamente.') }
-    finally  { setSalvando(false) }
-  }
 
-  // Abre o modal customizado em vez do window.confirm
   function handleDeletarTurma(turma, e) {
-    e.stopPropagation()
-    setConfirmarDelete(turma)
+    e.stopPropagation();
+    setConfirmarDelete(turma);
   }
 
-  // Executado ao confirmar no modal
   async function executarDelete() {
-    if (!confirmarDelete) return
-    await deletarTurma(confirmarDelete.ownerUid || uid, confirmarDelete.id)
+    if (!confirmarDelete) return;
+    await deletarTurma(confirmarDelete.ownerUid || uid, confirmarDelete.id);
 
-    // Notifica professores que a turma foi removida
     try {
       await criarNotificacaoPorRole({
-        role: 'professor',
-        titulo: 'Turma removida',
+        role: "professor",
+        titulo: "Turma removida",
         mensagem: `A turma "${confirmarDelete.nome}" (${confirmarDelete.disciplina} · ${confirmarDelete.periodo}) foi encerrada.`,
-        tipo: 'turma',
-        link: '/turmas',
+        tipo: "turma",
+        link: "/turmas",
         criadoPorUid: uid,
-        criadoPorNome: professor?.nome || 'Coordenação',
-      })
+        criadoPorNome: professor?.nome || "Coordenação",
+      });
     } catch (err) {
-      console.warn('Erro ao notificar remoção de turma:', err)
+      console.warn("Erro ao notificar remoção de turma:", err);
     }
 
-    setConfirmarDelete(null)
-    await carregarTurmas()
+    setConfirmarDelete(null);
+    await carregarTurmas();
   }
 
   async function handleSalvarRegistro() {
-    if (!isCoordenador) return
-    if (!formRegistro.data)            { setErroRegistro('Informe a data da aula.'); return }
-    if (!formRegistro.conteudo.trim()) { setErroRegistro('Informe o conteúdo da aula.'); return }
-    setSalvando(true)
+    if (!isCoordenador) return;
+    if (!formRegistro.data) {
+      setErroRegistro("Informe a data da aula.");
+      return;
+    }
+    if (!formRegistro.conteudo.trim()) {
+      setErroRegistro("Informe o conteúdo da aula.");
+      return;
+    }
+    setSalvando(true);
     try {
-      const ownerUid = turmaAberta.ownerUid || uid
-      await criarRegistroAula(ownerUid, turmaAberta.id, formRegistro)
-      const regs = await buscarRegistros(ownerUid, turmaAberta.id)
-      setRegistros(regs)
-      setPainelRegistro(false)
-      setFormRegistro(FORM_REGISTRO_INICIAL)
+      const ownerUid = turmaAberta.ownerUid || uid;
+      await criarRegistroAula(ownerUid, turmaAberta.id, formRegistro);
+      const regs = await buscarRegistros(ownerUid, turmaAberta.id);
+      setRegistros(regs);
+      setPainelRegistro(false);
+      setFormRegistro(FORM_REGISTRO_INICIAL);
 
-      // Notifica o professor vinculado à turma (se houver)
       const destinatarios = turmaAberta.professorId
         ? [turmaAberta.professorId]
-        : []
+        : [];
 
       if (destinatarios.length > 0) {
         try {
-          const dataFormatada = formRegistro.data.split('-').reverse().join('/')
+          const dataFormatada = formRegistro.data
+            .split("-")
+            .reverse()
+            .join("/");
           await criarNotificacao({
-            titulo: 'Novo registro de aula',
+            titulo: "Novo registro de aula",
             mensagem: `Foi adicionado um registro de aula do dia ${dataFormatada} na turma ${turmaAberta.nome}: "${formRegistro.conteudo}".`,
-            tipo: 'turma',
-            link: '/turmas',
+            tipo: "turma",
+            link: "/turmas",
             destinatarioUids: destinatarios,
             criadoPorUid: uid,
-            criadoPorNome: professor?.nome || 'Coordenação',
-          })
+            criadoPorNome: professor?.nome || "Coordenação",
+          });
         } catch (err) {
-          console.warn('Erro ao notificar novo registro:', err)
+          console.warn("Erro ao notificar novo registro:", err);
         }
       }
-    } catch { setErroRegistro('Erro ao salvar. Tente novamente.') }
-    finally  { setSalvando(false) }
+    } catch {
+      setErroRegistro("Erro ao salvar. Tente novamente.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   async function handleDeletarRegistro(registroId) {
-    if (!isCoordenador) return
-    await deletarRegistro(turmaAberta.ownerUid || uid, turmaAberta.id, registroId)
-    setRegistros(prev => prev.filter(r => r.id !== registroId))
+    if (!isCoordenador) return;
+    await deletarRegistro(
+      turmaAberta.ownerUid || uid,
+      turmaAberta.id,
+      registroId
+    );
+    setRegistros((prev) => prev.filter((r) => r.id !== registroId));
   }
 
   function DropdownCustomizado({ label, opcoes, valor, onChange, id }) {
-    void label
-    void opcoes
-    void valor
-    void onChange
-    void id
-    return null
-  /*
-    return (
-      <div className='perfil-grupo' style={{ position: 'relative', zIndex: dropdownAberto === id ? 99999 : 'auto' }}>
-        {label && <label className='perfil-label'>{label}</label>}
-        <button
-          className={`dropdown-trigger ${dropdownAberto === id ? 'aberto' : ''}`}
-          onClick={() => setDropdownAberto(dropdownAberto === id ? null : id)}
-          style={{
-            background: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: '8px',
-            padding: '9px 12px', fontSize: '13px', fontFamily: "'Poppins', sans-serif",
-            color: 'var(--texto)', cursor: 'pointer', display: 'flex',
-            justifyContent: 'space-between', alignItems: 'center', width: '100%',
-          }}
-        >
-          <span>{valor}</span>
-          <span className='arrow' style={{ fontSize: '16px', color: 'var(--roxo)' }}>▼</span>
-        </button>
-        {dropdownAberto === id && (
-          <div className='dropdown-menu'
-            style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px' }}
-            onClick={e => e.stopPropagation()}>
-            {opcoes.map(opt => (
-              <button key={opt} className='dropdown-item'
-                onClick={() => { onChange(opt); setDropdownAberto(null) }}
-                style={{ background: valor === opt ? 'var(--roxo)' : 'var(--branco)', color: valor === opt ? 'white' : 'var(--texto)' }}>
-                {valor === opt && <span style={{ marginRight: 8 }}>✓</span>}
-                {opt}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  */
+    void label;
+    void opcoes;
+    void valor;
+    void onChange;
+    void id;
+    return null;
   }
 
-  const turmasFiltradas = turmas.filter(t => t.disciplina === disciplinaAtiva)
+  const turmasFiltradas = turmas.filter(
+    (t) => t.disciplina === disciplinaAtiva
+  );
 
-  const professoresFiltrados = formTurma.professor.trim() === ''
-    ? professores
-    : professores.filter((p) => (
-      String(p.nome || p.nomePDF || p.email || '')
-        .toLowerCase()
-        .includes(formTurma.professor.toLowerCase())
-    ))
+  const professoresFiltrados =
+    formTurma.professor.trim() === ""
+      ? professores
+      : professores.filter((p) =>
+          String(p.nome || p.nomePDF || p.email || "")
+            .toLowerCase()
+            .includes(formTurma.professor.toLowerCase())
+        );
 
-  const disciplinasCadastradas = useMemo(() => listarDisciplinasComCor(coresDisciplinas), [coresDisciplinas])
+  const disciplinasCadastradas = useMemo(
+    () => listarDisciplinasComCor(coresDisciplinas),
+    [coresDisciplinas]
+  );
 
   const opcoesDisciplinasTurma = useMemo(() => {
     const opcoes = disciplinasCadastradas.map((disciplina) => ({
       valor: disciplina,
       label: disciplina,
-    }))
+    }));
 
-    if (formTurma.disciplina && !opcoes.some((opcao) => normalizarDisciplina(opcao.valor) === normalizarDisciplina(formTurma.disciplina))) {
-      opcoes.push({ valor: formTurma.disciplina, label: formTurma.disciplina })
+    if (
+      formTurma.disciplina &&
+      !opcoes.some(
+        (opcao) =>
+          normalizarDisciplina(opcao.valor) ===
+          normalizarDisciplina(formTurma.disciplina)
+      )
+    ) {
+      opcoes.push({ valor: formTurma.disciplina, label: formTurma.disciplina });
     }
 
     return [
-      { valor: '', label: 'Selecione a disciplina' },
-      ...opcoes.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
-    ]
-  }, [disciplinasCadastradas, formTurma.disciplina])
+      { valor: "", label: "Selecione a disciplina" },
+      ...opcoes.sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
+    ];
+  }, [disciplinasCadastradas, formTurma.disciplina]);
 
-  const professoresOrdenados = useMemo(() => (
-    professores
-      .map((professorItem) => ({
-        valor: professorItem.id || professorItem.email || professorItem.nomePDF || professorItem.nome || '',
-        label: professorItem.nomePDF || professorItem.nome || professorItem.email || 'Professor',
-        professor: professorItem.nomePDF || professorItem.nome || professorItem.email || '',
-        professorId: professorItem.id || '',
-      }))
-      .filter((item) => item.valor && item.professor)
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
-  ), [professores])
+  const professoresOrdenados = useMemo(
+    () =>
+      professores
+        .map((professorItem) => ({
+          valor:
+            professorItem.id ||
+            professorItem.email ||
+            professorItem.nomePDF ||
+            professorItem.nome ||
+            "",
+          label:
+            professorItem.nomePDF ||
+            professorItem.nome ||
+            professorItem.email ||
+            "Professor",
+          professor:
+            professorItem.nomePDF ||
+            professorItem.nome ||
+            professorItem.email ||
+            "",
+          professorId: professorItem.id || "",
+        }))
+        .filter((item) => item.valor && item.professor)
+        .sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
+    [professores]
+  );
 
   const opcoesProfessoresTurma = useMemo(() => {
-    const vinculados = listarVinculosDisciplina(formTurma.disciplina, professoresDisciplinas)
+    const vinculados = listarVinculosDisciplina(
+      formTurma.disciplina,
+      professoresDisciplinas
+    )
       .map((vinculo) => ({
         valor: vinculo.professorId || vinculo.professorEmail || vinculo.nome,
         label: vinculo.nome,
         professor: vinculo.nome,
-        professorId: vinculo.professorId || '',
+        professorId: vinculo.professorId || "",
       }))
       .filter((item) => item.valor && item.professor)
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 
-    const base = vinculados.length > 0 ? vinculados : professoresOrdenados
+    const base = vinculados.length > 0 ? vinculados : professoresOrdenados;
 
     return [
-      { valor: '', label: 'Sem professor', professor: '', professorId: '' },
+      { valor: "", label: "Sem professor", professor: "", professorId: "" },
       ...base,
-    ]
-  }, [formTurma.disciplina, professoresDisciplinas, professoresOrdenados])
+    ];
+  }, [formTurma.disciplina, professoresDisciplinas, professoresOrdenados]);
 
   function selecionarDisciplinaTurma(disciplina) {
-    const professoresDaDisciplina = listarVinculosDisciplina(disciplina, professoresDisciplinas)
+    const professoresDaDisciplina = listarVinculosDisciplina(
+      disciplina,
+      professoresDisciplinas
+    )
       .map((vinculo) => ({
         professor: vinculo.nome,
-        professorId: vinculo.professorId || '',
+        professorId: vinculo.professorId || "",
       }))
       .filter((item) => item.professor)
-      .sort((a, b) => a.professor.localeCompare(b.professor, 'pt-BR'))
+      .sort((a, b) => a.professor.localeCompare(b.professor, "pt-BR"));
 
-    const professorSelecionado = professoresDaDisciplina[0] || { professor: '', professorId: '' }
+    const professorSelecionado = professoresDaDisciplina[0] || {
+      professor: "",
+      professorId: "",
+    };
 
     setFormTurma((atual) => ({
       ...atual,
       disciplina,
       professor: professorSelecionado.professor,
       professorId: professorSelecionado.professorId,
-    }))
-    setErroTurma('')
+    }));
+    setErroTurma("");
   }
 
   function selecionarProfessorTurma(valor) {
-    const opcao = opcoesProfessoresTurma.find((item) => item.valor === valor)
+    const opcao = opcoesProfessoresTurma.find((item) => item.valor === valor);
     setFormTurma((atual) => ({
       ...atual,
-      professor: opcao?.professor || '',
-      professorId: opcao?.professorId || '',
-    }))
-    setErroTurma('')
+      professor: opcao?.professor || "",
+      professorId: opcao?.professorId || "",
+    }));
+    setErroTurma("");
   }
 
   // ══════════════════════════════════════
@@ -443,208 +574,583 @@ export default function Turmas({ uid, professor }) {
   // ══════════════════════════════════════
   if (turmaAberta) {
     return (
-      <div className='card' style={{ position: 'relative', minHeight: 400 }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button className='btn-voltar' onClick={() => { setTurmaAberta(null); setPainelRegistro(false) }}>
-              ← Voltar
-            </button>
-            <div className='registro-info'>
-              <div style={{ fontSize: 16, color: 'var(--texto)', fontWeight: 600 }}>{turmaAberta.disciplina}</div>
-              <div style={{ fontSize: 15, color: 'var(--texto-sec)' }}>{turmaAberta.nome}</div>
-              {turmaAberta.professor && (
-                <div style={{ fontSize: 12, color: 'var(--roxo)', fontWeight: 500 }}>Prof(a): {turmaAberta.professor}</div>
-              )}
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-            {Object.entries(COR_TIPO).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: v.bg, flexShrink: 0 }} />
-                <span style={{ fontSize: 16, color: 'var(--texto)', lineHeight: 1 }}>{v.label}</span>
-              </div>
-            ))}
-        </div>
-      </div>
-
-        {erroRegistro && <p style={{ color: '#c0392b', fontSize: 12, margin: '0 0 16px' }}>{erroRegistro}</p>}
-
-        {/* Lista de registros */}
-        {registros.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <p style={{ fontSize: 13, color: 'var(--texto-sec)', marginBottom: 16 }}>Nenhum registro ainda.</p>
-            <div style={{ fontSize: 12, color: 'var(--texto-sec)' }}>Adicione novos registros de aulas</div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {registros.map((r, idx) => {
-              const tipo = COR_TIPO[r.tipo] || COR_TIPO.teorica
-              return (
-                <div key={r.id} className='registro-pill' style={{ background: tipo.bg, animationDelay: `${idx * 50}ms` }}>
-                  <span style={{ color: tipo.cor, fontSize: 13, flex: 1 }}>
-                    Aula do dia {r.data.split('-').reverse().join('/')} — {r.conteudo}
-                  </span>
-                  {isCoordenador && (
-                    <button className='arquivo-acao' style={{ color: tipo.cor, opacity: 0.6 }} onClick={() => handleDeletarRegistro(r.id)} title='Remover'>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div className="card" style={{ position: "relative", minHeight: 400 }}>
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <button
+                className="btn-voltar"
+                onClick={() => {
+                  setTurmaAberta(null);
+                  setPainelRegistro(false);
+                }}
+              >
+                ← Voltar
+              </button>
+              <div className="registro-info">
+                <div
+                  style={{ fontSize: 16, color: "var(--texto)", fontWeight: 600 }}
+                >
+                  {turmaAberta.disciplina}
                 </div>
-              )
-            })}
+                <div style={{ fontSize: 15, color: "var(--texto-sec)" }}>
+                  {turmaAberta.nome}
+                </div>
+                {turmaAberta.professor && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--roxo)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Prof(a): {turmaAberta.professor}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* A legenda foi movida para a caixa inferior */}
           </div>
-        )}
 
-        {isCoordenador && (
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--borda)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, color: 'var(--texto-sec)' }}>Adicione novos registros de aulas</span>
-            <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => { setErroRegistro(''); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true) }}>
-              + Novo registro
-            </button>
-          </div>
+          {erroRegistro && (
+            <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>
+              {erroRegistro}
+            </p>
+          )}
+
+          {/* Lista de registros */}
+          {registros.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <p style={{ fontSize: 13, color: "var(--texto-sec)" }}>
+                Nenhum registro ainda.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {registros.map((r, idx) => {
+                const tipo = COR_TIPO[r.tipo] || COR_TIPO.teorica;
+                return (
+                  <div
+                    key={r.id}
+                    className="registro-pill"
+                    onClick={() => setRegistroAberto(r)} // <-- Clique para abrir o modal
+                    style={{
+                      background: tipo.bg,
+                      animationDelay: `${idx * 50}ms`,
+                      cursor: "pointer" // <-- Feedback visual de que é clicável
+                    }}
+                  >
+                    <span style={{ color: tipo.cor, fontSize: 13, flex: 1 }}>
+                      Aula do dia {r.data.split("-").reverse().join("/")} —{" "}
+                      {r.conteudo}
+                    </span>
+                    {isCoordenador && (
+                      <button
+                        className="arquivo-acao"
+                        style={{ color: tipo.cor, opacity: 0.6 }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // <-- Impede o modal de abrir ao clicar em remover
+                          handleDeletarRegistro(r.id);
+                        }}
+                        title="Remover"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {isCoordenador && (
+            <div
+              style={{
+                marginTop: 24,
+                paddingTop: 16,
+                borderTop: "1px solid var(--borda)",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <button
+                className="btn-upload"
+                style={{ marginTop: 0 }}
+                onClick={() => {
+                  setErroRegistro("");
+                  setFormRegistro(FORM_REGISTRO_INICIAL);
+                  setPainelRegistro(true);
+                }}
+              >
+                + Novo registro
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* --- CAIXA BRANCA INFERIOR COM A LEGENDA --- */}
+        <div className="card" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, padding: "20px" }}>
+          {Object.entries(COR_TIPO).map(([k, v]) => (
+            <div
+              key={k}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: v.bg,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{ fontSize: 14, color: "var(--texto)", fontWeight: 500, lineHeight: 1 }}
+              >
+                {v.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* --- MODAL DE VISUALIZAÇÃO DE REGISTRO (NOVO) --- */}
+        {registroAberto && (
+          <>
+            <div
+              onClick={() => setRegistroAberto(null)}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.25)",
+                zIndex: 1100,
+                backdropFilter: "blur(2px)",
+              }}
+            />
+            <div
+              className="registro-modal"
+              style={{
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "100%",
+                maxWidth: 480,
+                background: "var(--branco)",
+                borderRadius: 16,
+                padding: 28,
+                zIndex: 9999,
+                boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                animation: "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                maxHeight: "85vh",
+                overflowY: "auto",
+                overflowX: "hidden" // <-- Evita barra de rolagem horizontal inteira
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: (COR_TIPO[registroAberto.tipo] || COR_TIPO.teorica).bg }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", textTransform: "uppercase" }}>
+                      {(COR_TIPO[registroAberto.tipo] || COR_TIPO.teorica).label}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--texto)", margin: "0 0 2px" }}>
+                    {registroAberto.data.split("-").reverse().join("/")}
+                  </h3>
+                  <p style={{ fontSize: 15, color: "var(--texto-sec)", margin: 0, fontWeight: 500 }}>
+                    {registroAberto.conteudo}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setRegistroAberto(null)}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#999", padding: 4 }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div>
+                  <h4 style={{ fontSize: 13, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Descrição do Conteúdo
+                  </h4>
+                  <div style={{ fontSize: 14, color: "var(--texto)", lineHeight: 1.5, background: "var(--bg)", padding: 12, borderRadius: 8, border: "1px solid var(--borda)", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+                    {registroAberto.descricao || <span style={{ fontStyle: "italic", opacity: 0.6 }}>Nenhuma descrição informada.</span>}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 style={{ fontSize: 13, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Informações Adicionais
+                  </h4>
+                  <div style={{ fontSize: 14, color: "var(--texto)", lineHeight: 1.5, background: "var(--bg)", padding: 12, borderRadius: 8, border: "1px solid var(--borda)", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+                    {registroAberto.informacoes || <span style={{ fontStyle: "italic", opacity: 0.6 }}>Nenhuma informação adicional.</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Painel de novo registro */}
         {painelRegistro && (
           <>
-            <div onClick={() => setPainelRegistro(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 1100, backdropFilter: 'blur(2px)' }} />
-            <div className='registro-modal' style={{
-              position: 'fixed', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '100%', maxWidth: 480,
-              background: 'var(--branco)', borderRadius: 16, padding: 28,
-              zIndex: 1200, boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-              animation: 'painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both',
-              display: 'flex', flexDirection: 'column', gap: 16
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div
+              onClick={() => setPainelRegistro(false)}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.25)",
+                zIndex: 1100,
+                backdropFilter: "blur(2px)",
+              }}
+            />
+            <div
+              className="registro-modal"
+              style={{
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "100%",
+                maxWidth: 480,
+                background: "var(--branco)",
+                borderRadius: 16,
+                padding: 28,
+                zIndex: 9999,
+                boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                animation:
+                  "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
                 <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--texto)', margin: '0 0 2px' }}>Novo registro de aula</h3>
-                  <p style={{ fontSize: 15, color: 'var(--texto-sec)', margin: 0 }}>{turmaAberta.disciplina} · {turmaAberta.nome}</p>
+                  <h3
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: "var(--texto)",
+                      margin: "0 0 2px",
+                    }}
+                  >
+                    Novo registro de aula
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: 15,
+                      color: "var(--texto-sec)",
+                      margin: 0,
+                    }}
+                  >
+                    {turmaAberta.disciplina} · {turmaAberta.nome}
+                  </p>
                 </div>
-                <button onClick={() => setPainelRegistro(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
+                <button
+                  onClick={() => setPainelRegistro(false)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#999",
+                    padding: 4,
+                  }}
+                >
                   <X size={20} />
                 </button>
               </div>
 
-              <CustomDatePicker value={formRegistro.data} onChange={(dataStr) => setFormRegistro({ ...formRegistro, data: dataStr })} registros={registros} dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto} />
+              <CustomDatePicker
+                value={formRegistro.data}
+                onChange={(dataStr) =>
+                  setFormRegistro({ ...formRegistro, data: dataStr })
+                }
+                registros={registros}
+                dropdownAberto={dropdownAberto}
+                setDropdownAberto={setDropdownAberto}
+              />
 
-              <div className='perfil-grupo'>
-                <label className='perfil-label'>Conteúdo</label>
-                <input className='perfil-input' value={formRegistro.conteudo} onChange={e => setFormRegistro({ ...formRegistro, conteudo: e.target.value })} placeholder='Digite o conteúdo que será aplicado na aula' />
+              <div className="perfil-grupo">
+                <label className="perfil-label">Conteúdo</label>
+                <input
+                  className="perfil-input"
+                  value={formRegistro.conteudo}
+                  onChange={(e) =>
+                    setFormRegistro({
+                      ...formRegistro,
+                      conteudo: e.target.value,
+                    })
+                  }
+                  placeholder="Digite o conteúdo que será aplicado na aula"
+                />
               </div>
 
-              <div className='perfil-grupo'>
-                <label className='perfil-label'>Descrição do conteúdo</label>
-                <textarea className='perfil-input' rows={2} value={formRegistro.descricao} onChange={e => setFormRegistro({ ...formRegistro, descricao: e.target.value })} placeholder='Descreva o conteúdo que será aplicado na aula' />
+              <div className="perfil-grupo">
+                <label className="perfil-label">Descrição do conteúdo</label>
+                <textarea
+                  className="perfil-input"
+                  rows={2}
+                  value={formRegistro.descricao}
+                  onChange={(e) =>
+                    setFormRegistro({
+                      ...formRegistro,
+                      descricao: e.target.value,
+                    })
+                  }
+                  placeholder="Descreva o conteúdo que será aplicado na aula"
+                />
               </div>
 
-              <div className='perfil-grupo'>
-                <label className='perfil-label'>Informações adicionais</label>
-                <textarea className='perfil-input' rows={2} value={formRegistro.informacoes} onChange={e => setFormRegistro({ ...formRegistro, informacoes: e.target.value })} placeholder='Digite outras informações' />
+              <div className="perfil-grupo">
+                <label className="perfil-label">Informações adicionais</label>
+                <textarea
+                  className="perfil-input"
+                  rows={2}
+                  value={formRegistro.informacoes}
+                  onChange={(e) =>
+                    setFormRegistro({
+                      ...formRegistro,
+                      informacoes: e.target.value,
+                    })
+                  }
+                  placeholder="Digite outras informações"
+                />
               </div>
 
               <div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                   {Object.entries(COR_TIPO).map(([key, v]) => (
-                    <label key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', marginLeft: 4 }}>
-                      <input type='radio' name='tipo-registro' value={key} checked={formRegistro.tipo === key} onChange={() => setFormRegistro({ ...formRegistro, tipo: key })} style={{ accentColor: 'var(--roxo)', width: 16, height: 16 }} />
-                      <span style={{ fontSize: 12, color: 'var(--texto)' }}>{v.label}</span>
+                    <label
+                      key={key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        cursor: "pointer",
+                        marginLeft: 4,
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="tipo-registro"
+                        value={key}
+                        checked={formRegistro.tipo === key}
+                        onChange={() =>
+                          setFormRegistro({ ...formRegistro, tipo: key })
+                        }
+                        style={{
+                          accentColor: "var(--roxo)",
+                          width: 16,
+                          height: 16,
+                        }}
+                      />
+                      <span style={{ fontSize: 12, color: "var(--texto)" }}>
+                        {v.label}
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {erroRegistro && <p style={{ color: '#c0392b', fontSize: 12, margin: 0 }}>{erroRegistro}</p>}
+              {erroRegistro && (
+                <p style={{ color: "#c0392b", fontSize: 12, margin: 0 }}>
+                  {erroRegistro}
+                </p>
+              )}
 
-              <button onClick={handleSalvarRegistro} disabled={salvando}
-                style={{ marginTop: 10, width: '100%', padding: '14px', borderRadius: 40, border: 'none', background: 'var(--roxo)', color: '#fff', fontSize: 14, fontFamily: "'Poppins', sans-serif", fontWeight: 600, cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.6 : 1, transition: 'opacity 0.15s, transform 0.15s' }}
-                onMouseEnter={e => { if (!salvando) e.currentTarget.style.transform = 'scale(1.02)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}>
-                {salvando ? 'Salvando...' : 'Salvar novo registro de aula'}
+              <button
+                onClick={handleSalvarRegistro}
+                disabled={salvando}
+                style={{
+                  marginTop: 10,
+                  width: "100%",
+                  padding: "14px",
+                  borderRadius: 40,
+                  border: "none",
+                  background: "var(--roxo)",
+                  color: "#fff",
+                  fontSize: 14,
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 600,
+                  cursor: salvando ? "not-allowed" : "pointer",
+                  opacity: salvando ? 0.6 : 1,
+                  transition: "opacity 0.15s, transform 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!salvando)
+                    e.currentTarget.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                {salvando ? "Salvando..." : "Salvar novo registro de aula"}
               </button>
             </div>
           </>
         )}
       </div>
-    )
+    );
   }
 
   // ══════════════════════════════════════
   //  TELA: lista de turmas
   // ══════════════════════════════════════
   return (
-    <div className='card'>
+    <div className="card">
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--texto)', margin: '0 0 4px' }}>Turmas</h2>
-        <p style={{ fontSize: 14, color: 'var(--texto-sec)', margin: 0 }}>Disciplinas ministradas</p>
+        <h2
+          style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: "var(--texto)",
+            margin: "0 0 4px",
+          }}
+        >
+          Turmas
+        </h2>
+        <p style={{ fontSize: 14, color: "var(--texto-sec)", margin: 0 }}>
+          Disciplinas ministradas
+        </p>
       </div>
 
-      {erroTurma && <p style={{ color: '#c0392b', fontSize: 12, margin: '0 0 16px' }}>{erroTurma}</p>}
+      {erroTurma && (
+        <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>
+          {erroTurma}
+        </p>
+      )}
 
       {loading ? (
-        <p className='secao-vazia'>Carregando...</p>
+        <p className="secao-vazia">Carregando...</p>
       ) : turmas.length === 0 ? (
         <>
-          <p className='secao-vazia'>Nenhuma turma cadastrada.</p>
-          {isCoordenador && (
-            <button className='btn-upload' onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
-              + Nova turma
-            </button>
-          )}
+          <p className="secao-vazia">Nenhuma turma cadastrada.</p>
         </>
       ) : (
         <>
-          <div className='turma-tabs' style={{ marginBottom: 20 }}>
-            {disciplinas.map(d => {
-              const c = coresDe(d, coresDisciplinas)
-              const ativa = disciplinaAtiva === d
+          <div className="turma-tabs" style={{ marginBottom: 20 }}>
+            {disciplinas.map((d) => {
+              const c = coresDe(d, coresDisciplinas);
+              const ativa = disciplinaAtiva === d;
               return (
-                <button key={d} className='turma-tab-pill'
-                  style={{ background: ativa ? c.ativo : 'var(--roxo-claro)', color: ativa ? c.textoSobreAtivo : 'var(--texto)', borderColor: ativa ? c.ativo : 'transparent', transform: ativa ? 'scale(1.05)' : 'scale(1)' }}
-                  onClick={() => setDisciplinaAtiva(d)}>
+                <button
+                  key={d}
+                  className="turma-tab-pill"
+                  style={{
+                    background: ativa ? c.ativo : "var(--roxo-claro)",
+                    color: ativa ? c.textoSobreAtivo : "var(--texto)",
+                    borderColor: ativa ? c.ativo : "transparent",
+                    transform: ativa ? "scale(1.05)" : "scale(1)",
+                  }}
+                  onClick={() => setDisciplinaAtiva(d)}
+                >
                   {d}
                 </button>
-              )
+              );
             })}
-            {isCoordenador && (
-              <button className='turma-tab-pill'
-                style={{ background: 'none', color: 'var(--roxo)', border: '1.5px dashed var(--roxo)', marginLeft: 'auto' }}
-                onClick={() => { setErroTurma(''); setFormTurma(FORM_TURMA_INICIAL); setModalTurma(true) }}>
-                + Nova turma
-              </button>
-            )}
           </div>
 
-          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--texto)', margin: '0 0 12px' }}>{disciplinaAtiva}</p>
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: "var(--texto)",
+              margin: "0 0 12px",
+            }}
+          >
+            {disciplinaAtiva}
+          </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+          >
             {turmasFiltradas.map((t, idx) => {
-              const c = coresDe(t.disciplina, coresDisciplinas)
+              const c = coresDe(t.disciplina, coresDisciplinas);
               return (
-                <div key={t.id} style={{ position: 'relative' }}>
-                  <button className='turma-card-pill'
-                    style={{ background: c.bg, color: c.cor, animationDelay: `${idx * 60}ms` }}
-                    onClick={() => abrirTurma(t)}>
-                    <div style={{ textAlign: 'left' }}>
-                      <span style={{ display: 'block', fontWeight: 600, fontSize: 13 }}>{t.nome}</span>
-                      <span style={{ fontSize: 11, opacity: 0.75 }}>{t.periodo}</span>
+                <div key={t.id} style={{ position: "relative" }}>
+                  <button
+                    className="turma-card-pill"
+                    style={{
+                      background: c.bg,
+                      color: c.cor,
+                      animationDelay: `${idx * 60}ms`,
+                    }}
+                    onClick={() => abrirTurma(t)}
+                  >
+                    <div style={{ textAlign: "left" }}>
+                      <span
+                        style={{
+                          display: "block",
+                          fontWeight: 600,
+                          fontSize: 13,
+                        }}
+                      >
+                        {t.nome}
+                      </span>
+                      <span style={{ fontSize: 11, opacity: 0.75 }}>
+                        {t.periodo}
+                      </span>
                     </div>
                     <span style={{ fontSize: 18, fontWeight: 300 }}>›</span>
                   </button>
                   {isCoordenador && (
                     <button
-                      onClick={e => handleDeletarTurma(t, e)}
-                      style={{ position: 'absolute', top: '50%', right: 26, transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.35, transition: 'opacity .15s' }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                      onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}
-                      title='Remover turma'>
+                      onClick={(e) => handleDeletarTurma(t, e)}
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        right: 26,
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        opacity: 0.35,
+                        transition: "opacity .15s",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.opacity = "0.9")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.opacity = "0.35")
+                      }
+                      title="Remover turma"
+                    >
                       <Trash2 size={14} color={c.cor} />
                     </button>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
         </>
@@ -661,76 +1167,131 @@ export default function Turmas({ uid, professor }) {
 
       {/* ── Modal Nova Turma com Autocomplete do Professor ── */}
       {isCoordenador && modalTurma && (
-        <div className='modal-overlay' onClick={() => setModalTurma(false)}>
-          <div className='modal' onClick={e => e.stopPropagation()}>
-            <h3 className='modal-titulo'>Nova turma</h3>
+        <div className="modal-overlay" onClick={() => setModalTurma(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-titulo">Nova turma</h3>
 
-            <div className='perfil-grupo'>
-              <label className='perfil-label'>Nome da turma</label>
-              <input className='perfil-input' value={formTurma.nome} onChange={e => setFormTurma({ ...formTurma, nome: e.target.value })} placeholder='Ex: 1º RH, 2º Eletrônica' autoFocus />
+            <div className="perfil-grupo">
+              <label className="perfil-label">Nome da turma</label>
+              <input
+                className="perfil-input"
+                value={formTurma.nome}
+                onChange={(e) =>
+                  setFormTurma({ ...formTurma, nome: e.target.value })
+                }
+                placeholder="Ex: 1º RH, 2º Eletrônica"
+                autoFocus
+              />
             </div>
 
             <DropdownComPortal
-              label='Disciplina'
+              label="Disciplina"
               opcoes={opcoesDisciplinasTurma}
               valor={formTurma.disciplina}
               onChange={selecionarDisciplinaTurma}
-              id='disciplina-turma'
+              id="disciplina-turma"
               dropdownAberto={dropdownAberto}
               setDropdownAberto={setDropdownAberto}
             />
 
-            <div className='perfil-grupo' style={{ display: 'none' }}>
-              <label className='perfil-label'>Disciplina</label>
-              <input className='perfil-input' value={formTurma.disciplina} onChange={e => setFormTurma({ ...formTurma, disciplina: e.target.value })} placeholder='Ex: Matemática, Física, Química' />
+            <div className="perfil-grupo" style={{ display: "none" }}>
+              <label className="perfil-label">Disciplina</label>
+              <input
+                className="perfil-input"
+                value={formTurma.disciplina}
+                onChange={(e) =>
+                  setFormTurma({ ...formTurma, disciplina: e.target.value })
+                }
+                placeholder="Ex: Matemática, Física, Química"
+              />
             </div>
 
             <DropdownComPortal
-              label='Professor'
+              label="Professor"
               opcoes={opcoesProfessoresTurma}
               valor={formTurma.professorId || formTurma.professor}
               onChange={selecionarProfessorTurma}
-              id='professor-turma'
+              id="professor-turma"
               dropdownAberto={dropdownAberto}
               setDropdownAberto={setDropdownAberto}
             />
 
             {/* Campo Autocomplete de Professor */}
-            <div className='perfil-grupo' style={{ display: 'none', position: 'relative', zIndex: mostrarSugestoes ? 99999 : 'auto' }}>
-              <label className='perfil-label'>Professor</label>
+            <div
+              className="perfil-grupo"
+              style={{
+                display: "none",
+                position: "relative",
+                zIndex: mostrarSugestoes ? 99999 : "auto",
+              }}
+            >
+              <label className="perfil-label">Professor</label>
               <input
-                className='perfil-input'
+                className="perfil-input"
                 value={formTurma.professor}
-                onChange={e => {
-                  setFormTurma({ ...formTurma, professor: e.target.value, professorId: '' })
-                  setMostrarSugestoes(true)
+                onChange={(e) => {
+                  setFormTurma({
+                    ...formTurma,
+                    professor: e.target.value,
+                    professorId: "",
+                  });
+                  setMostrarSugestoes(true);
                 }}
                 onFocus={() => setMostrarSugestoes(true)}
                 onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
-                placeholder='Digite o nome do professor...'
+                placeholder="Digite o nome do professor..."
               />
               {mostrarSugestoes && (
-                <div className='dropdown-menu' style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
-                  maxHeight: '160px', overflowY: 'auto', zIndex: 1300, boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}>
+                <div
+                  className="dropdown-menu"
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    marginTop: "4px",
+                    maxHeight: "160px",
+                    overflowY: "auto",
+                    zIndex: 1300,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                >
                   {professoresFiltrados.length > 0 ? (
-                    professoresFiltrados.map(p => (
+                    professoresFiltrados.map((p) => (
                       <button
                         key={p.id}
-                        type='button'
-                        className='dropdown-item'
+                        type="button"
+                        className="dropdown-item"
                         onClick={() => {
-                          setFormTurma({ ...formTurma, professor: p.nome, professorId: p.id })
-                          setMostrarSugestoes(false)
+                          setFormTurma({
+                            ...formTurma,
+                            professor: p.nome,
+                            professorId: p.id,
+                          });
+                          setMostrarSugestoes(false);
                         }}
-                        style={{ background: 'var(--branco)', color: 'var(--texto)', textAlign: 'left', width: '100%', border: 'none', padding: '10px 12px', cursor: 'pointer' }}
+                        style={{
+                          background: "var(--branco)",
+                          color: "var(--texto)",
+                          textAlign: "left",
+                          width: "100%",
+                          border: "none",
+                          padding: "10px 12px",
+                          cursor: "pointer",
+                        }}
                       >
                         {p.nome}
                       </button>
                     ))
                   ) : (
-                    <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--texto-sec)', background: 'var(--branco)' }}>
+                    <div
+                      style={{
+                        padding: "10px 12px",
+                        fontSize: 12,
+                        color: "var(--texto-sec)",
+                        background: "var(--branco)",
+                      }}
+                    >
                       Nenhum professor encontrado
                     </div>
                   )}
@@ -738,29 +1299,48 @@ export default function Turmas({ uid, professor }) {
               )}
             </div>
 
-            <DropdownCustomizado label='Período' opcoes={PERIODOS} valor={formTurma.periodo} onChange={periodo => setFormTurma({ ...formTurma, periodo })} id='periodo-turma' />
-
-            <DropdownComPortal
-              label='Período'
+            <DropdownCustomizado
+              label="Período"
               opcoes={PERIODOS}
               valor={formTurma.periodo}
-              onChange={periodo => setFormTurma({ ...formTurma, periodo })}
-              id='periodo-turma'
+              onChange={(periodo) => setFormTurma({ ...formTurma, periodo })}
+              id="periodo-turma"
+            />
+
+            <DropdownComPortal
+              label="Período"
+              opcoes={PERIODOS}
+              valor={formTurma.periodo}
+              onChange={(periodo) => setFormTurma({ ...formTurma, periodo })}
+              id="periodo-turma"
               dropdownAberto={dropdownAberto}
               setDropdownAberto={setDropdownAberto}
             />
 
-            {erroTurma && <p style={{ color: '#c0392b', fontSize: 12, margin: '4px 0' }}>{erroTurma}</p>}
+            {erroTurma && (
+              <p style={{ color: "#c0392b", fontSize: 12, margin: "4px 0" }}>
+                {erroTurma}
+              </p>
+            )}
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button className='perfil-salvar' onClick={handleSalvarTurma} disabled={salvando}>
-                {salvando ? 'Salvando...' : 'Salvar turma'}
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button
+                className="perfil-salvar"
+                onClick={handleSalvarTurma}
+                disabled={salvando}
+              >
+                {salvando ? "Salvando..." : "Salvar turma"}
               </button>
-              <button className='btn-cancelar' onClick={() => setModalTurma(false)}>Cancelar</button>
+              <button
+                className="btn-cancelar"
+                onClick={() => setModalTurma(false)}
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -16,6 +16,7 @@ const EsqueciSenha    = lazy(() => import('./esqueci-senha/esqueci-senha'))
 const CadastrarEscola = lazy(() => import('./cadastrar-escola/cadastrar-escola'))
 const Registro        = lazy(() => import('./registro/registro'))
 const PrimeiroAcesso  = lazy(() => import('./primeiro-acesso/primeiro-acesso'))
+const AdminGeral  = lazy(() => import('./admin-geral/admin-geral'))
 
 // Fallback simples enquanto o chunk da rota carrega.
 function Carregando() {
@@ -65,9 +66,12 @@ function AnimatedRoutes() {
           <Route path="/cadastrar-escola" element={<PageTransition><CadastrarEscola /></PageTransition>} />
           <Route path='/registro' element={<PageTransition><Registro /></PageTransition>} />
           <Route path="/primeiro-acesso" element={<PageTransition><PrimeiroAcesso /></PageTransition>} />
+          <Route path="/admin-proshelf" element={<AdminGeral />} />
+
         </Routes>
       </Suspense>
     </AnimatePresence>
+    
   );
 }
 

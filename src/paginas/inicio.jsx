@@ -7,6 +7,7 @@ import Porta from '../assets/Union.png';
 import Mariana from '../assets/mariana.webp';
 import Background from '../assets/background.webp';
 
+const text = "Quero cadastrar a minha escola";
 const text1 = "Já estamos cadastrados";
 
 const container = {
@@ -54,14 +55,48 @@ function Inicio() {
 
         <nav>
           <ul className={styles.ul}>
+            {/* Botão Cadastrar Escola */}
             <motion.li 
               className={styles.menu} // <-- Era id='menu'
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               style={{ cursor: "pointer" }}
             >
+              <Link to="/cadastrar-escola" style={{textDecoration:"none"}}>
+                <motion.span
+                  variants={container}
+                  initial="hidden"
+                  animate="visible"
+                  style={{
+                    textDecoration: "none",
+                    color: "black",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    userSelect:"none",
+                  }}>
+                  {text.split("").map((char, index) => (
+                    <motion.span key={index} variants={letter}>
+                        {char === " " ? "\u00A0" : char}
+                    </motion.span>
+                  ))}
+                </motion.span>
+              </Link>
+
+              <motion.div
+                  initial={{ opacity: 0, x: -10, scale: 0.8 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ duration: 1.0, ease: "easeOut" }}>
+                  <Link to="/cadastrar-escola">
+                    <img src={Porta} className={styles['porta-icone']} alt="Ícone porta" />
+                  </Link>
+              </motion.div>
+              <Link to="/cadastrar-escola" style={{ textDecoration: "none", color: "black" }}>
+                <img src={Porta} className={styles['porta-icone-mobile']} alt="Ícone porta mobile" />
+              </Link>
             </motion.li>
 
+            {/* Botão Já estamos cadastrados */}
             <motion.li 
               className={styles.menu1} // <-- Era id='menu1'
               whileHover={{ scale: 1.05 }}
@@ -93,11 +128,13 @@ function Inicio() {
                   initial={{ opacity: 0, x: -10, scale: 0.8 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   transition={{ duration: 1.0, ease: "easeOut" }}>
-                  <a href='#'><img src={Porta} className={styles['porta-icone']} alt="Ícone porta" /></a>
+                  <Link to="/login">
+                    <img src={Porta} className={styles['porta-icone']} alt="Ícone porta" />
+                  </Link>
               </motion.div>
-              <a href='#' style={{ textDecoration: "none", color: "black" }}>
+              <Link to="/login" style={{ textDecoration: "none", color: "black" }}>
                 <img src={Porta} className={styles['porta-icone-mobile']} alt="Ícone porta mobile" />
-              </a>
+              </Link>
             </motion.li>
           </ul>
         </nav>

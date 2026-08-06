@@ -1077,12 +1077,14 @@ select.perfil-input option:checked {
 /* Linha de cada aula */
 .crono-pill-row {
   display: grid;
-  grid-template-columns: 96px 260px 260px 150px 120px;
+  /* Aumentamos a primeira coluna para 100px para o texto não invadir a próxima */
+  grid-template-columns: 100px 2.2fr 2.2fr 1.3fr 75px;
   align-items: end;
-  column-gap: 18px;
+  column-gap: 12px;
   row-gap: 10px;
-  justify-content: start;
+  width: 100%;
 }
+
 
 /* "Nª aula" — alinhado ao centro verticalmente */
 .crono-pill-ordem {
@@ -1091,9 +1093,8 @@ select.perfil-input option:checked {
   color: #888;
   white-space: nowrap;
   padding-bottom: 10px;
-  padding-right: 8px;
+  padding-right: 4px;
 }
-
 .crono-pill-ordem.vazia {
   visibility: hidden;
 }
@@ -1108,12 +1109,12 @@ select.perfil-input option:checked {
 
 /* Label acima da pílula */
 .crono-pill-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #aaa;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding-left: 14px;
+  letter-spacing: 0.5px;
+  padding-left: 10px;
 }
 
 /* Base compartilhada de todas as pílulas */
@@ -1127,16 +1128,19 @@ select.perfil-input option:checked {
   justify-content: center;
   width: 100%;
   min-height: 42px;
-  padding: 10px 18px;
+  /* Reduzimos um pouco o padding horizontal para títulos longos caberem */
+  padding: 9px 12px; 
   border-radius: 999px;
-  font-size: 0.86rem;
+  /* Reduzimos minimamente a fonte para preservar as palavras em telas de 1024px */
+  font-size: 0.78rem; 
   font-weight: 600;
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: ellipsis; /* Se o texto for gigante, ele aplica os "..." automaticamente */
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
 
 .crono-pill-disc:hover,
 .crono-pill-turma:hover,
@@ -1390,20 +1394,34 @@ select.perfil-input option:checked {
   border-top: 1px solid #e8def3;
 }
 
-.crono-editor-row > input,
-.crono-editor-row > select,
-.crono-editor-row > label,
-.crono-editor-grade-dropdown,
-.crono-editor-stack,
-.crono-editor-remover {
-  border-radius: 0;
-  border: none;
+.crono-editor-row > .crono-celula,
+.crono-editor-row > .crono-editor-remover {
   background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.crono-editor-row > input,
-.crono-editor-row > select {
+.crono-editor-row > .crono-celula > input,
+.crono-editor-row > .crono-celula > label,
+.crono-editor-grade-dropdown,
+.crono-editor-stack {
+  border-radius: 0;
+  border: none;
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+}
+
+.crono-editor-row > .crono-celula > input {
   min-height: 44px;
+  padding: 0 10px;
+}
+
+/* Deixa as labels ocultas no PC (porque já existe o cabeçalho) */
+.crono-celula::before {
+  content: attr(data-label);
+  display: none; 
 }
 
 .crono-editor-grade-dropdown {
@@ -2040,12 +2058,8 @@ select.perfil-input option:checked {
   color: #d9c4ff;
 }
 
-:root.dark-mode .crono-editor-row > input,
-:root.dark-mode .crono-editor-row > select,
-:root.dark-mode .crono-editor-row > label,
-:root.dark-mode .crono-editor-grade-dropdown,
-:root.dark-mode .crono-editor-stack,
-:root.dark-mode .crono-editor-remover {
+:root.dark-mode .crono-editor-row > .crono-celula,
+:root.dark-mode .crono-editor-row > .crono-editor-remover {
   background-color: #1f1a2b;
 }
 
@@ -2208,5 +2222,415 @@ select.perfil-input option:checked {
       "turma"
       "prof"
       "sala";
+  }
+}
+
+/* =======================================================
+   RESPONSIVIDADE: ARQUIVOS & TURMA_ARQUIVOS
+   ======================================================= */
+
+/* --- TELA TABLET (até 900px) --- */
+@media (max-width: 900px) {
+  /* No TurmaArquivos: Quebra o grid central (Arquivos x Solicitações) em 1 coluna */
+  .turma-arquivos-pagina > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}
+
+/* --- TELA CELULAR / MOBILE (até 768px) --- */
+@media (max-width: 768px) {
+  /* Container principal de ambas as telas */
+  .arquivos-container,
+  .turma-arquivos-pagina {
+    padding: 24px 16px !important;
+  }
+  
+  /* --- Tela Arquivos (Listagem de Turmas) --- */
+  /* Reduz fonte do título */
+  .arquivos-container h1 {
+    font-size: 22px !important;
+  }
+  .arquivos-container p {
+    font-size: 13px !important;
+  }
+  
+  /* Botão "+ Nova Turma" */
+  .arquivos-container .btn-upload {
+    width: auto !important;
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Grid de Cards de Turmas */
+  .arquivos-container > div > div[style*="display: grid"] {
+    grid-template-columns: 1fr 1fr !important; /* 2 colunas no tablet/mobile grande */
+    gap: 12px !important;
+  }
+
+  /* --- Tela TurmaArquivos (Dentro da pasta) --- */
+  /* Ajusta o Header */
+  .turma-arquivos-pagina > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+  }
+  .turma-arquivos-pagina button:last-child {
+    width: 100% !important; /* Botão Solicitar Arquivo Ocupa tudo */
+    justify-content: center !important;
+  }
+  .turma-arquivos-pagina h2 {
+    font-size: 18px !important;
+  }
+
+  /* Item da Fila de Solicitações */
+  .solicitacao-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  
+  /* Botões de Aprovar/Recusar na solicitação */
+  .solicitacao-item > div:last-child {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+  .solicitacao-item > div:last-child button {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  /* Modais e formulários */
+  .turma-arquivos-modal {
+    padding: 20px 16px !important;
+  }
+  .turma-arquivos-modal h4 {
+    font-size: 15px !important;
+  }
+  
+  /* Grid do Modal Nova Turma */
+  .modal > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* --- TELA CELULAR PEQUENO (até 480px) --- */
+@media (max-width: 480px) {
+  /* Grid de Cards de Turmas vira 1 coluna */
+  .arquivos-container > div > div[style*="display: grid"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Card de Turma: Layout interno */
+  .arquivos-container > div > div[style*="display: grid"] > div {
+    padding: 14px 14px 12px !important;
+    gap: 14px !important;
+  }
+  
+  /* Reduz fonte de dentro do Card de Turma */
+  .arquivos-container > div > div[style*="display: grid"] > div p {
+    font-size: 15px !important;
+  }
+  .arquivos-container > div > div[style*="display: grid"] > div span {
+    font-size: 16px !important;
+  }
+
+  /* Pílulas e itens do TurmaArquivos */
+  .arquivo-turma-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  /* Bota a lixeira para o canto (caso o coordenador esteja logado) */
+  .arquivo-turma-item button {
+    position: absolute !important;
+    top: 12px;
+    right: 12px;
+  }
+  .arquivo-turma-item {
+    position: relative; /* Para segurar a lixeira */
+  }
+
+  /* Padding geral de container muito pequeno */
+  .arquivos-container,
+  .turma-arquivos-pagina {
+    padding: 16px 12px !important;
+    border-radius: 0 !important; /* Se estiver grudado nas bordas do cel */
+    border: none !important;
+  }
+}
+
+/* =======================================================
+   AJUSTES: BOTÃO VOLTAR E CARD DE ARQUIVO
+   ======================================================= */
+
+/* 1. Força a quebra de linha em nomes de arquivos gigantes */
+.arquivo-turma-item a,
+.arquivo-turma-item div {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+  /* 2. Coloca o botão "Voltar" em cima do título da Turma/Curso */
+  .turma-arquivos-pagina > div:first-child > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 3. Deixa o card do arquivo mais compacto (ícone e texto lado a lado) */
+  .arquivo-turma-item {
+    flex-direction: row !important; /* Desfaz a coluna caso estivesse empilhando */
+    align-items: center !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  /* 4. Reduz a fonte do nome do arquivo e do subtítulo para caber melhor */
+  .arquivo-turma-item a {
+    font-size: 12px !important;
+  }
+  
+  .arquivo-turma-item > div > div:last-child {
+    font-size: 10px !important;
+  }
+}
+
+/* =======================================================
+   CORREÇÃO: EDITOR DE CRONOGRAMAS NO MOBILE (CARDS)
+   Cole isso na última linha do arquivo secoes.css
+   ======================================================= */
+@media (max-width: 900px) {
+  /* 1. Remove o scroll horizontal e o fundo padrão de tabela */
+  .crono-editor-planilha {
+    border: none;
+    background: transparent;
+    overflow-x: visible;
+  }
+
+  /* 2. Esconde o cabeçalho das colunas (Aula, Horário, etc.) */
+  .crono-editor-head {
+    display: none;
+  }
+
+  /* 3. Transforma a linha da tabela (row) num lindo Card */
+  .crono-editor-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas no topo */
+    gap: 12px;
+    min-width: 0 !important; /* Isso mata o bug do scroll horizontal! */
+    background: #fff;
+    padding: 24px 16px 16px;
+    border-radius: 12px;
+    border: 1px solid #e0d6ef;
+    margin-bottom: 16px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(111, 59, 157, 0.05);
+  }
+
+  /* Fundo diferenciado quando a turma for dividida (A/B) */
+  .crono-editor-row.dividida {
+    background: #faf7ff;
+    border: 1px solid #d9cbed;
+  }
+
+  /* 4. Reposicionamento dos Inputs dentro do Card */
+  .crono-editor-row > input[type='number'] { grid-column: 1; }
+  .crono-editor-row > input[type='time'] { grid-column: 2; }
+
+  /* Elementos que ocupam a largura total do card */
+  .crono-editor-row > .crono-editor-grade-dropdown,
+  .crono-editor-row > .crono-editor-toggle,
+  .crono-editor-row > input[type='text'], /* Input de Sala */
+  .crono-editor-stack {
+    grid-column: 1 / -1;
+  }
+
+  /* Dá um destaque na chave "Sim/Não" (Turma A/B) */
+  .crono-editor-row > .crono-editor-toggle {
+    justify-content: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e0d6ef;
+    margin-bottom: 4px;
+  }
+
+  /* Devolve as bordas aos inputs que haviam ficado transparentes na tabela */
+  .crono-editor-row > input,
+  .crono-editor-stack input,
+  .crono-editor-row > .crono-editor-grade-dropdown .dropdown-trigger,
+  .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+    border: 1px solid #e0d6ef !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+  }
+
+  /* Espaçamento interno (Turmas A e B) */
+  .crono-editor-stack {
+    gap: 10px;
+    background: transparent;
+  }
+
+  /* 5. Posiciona o botão de deletar (Lixeira) como um botão flutuante no card */
+  .crono-editor-row > .crono-editor-remover {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff1f0;
+    border: 1px solid #ffccc7;
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15);
+  }
+
+  /* --- Suporte ao Dark Mode nos Cards --- */
+  :root.dark-mode .crono-editor-row {
+    background: #1f1a2b;
+    border-color: #30273d;
+  }
+  :root.dark-mode .crono-editor-row.dividida {
+    background: #251e33;
+    border-color: #3b2f4a;
+  }
+  :root.dark-mode .crono-editor-row > .crono-editor-toggle {
+    border-bottom-color: #3b2f4a;
+  }
+  :root.dark-mode .crono-editor-row > input,
+  :root.dark-mode .crono-editor-stack input,
+  :root.dark-mode .crono-editor-row > .crono-editor-grade-dropdown .dropdown-trigger,
+  :root.dark-mode .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+    border-color: #382d47 !important;
+    background: #171321 !important;
+  }
+  :root.dark-mode .crono-editor-row > .crono-editor-remover {
+    background: #3b1d24;
+    border-color: #5c222b;
+  }
+}
+
+/* =======================================================
+   DESIGN DE CARDS COM LABELS (MOBILE)
+   ======================================================= */
+@media (max-width: 900px) {
+  /* Remove a rolagem horizontal */
+  .crono-editor-planilha {
+    border: none;
+    background: transparent;
+    overflow-x: visible;
+  }
+  
+  /* Esconde o cabeçalho de tabela do PC */
+  .crono-editor-head {
+    display: none;
+  }
+  
+  /* Transforma a linha num Card com Grid 2x2 */
+  .crono-editor-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    min-width: 0 !important;
+    background: #fff;
+    padding: 24px 16px 16px;
+    border-radius: 12px;
+    border: 1px solid #e0d6ef;
+    margin-bottom: 16px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(111, 59, 157, 0.05);
+  }
+  
+  .crono-editor-row.dividida {
+    background: #faf7ff;
+    border: 1px solid #d9cbed;
+  }
+
+  /* Faz a Mágica: Mostra os títulos de cada input (via data-label) */
+  .crono-celula::before {
+    display: block !important;
+    font-size: 11px;
+    font-weight: 700;
+    color: #7a6d86;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Ajusta as células para o card */
+  .crono-editor-row > .crono-celula {
+    background-color: transparent;
+    justify-content: flex-start;
+  }
+
+  /* Posicionamento inteligente no Card */
+  .crono-editor-row > .crono-celula:nth-child(1) { grid-column: 1; } /* Aula (Esquerda Topo) */
+  .crono-editor-row > .crono-celula:nth-child(2) { grid-column: 2; } /* Horário (Direita Topo) */
+  
+  /* Os demais ocupam a largura total do celular */
+  .crono-editor-row > .crono-celula:nth-child(n+3) {
+    grid-column: 1 / -1;
+  }
+
+  /* Estilizando os inputs para voltarem a ter borda arredondada */
+  .crono-editor-row > .crono-celula > input,
+  .crono-editor-stack input,
+  .crono-editor-row .crono-editor-grade-dropdown .dropdown-trigger,
+  .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+    border: 1px solid #e0d6ef !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    min-height: 42px;
+  }
+
+  /* Botãozinho de Sim/Não Turma A/B */
+  .crono-editor-row .crono-editor-toggle {
+    justify-content: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e0d6ef;
+  }
+
+  /* Lixeira vira um botão flutuante para fora do card! */
+  .crono-editor-row > .crono-editor-remover {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff1f0;
+    border: 1px solid #ffccc7;
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* --- Dark Mode Mobile --- */
+  :root.dark-mode .crono-editor-row {
+    background: #1f1a2b;
+    border-color: #30273d;
+  }
+  :root.dark-mode .crono-editor-row.dividida {
+    background: #251e33;
+    border-color: #3b2f4a;
+  }
+  :root.dark-mode .crono-celula::before {
+    color: #a395b3;
+  }
+  :root.dark-mode .crono-editor-row > .crono-celula > input,
+  :root.dark-mode .crono-editor-stack input,
+  :root.dark-mode .crono-editor-row .crono-editor-grade-dropdown .dropdown-trigger,
+  :root.dark-mode .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+    border-color: #382d47 !important;
+    background: #171321 !important;
+  }
+  :root.dark-mode .crono-editor-row .crono-editor-toggle {
+    border-bottom-color: #3b2f4a;
+  }
+  :root.dark-mode .crono-editor-row > .crono-editor-remover {
+    background: #3b1d24;
+    border-color: #5c222b;
   }
 }

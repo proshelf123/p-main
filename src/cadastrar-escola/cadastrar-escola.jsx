@@ -6,6 +6,9 @@ import { Link, useNavigate } from 'react-router';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
+// 1. Importação do seu componente customizado
+import DropdownComPortal from '../secoes/DropwdownComPortal';
+
 const ESTADOS = [
     'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
     'MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN',
@@ -14,6 +17,9 @@ const ESTADOS = [
 
 function CadastroEscola() {
     const navigate = useNavigate();
+
+    // 2. Estado para controlar qual dropdown está aberto
+    const [dropdownAberto, setDropdownAberto] = useState(null);
 
     const [form, setForm] = useState({
         nomeInstituicao: '',
@@ -121,6 +127,27 @@ function CadastroEscola() {
 
     return (
         <div className='pagina-login' onKeyDown={(e) => e.key === 'Enter' && handleCadastro()}>
+            
+            {/* Adicionando as variáveis CSS que o DropdownComPortal utiliza */}
+            <style>{`
+                :root {
+                    --roxo: #6F3B9D;
+                    --branco: #ffffff;
+                    --borda: #cccccc;
+                    --texto: #000000;
+                }
+                .perfil-label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-size: 16px;
+                    font-weight: 400;
+                }
+                @keyframes slideDown {
+                    from { opacity: 0; transform: translateY(-8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
+
             <div className='lado-roxo'>
                 <img src={LogoMetade} className='icone-login' alt="Ícone de login" />
 
@@ -271,29 +298,18 @@ function CadastroEscola() {
                                         onChange={handleChange}
                                     />
                                 </div>
-                                <div className='campo' style={{ width: '50%' }}>
-                                    <label>Estado *</label>
-                                    <select
-                                        name="estado"
-                                        value={form.estado}
-                                        onChange={handleChange}
-                                        style={{
-                                            padding: '16px',
-                                            border: '1px solid #ccc',
-                                            borderRadius: '8px',
-                                            fontSize: '16px',
-                                            outline: 'none',
-                                            width: '100%',
-                                            background: 'white',
-                                            color: form.estado ? '#000' : '#999',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        <option value="">Selecione</option>
-                                        {ESTADOS.map(uf => (
-                                            <option key={uf} value={uf}>{uf}</option>
-                                        ))}
-                                    </select>
+                                
+                                {/* AQUI FOI SUBSTITUÍDO O SELECT PELO DROPDOWN */}
+                                <div style={{ width: '50%'}}>
+                                    <DropdownComPortal 
+                                        label="Estado *"
+                                        id="estado"
+                                        opcoes={ESTADOS}
+                                        valor={form.estado}
+                                        onChange={(valor) => setForm(prev => ({ ...prev, estado: valor }))}
+                                        dropdownAberto={dropdownAberto}
+                                        setDropdownAberto={setDropdownAberto}
+                                    />
                                 </div>
                             </div>
 
