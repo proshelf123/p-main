@@ -2231,7 +2231,6 @@ select.perfil-input option:checked {
 
 /* --- TELA TABLET (até 900px) --- */
 @media (max-width: 900px) {
-  /* No TurmaArquivos: Quebra o grid central (Arquivos x Solicitações) em 1 coluna */
   .turma-arquivos-pagina > div:nth-child(2) {
     grid-template-columns: 1fr !important;
     gap: 32px !important;
@@ -2240,57 +2239,42 @@ select.perfil-input option:checked {
 
 /* --- TELA CELULAR / MOBILE (até 768px) --- */
 @media (max-width: 768px) {
-  /* Container principal de ambas as telas */
   .arquivos-container,
   .turma-arquivos-pagina {
     padding: 24px 16px !important;
   }
   
-  /* --- Tela Arquivos (Listagem de Turmas) --- */
-  /* Reduz fonte do título */
-  .arquivos-container h1 {
-    font-size: 22px !important;
-  }
-  .arquivos-container p {
-    font-size: 13px !important;
-  }
+  .arquivos-container h1 { font-size: 22px !important; }
+  .arquivos-container p { font-size: 13px !important; }
   
-  /* Botão "+ Nova Turma" */
   .arquivos-container .btn-upload {
     width: auto !important;
     padding: 8px 14px !important;
     font-size: 12px !important;
   }
 
-  /* Grid de Cards de Turmas */
   .arquivos-container > div > div[style*="display: grid"] {
-    grid-template-columns: 1fr 1fr !important; /* 2 colunas no tablet/mobile grande */
+    grid-template-columns: 1fr 1fr !important;
     gap: 12px !important;
   }
 
-  /* --- Tela TurmaArquivos (Dentro da pasta) --- */
-  /* Ajusta o Header */
   .turma-arquivos-pagina > div:first-child {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 16px !important;
   }
   .turma-arquivos-pagina button:last-child {
-    width: 100% !important; /* Botão Solicitar Arquivo Ocupa tudo */
+    width: 100% !important;
     justify-content: center !important;
   }
-  .turma-arquivos-pagina h2 {
-    font-size: 18px !important;
-  }
+  .turma-arquivos-pagina h2 { font-size: 18px !important; }
 
-  /* Item da Fila de Solicitações */
   .solicitacao-item {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
   }
   
-  /* Botões de Aprovar/Recusar na solicitação */
   .solicitacao-item > div:last-child {
     width: 100% !important;
     justify-content: flex-start !important;
@@ -2300,15 +2284,9 @@ select.perfil-input option:checked {
     justify-content: center !important;
   }
 
-  /* Modais e formulários */
-  .turma-arquivos-modal {
-    padding: 20px 16px !important;
-  }
-  .turma-arquivos-modal h4 {
-    font-size: 15px !important;
-  }
+  .turma-arquivos-modal { padding: 20px 16px !important; }
+  .turma-arquivos-modal h4 { font-size: 15px !important; }
   
-  /* Grid do Modal Nova Turma */
   .modal > div[style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
@@ -2316,55 +2294,29 @@ select.perfil-input option:checked {
 
 /* --- TELA CELULAR PEQUENO (até 480px) --- */
 @media (max-width: 480px) {
-  /* Grid de Cards de Turmas vira 1 coluna */
   .arquivos-container > div > div[style*="display: grid"] {
     grid-template-columns: 1fr !important;
   }
   
-  /* Card de Turma: Layout interno */
   .arquivos-container > div > div[style*="display: grid"] > div {
     padding: 14px 14px 12px !important;
     gap: 14px !important;
   }
   
-  /* Reduz fonte de dentro do Card de Turma */
-  .arquivos-container > div > div[style*="display: grid"] > div p {
-    font-size: 15px !important;
-  }
-  .arquivos-container > div > div[style*="display: grid"] > div span {
-    font-size: 16px !important;
-  }
+  .arquivos-container > div > div[style*="display: grid"] > div p { font-size: 15px !important; }
+  .arquivos-container > div > div[style*="display: grid"] > div span { font-size: 16px !important; }
 
-  /* Pílulas e itens do TurmaArquivos */
-  .arquivo-turma-item {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 10px !important;
-  }
-  /* Bota a lixeira para o canto (caso o coordenador esteja logado) */
-  .arquivo-turma-item button {
-    position: absolute !important;
-    top: 12px;
-    right: 12px;
-  }
-  .arquivo-turma-item {
-    position: relative; /* Para segurar a lixeira */
-  }
-
-  /* Padding geral de container muito pequeno */
   .arquivos-container,
   .turma-arquivos-pagina {
     padding: 16px 12px !important;
-    border-radius: 0 !important; /* Se estiver grudado nas bordas do cel */
+    border-radius: 0 !important;
     border: none !important;
   }
 }
 
 /* =======================================================
-   AJUSTES: BOTÃO VOLTAR E CARD DE ARQUIVO
+   AJUSTES: BOTÃO VOLTAR E QUEBRA DE TEXTO
    ======================================================= */
-
-/* 1. Força a quebra de linha em nomes de arquivos gigantes */
 .arquivo-turma-item a,
 .arquivo-turma-item div {
   word-break: break-word;
@@ -2372,30 +2324,10 @@ select.perfil-input option:checked {
 }
 
 @media (max-width: 768px) {
-  /* 2. Coloca o botão "Voltar" em cima do título da Turma/Curso */
   .turma-arquivos-pagina > div:first-child > div:first-child {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 8px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  /* 3. Deixa o card do arquivo mais compacto (ícone e texto lado a lado) */
-  .arquivo-turma-item {
-    flex-direction: row !important; /* Desfaz a coluna caso estivesse empilhando */
-    align-items: center !important;
-    padding: 10px 12px !important;
-    gap: 10px !important;
-  }
-
-  /* 4. Reduz a fonte do nome do arquivo e do subtítulo para caber melhor */
-  .arquivo-turma-item a {
-    font-size: 12px !important;
-  }
-  
-  .arquivo-turma-item > div > div:last-child {
-    font-size: 10px !important;
   }
 }
 

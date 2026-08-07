@@ -135,7 +135,7 @@ body {
     border-radius: 50%;
     position: absolute;
     left: 550px;
-    top: 70px;
+    top: 100px;
     box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
 }
 
@@ -146,7 +146,7 @@ body {
     border-radius: 50%;
     position: absolute;
     left: 150px;
-    top: 230px;
+    top: 340px;
     box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
 }
 
@@ -203,7 +203,7 @@ body {
     font-size: 40px;
     font-weight: bolder;
     text-decoration: none;
-    margin-right: 35px;
+    margin-right: 160px;
 }
 
 .inteligente {
