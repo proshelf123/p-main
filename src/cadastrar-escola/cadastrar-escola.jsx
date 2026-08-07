@@ -8,6 +8,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // 1. Importação do seu componente customizado
 import DropdownComPortal from '../secoes/DropwdownComPortal';
+import emailjs from '@emailjs/browser';
 
 const ESTADOS = [
     'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
@@ -104,21 +105,42 @@ function CadastroEscola() {
         return true;
     };
 
-    const handleCadastro = async (e) => {
+const handleCadastro = async (e) => {
         e?.preventDefault();
         setStatus({ tipo: '', mensagem: '' });
         if (!validar()) return;
 
         setCarregando(true);
         try {
+            // Salva no Firebase primeiro
             await addDoc(collection(db, 'escolas'), {
                 ...form,
                 criadoEm: serverTimestamp(),
                 status: 'pendente',
             });
+
+            // 2. Configura os parâmetros que serão enviados para o template do EmailJS
+            // As chaves do objeto devem bater com as variáveis {{variavel}} criadas no seu template
+            const templateParams = {
+                to_name: form.responsavel,
+                to_email: form.email,
+                nome_escola: form.nomeInstituicao,
+                // Adicione outras variáveis aqui se precisar (ex: telefone, cnpj)
+            };
+
+            // 3. Dispara o e-mail
+            // Substitua as strings abaixo pelas suas credenciais do EmailJS
+            await emailjs.send(
+                'proshelf',     // Ex: 'service_xyz123'
+                'template_zqo10yi',    // Ex: 'template_abc456'
+                templateParams,
+                'e1dAcW59wam10IXZC'      // Ex: 'AbC_DeFgHiJkLmNo'
+            );
+
+            // Se tudo der certo, exibe a tela de sucesso
             setSucesso(true);
         } catch (error) {
-            console.error(error);
+            console.error('Erro no cadastro ou envio de e-mail:', error);
             setStatus({ tipo: 'erro', mensagem: 'Erro ao cadastrar. Tente novamente.' });
         } finally {
             setCarregando(false);

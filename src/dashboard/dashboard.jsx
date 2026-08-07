@@ -33,7 +33,7 @@ import Calendario from '../secoes/Calendario'
 import Configuracoes from '../secoes/config'
 import Perfil from '../perfil/Perfil'
 import NotificationBell from '../notificacoes/notificacoes.jsx'
-import IconePerfil from '../assets/Frame 4.png'
+import IconePerfil from '../assets/Group 48.png'
 import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
 import NotificationToast from '../notificacoes/notificacaoToast.jsx'
 import useNotificacoes from "../notificacoes/useNotificacoes"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase'; 
-import { collection, getDocs, query, where, doc, updateDoc, setDoc } from 'firebase/firestore';
+// IMPORTAÇÃO NOVA: Adicionado o deleteDoc
+import { collection, getDocs, query, where, doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
@@ -85,8 +86,7 @@ export default function AdminProShelf() {
     }
   };
 
-  // Aprovar Escola e Criar Credenciais do Coordenador
- // Aprovar Escola, Criar Credenciais e Enviar E-mail
+  // Aprovar Escola, Criar Credenciais e Enviar E-mail
   const handleAprovar = async (escola) => {
     if (!window.confirm(`Tem certeza que deseja aprovar a escola "${escola.nomeInstituicao}"?`)) return;
 
@@ -123,10 +123,10 @@ export default function AdminProShelf() {
       };
 
       await emailjs.send(
-        'SEU_SERVICE_ID',   // Substitua pelo seu Service ID do EmailJS
-        'SEU_TEMPLATE_ID',  // Substitua pelo seu Template ID do EmailJS
+        'proshelf',  
+        'template_58tlpjq',  
         templateParams, 
-        'SUA_PUBLIC_KEY'    // Substitua pela sua Public Key do EmailJS
+        'e1dAcW59wam10IXZC'   
       );
 
       alert(`Escola aprovada com sucesso e e-mail enviado para ${escola.email}!`);
@@ -139,7 +139,29 @@ export default function AdminProShelf() {
       setProcessandoId(null);
     }
   };
-  
+
+  // NOVA FUNÇÃO: Reprovar (Excluir) Escola
+  const handleReprovar = async (escola) => {
+    if (!window.confirm(`Tem certeza que deseja reprovar e excluir a solicitação da escola "${escola.nomeInstituicao}"? Esta ação não pode ser desfeita.`)) return;
+
+    setProcessandoId(escola.id);
+    try {
+      // 1. Exclui o documento da escola do Firestore
+      const escolaRef = doc(db, "escolas", escola.id);
+      await deleteDoc(escolaRef);
+
+      alert(`Solicitação da escola "${escola.nomeInstituicao}" foi reprovada e excluída com sucesso!`);
+
+      // 2. Remove da lista na tela
+      setEscolasPendentes(prev => prev.filter(e => e.id !== escola.id));
+    } catch (error) {
+      console.error("Erro ao reprovar escola:", error);
+      alert("Erro ao reprovar escola: " + error.message);
+    } finally {
+      setProcessandoId(null);
+    }
+  };
+
   // Se o admin NÃO estiver logado, exibe a tela de login restrita
   if (!usuario) {
     return (
@@ -274,22 +296,41 @@ export default function AdminProShelf() {
                 <p style={{ margin: '4px 0', fontSize: '14px', color: '#555' }}><strong>Local:</strong> {escola.cidade} - {escola.estado}</p>
               </div>
 
-              <button
-                onClick={() => handleAprovar(escola)}
-                disabled={processandoId === escola.id}
-                style={{
-                  backgroundColor: processandoId === escola.id ? '#ccc' : '#6F3B9D',
-                  color: 'white',
-                  border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: processandoId === escola.id ? 'not-allowed' : 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {processandoId === escola.id ? 'A aprovar...' : 'Aprovar Escola'}
-              </button>
+              {/* Botões lado a lado */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => handleReprovar(escola)}
+                  disabled={processandoId === escola.id}
+                  style={{
+                    backgroundColor: processandoId === escola.id ? '#ccc' : '#e53935',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: processandoId === escola.id ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Reprovar
+                </button>
+                <button
+                  onClick={() => handleAprovar(escola)}
+                  disabled={processandoId === escola.id}
+                  style={{
+                    backgroundColor: processandoId === escola.id ? '#ccc' : '#6F3B9D',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: processandoId === escola.id ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {processandoId === escola.id ? 'A processar...' : 'Aprovar Escola'}
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -40,7 +40,7 @@ main, .pagina-conteudo {
 
 .cores-disc-kicker {
   display: block;
-  color: #BA7517;
+  color: #F38100;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -121,7 +121,7 @@ main, .pagina-conteudo {
   align-items: center;
   justify-content: center;
   background: #FAEEDA;
-  color: #BA7517;
+  color: #F38100;
   flex-shrink: 0;
 }
 
