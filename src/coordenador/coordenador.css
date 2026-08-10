@@ -3,9 +3,7 @@
 
 
 .upload-container {
-  background: var(--branco, #fff);
   border-radius: 12px;
-  border: 0.5px solid var(--borda, #e8e4f0);
   padding: 28px 28px 24px;
   max-width: 520px;
   margin: 0 auto;
@@ -92,11 +90,8 @@ main, .pagina-conteudo {
 }
 
 .cores-disc-card {
-  background: var(--branco);
-  border: 1px solid var(--borda);
   border-radius: 12px;
   padding: 22px;
-  box-shadow: 0 2px 16px rgba(111, 59, 157, 0.06);
 }
 
 .cores-disc-card-header {
@@ -311,7 +306,6 @@ main, .pagina-conteudo {
   grid-template-columns: minmax(210px, 0.72fr) minmax(440px, 1fr);
   gap: 14px;
   align-items: center;
-  border: 1px solid var(--borda);
   border-radius: 10px;
   padding: 12px;
 }

@@ -164,7 +164,7 @@ export default function Arquivos({ uid, professor }) {
   }
 
   return (
-    <div className='arquivos-container' style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px 40px' }}>
+    <div className='arquivos-container' style={{ minHeight: '50vh', background: 'var(--bg)', padding: '12px 10px' }}>
 
       {confirmarDelete && (
         <ModalConfirmar
@@ -183,14 +183,31 @@ export default function Arquivos({ uid, professor }) {
         transition={{ duration: 0.4 }}
         style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}
       >
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--texto)', marginBottom: 4 }}>
-            Arquivos
-          </h1>
-          <p style={{ color: 'var(--texto-sec)', fontSize: 14, margin: 0 }}>
-            Selecione uma turma para acessar ou solicitar arquivos
-          </p>
+        {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+        <div 
+          style={{ 
+            width: "100%", /* <-- ESSA LINHA FORÇA O TRAÇO A IR DE PONTA A PONTA */
+            marginBottom: "32px", 
+            paddingBottom: "24px", 
+            borderBottom: "1px solid var(--borda)" 
+          }}
+        >
+          {/* A linha roxa agora fica isolada aqui, acompanhando apenas a altura do texto */}
+          <div 
+            style={{ 
+              paddingLeft: "15px",
+              borderLeft: "3px solid var(--roxo)" 
+            }}
+          >
+            <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+              Arquivos
+            </h2>
+            <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+              Selecione uma turma para acessar ou solicitar arquivos
+            </p>
+          </div>
         </div>
+        {/* --- FIM DO HEADER --- */}
       </MotionDiv>
 
       {carregando ? (

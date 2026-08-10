@@ -924,21 +924,33 @@ export default function Cronogramas({
   }
 
   return (
-    <div className='crono-card'>
+    <div>
       <div className='crono-topo'>
-        <div>
-          <h2 className='crono-titulo'>Cronogramas</h2>
-          {cursoSelecionado && (
-            <p className='crono-subtitulo'>{cursoSelecionado.titulo}</p>
-          )}
+        {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+        <div 
+          style={{ 
+            width: "100%", /* <-- ESSA LINHA FORÇA O TRAÇO A IR DE PONTA A PONTA */
+            marginBottom: "32px", 
+            paddingBottom: "24px", 
+            borderBottom: "1px solid var(--borda)" 
+          }}
+        >
+          {/* A linha roxa agora fica isolada aqui, acompanhando apenas a altura do texto */}
+          <div 
+            style={{ 
+              paddingLeft: "15px",
+              borderLeft: "3px solid var(--roxo)" 
+            }}
+          >
+            <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+              Cronogramas
+            </h2>
+            <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+              Crie, edite e veja seus cronogramas
+            </p>
+          </div>
         </div>
-
-        {cursoSelecionado && (
-          <button className='crono-voltar-btn' onClick={voltarParaCursos}>
-            <ArrowLeft size={16} />
-            Cursos
-          </button>
-        )}
+        {/* --- FIM DO HEADER --- */}
       </div>
 
       {isCoordenador && (

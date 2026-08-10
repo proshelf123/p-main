@@ -11,7 +11,7 @@ import {
   escutarProfessoresDisciplinas,
 } from "../firebase/estrutura";
 import "./secoes.css";
-import { Trash2, AlertTriangle, X } from "lucide-react";
+import { Trash2, AlertTriangle, X, Users } from "lucide-react";
 import CustomDatePicker from "./dropdown-calendario";
 import {
   criarNotificacao,
@@ -110,7 +110,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
         </h3>
         <p
           style={{
-            fontSize: 13,
+            fontSize: 15,
             color: "var(--texto-sec)",
             margin: "0 0 6px",
             textAlign: "center",
@@ -143,7 +143,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
             }}
           />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: c.cor }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: c.cor }}>
               {turma?.nome}
             </div>
             <div style={{ fontSize: 11, color: c.cor, opacity: 0.7 }}>
@@ -173,7 +173,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
               borderRadius: 10,
               border: "1px solid var(--borda)",
               background: "var(--branco)",
-              fontSize: 13,
+              fontSize: 15,
               fontFamily: "'Poppins', sans-serif",
               color: "var(--texto)",
               cursor: "pointer",
@@ -198,7 +198,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
               borderRadius: 10,
               border: "none",
               background: "#ED235C",
-              fontSize: 13,
+              fontSize: 15,
               fontFamily: "'Poppins', sans-serif",
               fontWeight: 600,
               color: "#fff",
@@ -602,26 +602,30 @@ export default function Turmas({ uid, professor }) {
               >
                 ← Voltar
               </button>
-              <div className="registro-info">
-                <div
-                  style={{ fontSize: 16, color: "var(--texto)", fontWeight: 600 }}
-                >
-                  {turmaAberta.disciplina}
+              <div 
+                className="registro-info"
+                style={{
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: "4px"
+                }}
+              >
+                {/* Linha 1: Disciplina e Professor */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 16, color: "var(--texto)", fontWeight: 600 }}>
+                    {turmaAberta.disciplina}
+                  </div>
+                  {turmaAberta.professor && (
+                    <div style={{ fontSize: 12, color: "var(--roxo)", fontWeight: 500 }}>
+                      Prof(a): {turmaAberta.professor}
+                    </div>
+                  )}
                 </div>
-                <div style={{ fontSize: 15, color: "var(--texto-sec)" }}>
+                
+                {/* Linha 2: Apenas o texto cinza (Nome da turma) */}
+                <div style={{ fontSize: 15, color: "var(--texto-sec)", wordBreak: "break-word" }}>
                   {turmaAberta.nome}
                 </div>
-                {turmaAberta.professor && (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--roxo)",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Prof(a): {turmaAberta.professor}
-                  </div>
-                )}
               </div>
             </div>
             {/* A legenda foi movida para a caixa inferior */}
@@ -636,7 +640,7 @@ export default function Turmas({ uid, professor }) {
           {/* Lista de registros */}
           {registros.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
-              <p style={{ fontSize: 13, color: "var(--texto-sec)" }}>
+              <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>
                 Nenhum registro ainda.
               </p>
             </div>
@@ -655,7 +659,7 @@ export default function Turmas({ uid, professor }) {
                       cursor: "pointer" // <-- Feedback visual de que é clicável
                     }}
                   >
-                    <span style={{ color: tipo.cor, fontSize: 13, flex: 1 }}>
+                    <span style={{ color: tipo.cor, fontSize: 15, flex: 1 }}>
                       Aula do dia {r.data.split("-").reverse().join("/")} —{" "}
                       {r.conteudo}
                     </span>
@@ -793,7 +797,7 @@ export default function Turmas({ uid, professor }) {
 
               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
-                  <h4 style={{ fontSize: 13, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  <h4 style={{ fontSize: 15, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
                     Descrição do Conteúdo
                   </h4>
                   <div style={{ fontSize: 14, color: "var(--texto)", lineHeight: 1.5, background: "var(--bg)", padding: 12, borderRadius: 8, border: "1px solid var(--borda)", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
@@ -802,7 +806,7 @@ export default function Turmas({ uid, professor }) {
                 </div>
 
                 <div>
-                  <h4 style={{ fontSize: 13, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  <h4 style={{ fontSize: 15, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
                     Informações Adicionais
                   </h4>
                   <div style={{ fontSize: 14, color: "var(--texto)", lineHeight: 1.5, background: "var(--bg)", padding: 12, borderRadius: 8, border: "1px solid var(--borda)", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
@@ -1028,22 +1032,31 @@ export default function Turmas({ uid, professor }) {
   //  TELA: lista de turmas
   // ══════════════════════════════════════
   return (
-    <div className="card">
-      <div style={{ marginBottom: 20 }}>
-        <h2
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: "var(--texto)",
-            margin: "0 0 4px",
+<div style={{ padding: "10px 0" }}>
+{/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+      <div 
+        style={{ 
+          marginBottom: "32px", 
+          paddingBottom: "24px", /* O espaço que empurra a linha cinza para baixo */
+          borderBottom: "1px solid var(--borda)" /* A linha horizontal cinza */
+        }}
+      >
+        {/* A linha roxa agora fica isolada aqui, acompanhando apenas a altura do texto */}
+        <div 
+          style={{ 
+            paddingLeft: "14px",
+            borderLeft: "3px solid var(--roxo)" 
           }}
         >
-          Turmas
-        </h2>
-        <p style={{ fontSize: 14, color: "var(--texto-sec)", margin: 0 }}>
-          Disciplinas ministradas
-        </p>
+          <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+            Turmas
+          </h2>
+          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+            Disciplinas e turmas ministradas
+          </p>
+        </div>
       </div>
+      {/* --- FIM DO HEADER --- */}
 
       {erroTurma && (
         <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>
@@ -1059,7 +1072,7 @@ export default function Turmas({ uid, professor }) {
         </>
       ) : (
         <>
-          <div className="turma-tabs" style={{ marginBottom: 20 }}>
+          <div className="turma-tabs" style={{ marginBottom: 40 }}>
             {disciplinas.map((d) => {
               const c = coresDe(d, coresDisciplinas);
               const ativa = disciplinaAtiva === d;
@@ -1083,54 +1096,58 @@ export default function Turmas({ uid, professor }) {
 
           <p
             style={{
-              fontSize: 15,
+              fontSize: 20,
               fontWeight: 600,
-              color: "var(--texto)",
               margin: "0 0 12px",
             }}
           >
             {disciplinaAtiva}
           </p>
 
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
-          >
+<div className="turmas-grid">
             {turmasFiltradas.map((t, idx) => {
               const c = coresDe(t.disciplina, coresDisciplinas);
               return (
                 <div key={t.id} style={{ position: "relative" }}>
-                  <button
+<button
                     className="turma-card-pill"
                     style={{
                       background: c.bg,
                       color: c.cor,
                       animationDelay: `${idx * 60}ms`,
+                      maxWidth: "100%", /* Bloqueia o crescimento infinito */
+                      boxSizing: "border-box"
                     }}
+
                     onClick={() => abrirTurma(t)}
                   >
-                    <div style={{ textAlign: "left" }}>
+                    {/* flex: 1 e minWidth: 0 avisam que essa caixa PODE encolher */}
+                    <div style={{ textAlign: "left", flex: 1, minWidth: 0, paddingRight: 32 }}>
                       <span
                         style={{
                           display: "block",
                           fontWeight: 600,
-                          fontSize: 13,
+                          fontSize: 15,
+                          whiteSpace: "normal", 
+                          wordBreak: "break-all", /* Corta a palavra gigante no meio */
                         }}
                       >
                         {t.nome}
                       </span>
-                      <span style={{ fontSize: 11, opacity: 0.75 }}>
+                      <span style={{ display: "block", fontSize: 14, opacity: 0.75 }}>
                         {t.periodo}
                       </span>
                     </div>
-                    <span style={{ fontSize: 18, fontWeight: 300 }}>›</span>
+                    {/* flexShrink: 0 impede a setinha de ser esmagada */}
+                    <span style={{ fontSize: 18, fontWeight: 300, flexShrink: 0, marginRight: 10, }}>›</span>
                   </button>
                   {isCoordenador && (
                     <button
                       onClick={(e) => handleDeletarTurma(t, e)}
                       style={{
                         position: "absolute",
-                        top: "50%",
-                        right: 26,
+                        top: "53%",
+                        right: 37,
                         transform: "translateY(-50%)",
                         background: "none",
                         border: "none",

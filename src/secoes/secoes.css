@@ -1920,14 +1920,15 @@ select.perfil-input option:checked {
     text-align: left;
   }
 
-  .turma-tabs {
-    overflow-x: auto;
-    flex-wrap: nowrap;
+.turma-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
     padding-bottom: 4px;
+    gap: 10px; /* Isso devolve o espaçamento bonito entre os botões */
   }
 
   .turma-tab-pill {
-    flex-shrink: 0;
+    flex-shrink: 1;
   }
 
   .modal-overlay {
@@ -2564,5 +2565,42 @@ select.perfil-input option:checked {
   :root.dark-mode .crono-editor-row > .crono-editor-remover {
     background: #3b1d24;
     border-color: #5c222b;
+  }
+}
+
+/* ── Grade de cartões de turmas ── */
+.turmas-grid {
+  display: grid;
+  /* O pulo do gato: minmax(0, 1fr) proíbe a grade de estourar 100% da tela */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* Blindando o botão para não esticar */
+.turma-card-pill {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* O container do texto precisa conseguir encolher (min-width: 0) */
+.turma-card-pill > div {
+  min-width: 0;
+  flex: 1;
+  padding-right: 12px;
+}
+
+/* Quebra palavras monstruosas (sem espaço) em qualquer caractere */
+.turma-card-pill span {
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  margin-left: 15px;
+}
+
+/* ── Responsividade: 1 coluna no celular ── */
+@media (max-width: 768px) {
+  .turmas-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -174,9 +174,9 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
         }
       `}</style>
 
-      {/* Header Interno */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+{/* Header Interno */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
           {handleVoltar && (
             <button
               className="btn-voltar"

@@ -187,7 +187,7 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
         </div>
       </section>
 
-      <section className='cores-disc-card'>
+      <section className='cores-disc-card-2'>
         <div className='cores-disc-add'>
           <div className='cores-disc-input-wrap'>
             <label>Adicionar disciplina</label>
