@@ -11,15 +11,11 @@ import './coordenador.css'
 import { Trash2, TriangleAlert, CircleCheckBig, AlertTriangle } from 'lucide-react'
 import { criarNotificacao } from '../notificacoes/notificacoes'
 
-const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
+const FORM_INICIAL = { nome: '', email: '', senha: ''}
 const FUNCTIONS_HTTP_BASE = 'https://us-central1-proshelf-8ecfd.cloudfunctions.net'
 
 function normalizarEmail(email) {
   return String(email || '').trim().toLowerCase()
-}
-
-function normalizarNomePDF(nomePDF) {
-  return String(nomePDF || '').trim().toUpperCase()
 }
 
 function mensagemErro(error, fallback) {
@@ -38,7 +34,7 @@ function mensagemErro(error, fallback) {
 }
 
 function obterNomeProfessor(professor) {
-  return professor?.nomePDF || professor?.nome || professor?.email || 'Professor'
+  return professor?.nome || professor?.email || 'Professor'
 }
 
 async function chamarFuncaoHttp(nomeFuncao, dados) {
@@ -212,11 +208,6 @@ export default function CadastroProfessores() {
     setErro('')
   }
 
-  function handleNomePDFChange(e) {
-    const nomePDF = normalizarNomePDF(e.target.value)
-    setForm((formAtual) => ({ ...formAtual, nomePDF }))
-    setErro('')
-  }
 
   async function garantirPerfilNoFirestore(uid, dados) {
     try {
@@ -224,7 +215,6 @@ export default function CadastroProfessores() {
         nome: dados.nome,
         email: dados.email,
         role: 'professor',
-        nomePDF: dados.nomePDF,
         criadoEm: serverTimestamp(),
       }, { merge: true })
     } catch (err) {
@@ -258,10 +248,9 @@ export default function CadastroProfessores() {
       nome: form.nome.trim(),
       email: normalizarEmail(form.email),
       senha: form.senha,
-      nomePDF: normalizarNomePDF(form.nomePDF),
     }
 
-    if (!dados.nome || !dados.email || !dados.senha || !dados.nomePDF) {
+    if (!dados.nome || !dados.email || !dados.senh) {
       setErro('Preencha todos os campos.'); return
     }
     if (!dados.email.includes('@')) {
@@ -365,8 +354,7 @@ export default function CadastroProfessores() {
             Cadastro de Professores
           </h2>
           <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
-            Cadastre o professor criando a conta de acesso e vinculando ao nome
-            que aparece no PDF do horário. O coordenador não é deslogado!
+            Cadastre o professor criando a conta de acesso. O coordenador não é deslogado!
           </p>
         </div>
       </div>
@@ -407,19 +395,6 @@ export default function CadastroProfessores() {
           </div>
           <span style={{ fontSize: 11, color: 'var(--texto-sec)', marginTop: 3 }}>
             O professor pode trocar a senha depois em Configurações
-          </span>
-        </div>
-
-        <div className='perfil-grupo'>
-          <label className='perfil-label'>Nome no PDF do horário (MAIÚSCULAS)</label>
-          <input
-            className='perfil-input' name='nomePDF' value={form.nomePDF}
-            onChange={handleNomePDFChange}
-            placeholder='Ex: GETULIO, MARIA JOSÉ, ADILSON'
-            style={{ textTransform: 'uppercase' }}
-          />
-          <span style={{ fontSize: 11, color: 'var(--texto-sec)', marginTop: 3 }}>
-            Copie o nome exatamente como aparece no PDF do horário
           </span>
         </div>
 
@@ -473,7 +448,7 @@ export default function CadastroProfessores() {
                 {nome.charAt(0).toUpperCase() || '?'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--texto)' }}>{professor.nomePDF || professor.nome}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--texto)' }}>{professor.nome}</div>
                 <div style={{ fontSize: 11, color: 'var(--texto-sec)' }}>{professor.email}</div>
               </div>
               <button

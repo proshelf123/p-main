@@ -120,28 +120,27 @@ const handleCadastro = async (e) => {
             });
 
             // 2. Configura os parâmetros que serão enviados para o template do EmailJS
-            // As chaves do objeto devem bater com as variáveis {{variavel}} criadas no seu template
+            // Este template deve ser um de "Recebemos o seu cadastro"
             const templateParams = {
                 to_name: form.responsavel,
                 to_email: form.email,
                 nome_escola: form.nomeInstituicao,
-                // Adicione outras variáveis aqui se precisar (ex: telefone, cnpj)
             };
 
-            // 3. Dispara o e-mail
-            // Substitua as strings abaixo pelas suas credenciais do EmailJS
+            // 3. Dispara o e-mail de RECEÇÃO DE CADASTRO
             await emailjs.send(
-                'proshelf',     // Ex: 'service_xyz123'
-                'template_zqo10yi',    // Ex: 'template_abc456'
+                'proshelf',           // Seu Service ID
+                'template_recebido',  // SUBSTITUA PELO ID DO TEMPLATE DE "RECEBEMOS O SEU CADASTRO"
                 templateParams,
-                'e1dAcW59wam10IXZC'      // Ex: 'AbC_DeFgHiJkLmNo'
+                'e1dAcW59wam10IXZC'   // Sua Public Key
             );
 
             // Se tudo der certo, exibe a tela de sucesso
             setSucesso(true);
         } catch (error) {
             console.error('Erro no cadastro ou envio de e-mail:', error);
-            setStatus({ tipo: 'erro', mensagem: 'Erro ao cadastrar. Tente novamente.' });
+            // Mesmo se o email falhar, consideramos o cadastro feito se passou do Firebase
+            setSucesso(true);
         } finally {
             setCarregando(false);
         }

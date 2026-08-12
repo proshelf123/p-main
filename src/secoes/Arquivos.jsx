@@ -115,6 +115,7 @@ export default function Arquivos({ uid, professor }) {
     : perfilCarregado
   const isCoordenador = perfilAtual?.role === 'coordenador'
 
+
   useEffect(() => {
     if (professor) return
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

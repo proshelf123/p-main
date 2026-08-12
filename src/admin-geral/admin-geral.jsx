@@ -23,6 +23,16 @@ const firebaseConfig = {
   appId: "1:814026747108:web:efe59342c77f8c020990f1"
 };
 
+// Função para gerar uma senha aleatória de 8 caracteres
+const gerarSenhaAleatoria = (tamanho = 8) => {
+  const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let senha = '';
+  for (let i = 0; i < tamanho; i++) {
+    senha += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+  }
+  return senha;
+};
+
 export default function AdminProShelf() {
   const [usuario, setUsuario] = useState(null);
   const [emailLogin, setEmailLogin] = useState('');
@@ -86,25 +96,22 @@ export default function AdminProShelf() {
     }
   };
 
-  // Aprovar Escola, Criar Credenciais e Enviar E-mail
-  const handleAprovar = async (escola) => {
+const handleAprovar = async (escola) => {
     if (!window.confirm(`Tem certeza que deseja aprovar a escola "${escola.nomeInstituicao}"?`)) return;
 
     setProcessandoId(escola.id);
     try {
-      // 1. Atualiza o status da escola para 'aprovada'
-      const escolaRef = doc(db, "escolas", escola.id);
-      await updateDoc(escolaRef, { status: 'aprovada' });
-
-      // 2. Cria a instância secundária do Firebase Auth para não deslogar o admin
+      // 1. PRIMEIRO: Tenta criar a conta no Firebase Auth 
+      // (Se o e-mail já existir, vai dar erro aqui e pular direto para o "catch" lá embaixo, sem aprovar a escola!)
       const tempApp = initializeApp(firebaseConfig, "TempAuthApp_" + Date.now());
       const tempAuth = getAuth(tempApp);
-
-      const senhaTemporaria = "123456"; // Palavra-passe temporária padrão
-      await createUserWithEmailAndPassword(tempAuth, escola.email, senhaTemporaria);
+      // 🔥 AQUI ESTÁ A MÁGICA: Gera uma senha aleatória de 8 caracteres!
+      const senhaTemporaria = gerarSenhaAleatoria(8); 
+      
+ await createUserWithEmailAndPassword(tempAuth, escola.email, senhaTemporaria);
       await deleteApp(tempApp); // Fecha o app temporário
 
-      // 3. Cria o documento do usuário coordenador no Firestore vinculado ao escolaId
+      // 2. SEGUNDO: Cria o documento do usuário coordenador no Firestore
       await setDoc(doc(db, "usuarios", escola.email), {
         email: escola.email,
         nome: escola.responsavel,
@@ -114,7 +121,11 @@ export default function AdminProShelf() {
         criadoEm: new Date()
       });
 
-      // 4. Envia o e-mail automático via EmailJS
+      // 3. TERCEIRO: A conta foi criada com sucesso! Agora sim atualizamos o status da escola para 'aprovada'
+      const escolaRef = doc(db, "escolas", escola.id);
+      await updateDoc(escolaRef, { status: 'aprovada' });
+
+      // 4. QUARTO: Envia o e-mail automático via EmailJS
       const templateParams = {
         to_email: escola.email,
         to_name: escola.responsavel,
@@ -124,43 +135,51 @@ export default function AdminProShelf() {
 
       await emailjs.send(
         'proshelf',  
-        'template_58tlpjq',  
+        'template_q6rlqso',  
         templateParams, 
         'e1dAcW59wam10IXZC'   
       );
 
       alert(`Escola aprovada com sucesso e e-mail enviado para ${escola.email}!`);
 
+      // Remove da tela
       setEscolasPendentes(prev => prev.filter(e => e.id !== escola.id));
+      
     } catch (error) {
       console.error("Erro ao aprovar escola ou enviar e-mail:", error);
-      alert("Erro ao aprovar escola / enviar e-mail: " + error.message);
+      
+      // Dá um aviso amigável se o e-mail já estiver em uso
+      if (error.code === 'auth/email-already-in-use') {
+        alert("Erro: O e-mail desta escola já possui uma conta no sistema. Exclua a conta antiga ou reprove esta solicitação.");
+      } else {
+        alert("Erro ao aprovar escola / enviar e-mail: " + error.message);
+      }
     } finally {
       setProcessandoId(null);
     }
   };
 
-  // NOVA FUNÇÃO: Reprovar (Excluir) Escola
-  const handleReprovar = async (escola) => {
-    if (!window.confirm(`Tem certeza que deseja reprovar e excluir a solicitação da escola "${escola.nomeInstituicao}"? Esta ação não pode ser desfeita.`)) return;
+// NOVA FUNÇÃO: Reprovar (Excluir) Escola
+const handleReprovar = async (escola) => {
+  if (!window.confirm(`Tem certeza que deseja reprovar e excluir a solicitação da escola "${escola.nomeInstituicao}"? Esta ação não pode ser desfeita.`)) return;
 
-    setProcessandoId(escola.id);
-    try {
-      // 1. Exclui o documento da escola do Firestore
-      const escolaRef = doc(db, "escolas", escola.id);
-      await deleteDoc(escolaRef);
+  setProcessandoId(escola.id);
+  try {
+    // 1. Exclui o documento da escola do Firestore
+    const escolaRef = doc(db, "escolas", escola.id);
+    await deleteDoc(escolaRef);
 
-      alert(`Solicitação da escola "${escola.nomeInstituicao}" foi reprovada e excluída com sucesso!`);
+    alert(`Solicitação da escola "${escola.nomeInstituicao}" foi reprovada e excluída com sucesso!`);
 
-      // 2. Remove da lista na tela
-      setEscolasPendentes(prev => prev.filter(e => e.id !== escola.id));
-    } catch (error) {
-      console.error("Erro ao reprovar escola:", error);
-      alert("Erro ao reprovar escola: " + error.message);
-    } finally {
-      setProcessandoId(null);
-    }
-  };
+    // 3. Remove da lista na tela
+    setEscolasPendentes(prev => prev.filter(e => e.id !== escola.id));
+  } catch (error) {
+    console.error("Erro ao reprovar escola:", error);
+    alert("Erro ao reprovar escola: " + error.message);
+  } finally {
+    setProcessandoId(null);
+  }
+};
 
   // Se o admin NÃO estiver logado, exibe a tela de login restrita
   if (!usuario) {
