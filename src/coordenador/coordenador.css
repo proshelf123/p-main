@@ -201,10 +201,11 @@ main, .pagina-conteudo {
   text-align: center;
 }
 
+/* 1. Transforma a lista em um Grid de 2 colunas */
 .cores-disc-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
 
 .disc-prof-lista {
@@ -301,13 +302,14 @@ main, .pagina-conteudo {
   transform: translateY(-1px);
 }
 
+/* 2. Ajusta o item para não forçar uma largura mínima muito grande e quebrar o layout */
 .cores-disc-item {
   display: grid;
-  grid-template-columns: minmax(210px, 0.72fr) minmax(440px, 1fr);
+  grid-template-columns: 1fr auto;
   gap: 14px;
   align-items: center;
   border-radius: 10px;
-  padding: 12px;
+  padding: 8px 0; /* Removendo o padding lateral para ganhar mais espaço útil */
 }
 
 .cores-disc-preview {
@@ -447,7 +449,7 @@ main, .pagina-conteudo {
 }
 
 @media (max-width: 900px) {
-  .cores-disc-topo,
+.cores-disc-topo,
   .cores-disc-add {
     grid-template-columns: 1fr;
     flex-direction: column;
@@ -459,12 +461,15 @@ main, .pagina-conteudo {
     width: 100%;
   }
 
-  .cores-disc-item {
-    grid-template-columns: 1fr;
+.cores-disc-item {
+    grid-template-columns: 1fr auto;
   }
 
   .disc-prof-item {
     grid-template-columns: 1fr;
+  }
+  .cores-disc-lista {
+    grid-template-columns: 1fr; 
   }
 }
 

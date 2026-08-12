@@ -152,63 +152,63 @@ export default function Calendario({ uid, professor }) {
   }
 
   async function handleSalvar() {
-  if (!isCoordenador) return
+    if (!isCoordenador) return
 
-  if (!form.titulo.trim()) {
-    setErro('Informe o título do evento.')
-    return
-  }
-
-  if (!form.data) {
-    setErro('Informe a data.')
-    return
-  }
-
-  setSalvando(true)
-
-  try {
-    await criarEvento(uid, {
-      ...form,
-      compartilharComProfessores: true,
-    })
-
-    console.log('Evento criado. Criando notificação do evento...')
-
-    try {
-      const resultado = await criarNotificacaoPorRole({
-        role: "professor",
-        titulo: "Novo Evento no Calendário",
-        mensagem: `O coordenador adicionou: "${form.titulo}"`,
-        tipo: "calendario",
-        link: "/calendario",
-        criadoPorUid: auth.currentUser?.uid || uid,
-        criadoPorNome:
-          professor?.nome ||
-          auth.currentUser?.displayName ||
-          'Coordenação',
-      })
-
-      console.log('Resultado da criação de notificações:', resultado)
-    } catch (erroNotificacao) {
-      console.error(
-        "Evento salvo, mas ocorreu erro ao criar notificação:",
-        erroNotificacao
-      )
+    if (!form.titulo.trim()) {
+      setErro('Informe o título do evento.')
+      return
     }
 
-    const dados = await buscarEventos(uid, professor)
+    if (!form.data) {
+      setErro('Informe a data.')
+      return
+    }
 
-    setEventos(dados)
-    setModalAberto(false)
-    setForm(FORM_INICIAL)
-    setErro('')
-  } catch (err) {
-    console.error("Erro ao salvar evento:", err)
-    setErro('Erro ao salvar. Tente novamente.')
-  } finally {
-    setSalvando(false)
+    setSalvando(true)
+
+    try {
+      await criarEvento(uid, {
+        ...form,
+        compartilharComProfessores: true,
+      })
+
+      console.log('Evento criado. Criando notificação do evento...')
+
+      try {
+        const resultado = await criarNotificacaoPorRole({
+          role: "professor",
+          titulo: "Novo Evento no Calendário",
+          mensagem: `O coordenador adicionou: "${form.titulo}"`,
+          tipo: "calendario",
+          link: "/calendario",
+          criadoPorUid: auth.currentUser?.uid || uid,
+          criadoPorNome:
+            professor?.nome ||
+            auth.currentUser?.displayName ||
+            'Coordenação',
+        })
+
+        console.log('Resultado da criação de notificações:', resultado)
+      } catch (erroNotificacao) {
+        console.error(
+          "Evento salvo, mas ocorreu erro ao criar notificação:",
+          erroNotificacao
+        )
+      }
+
+      const dados = await buscarEventos(uid, professor)
+
+      setEventos(dados)
+      setModalAberto(false)
+      setForm(FORM_INICIAL)
+      setErro('')
+    } catch (err) {
+      console.error("Erro ao salvar evento:", err)
+      setErro('Erro ao salvar. Tente novamente.')
+    } finally {
+      setSalvando(false)
+    }
   }
-}
 
   function handleDeletar(evento, e) {
     e?.stopPropagation()
@@ -236,140 +236,165 @@ export default function Calendario({ uid, professor }) {
   const eventosDiaSel = eventosDoDia(diaSelecionado)
 
   return (
-    <div className='grid-2'>
-
-      {/* ── Calendário visual ── */}
-      <div className='card'>
-
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 12,
-          background: 'var(--roxo)',
-          borderRadius: 40,
-          padding: '8px 12px',
-        }}>
-          <button
-            className='cal-nav-header'
-            onClick={() => { if (mes === 0) { setMes(11); setAno(a => a - 1) } else setMes(m => m - 1) }}
-          >‹</button>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.2 }}>
-            {MESES[mes]} {ano}
-          </span>
-          <button
-            className='cal-nav-header'
-            onClick={() => { if (mes === 11) { setMes(0); setAno(a => a + 1) } else setMes(m => m + 1) }}
-          >›</button>
+    <div>
+      {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+      <div 
+        style={{ 
+          width: "100%",
+          marginBottom: "32px", 
+          paddingBottom: "24px", 
+          borderBottom: "1px solid var(--borda)" 
+        }}
+      >
+        <div 
+          style={{ 
+            paddingLeft: "15px",
+            borderLeft: "3px solid var(--roxo)" 
+          }}
+        >
+          <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+            Calendário
+          </h2>
+          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+            Verifique feriados, eventos e tudo mais
+          </p>
         </div>
-
-        <div className='cal-grid'>
-          {DIAS_SEMANA.map((d, i) => (
-            <div key={i} className='cal-dia-label'>{d}</div>
-          ))}
-          {celulas.map((dia, i) => {
-            if (!dia) return <div key={i} className='cal-dia vazia' />
-
-            const isHoje        = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
-            const isSelecionado = dia === diaSelecionado
-            const evsDia        = eventosDoDia(dia)
-            const temEv         = evsDia.length > 0
-
-            return (
-              <div
-                key={isSelecionado ? `sel-${i}` : i}
-                className={`cal-dia ${isHoje ? 'hoje' : ''} ${temEv ? 'tem-evento' : ''} ${isSelecionado ? 'selecionado' : ''}`}
-                onClick={() => setDiaSelecionado(dia === diaSelecionado ? null : dia)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span className='cal-dia-num'>{dia}</span>
-
-                {temEv && (
-                  <div className='cal-dia-bolinhas'>
-                    {evsDia.slice(0, 3).map(ev => {
-                      const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
-                      return (
-                        <span
-                          key={ev.id}
-                          className='cal-ev-bolinha'
-                          style={{ background: tipo.cor }}
-                        />
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Eventos do dia selecionado */}
-        {diaSelecionado && (
-          <div style={{ marginTop: 12, borderTop: '1px solid var(--borda)', paddingTop: 12 }}>
-            <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--texto)' }}>
-                {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
-              </span>
-            </div>
-            {eventosDiaSel.length === 0 ? (
-              <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: 0 }}>Nenhum evento neste dia.</p>
-            ) : (
-              eventosDiaSel.map(ev => {
-                const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
-                return (
-                  <div key={ev.id} className='cal-evento' style={{ borderLeftColor: tipo.cor }}>
-                    <div className='cal-evento-nome'>{ev.titulo}</div>
-                    <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                    {isCoordenador && (
-                      <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
-                    )}
-                  </div>
-                )
-              })
-            )}
-          </div>
-        )}
-
       </div>
+      {/* --- FIM DO HEADER --- */}
 
-      {/* ── Eventos do mês ── */}
-      <div className='card'>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos em: {MESES[mes]}</div>
-          {isCoordenador && (
-            <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => abrirModal()}>
-              + Novo evento
-            </button>
+      {/* ── Grid para Calendário e Eventos lado a lado ── */}
+      <div className='grid-2' style={{ alignItems: 'start' }}>
+        {/* ── Calendário visual ── */}
+        <div className='card'>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+            background: 'var(--roxo)',
+            borderRadius: 40,
+            padding: '8px 12px',
+          }}>
+            <button
+              className='cal-nav-header'
+              onClick={() => { if (mes === 0) { setMes(11); setAno(a => a - 1) } else setMes(m => m - 1) }}
+            >‹</button>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.2 }}>
+              {MESES[mes]} {ano}
+            </span>
+            <button
+              className='cal-nav-header'
+              onClick={() => { if (mes === 11) { setMes(0); setAno(a => a + 1) } else setMes(m => m + 1) }}
+            >›</button>
+          </div>
+
+          <div className='cal-grid'>
+            {DIAS_SEMANA.map((d, i) => (
+              <div key={i} className='cal-dia-label'>{d}</div>
+            ))}
+            {celulas.map((dia, i) => {
+              if (!dia) return <div key={i} className='cal-dia vazia' />
+
+              const isHoje        = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
+              const isSelecionado = dia === diaSelecionado
+              const evsDia        = eventosDoDia(dia)
+              const temEv         = evsDia.length > 0
+
+              return (
+                <div
+                  key={isSelecionado ? `sel-${i}` : i}
+                  className={`cal-dia ${isHoje ? 'hoje' : ''} ${temEv ? 'tem-evento' : ''} ${isSelecionado ? 'selecionado' : ''}`}
+                  onClick={() => setDiaSelecionado(dia === diaSelecionado ? null : dia)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span className='cal-dia-num'>{dia}</span>
+
+                  {temEv && (
+                    <div className='cal-dia-bolinhas'>
+                      {evsDia.slice(0, 3).map(ev => {
+                        const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
+                        return (
+                          <span
+                            key={ev.id}
+                            className='cal-ev-bolinha'
+                            style={{ background: tipo.cor }}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Eventos do dia selecionado */}
+          {diaSelecionado && (
+            <div style={{ marginTop: 12, borderTop: '1px solid var(--borda)', paddingTop: 12 }}>
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--texto)' }}>
+                  {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
+                </span>
+              </div>
+              {eventosDiaSel.length === 0 ? (
+                <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: 0 }}>Nenhum evento neste dia.</p>
+              ) : (
+                eventosDiaSel.map(ev => {
+                  const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
+                  return (
+                    <div key={ev.id} className='cal-evento' style={{ borderLeftColor: tipo.cor }}>
+                      <div className='cal-evento-nome'>{ev.titulo}</div>
+                      <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
+                      {isCoordenador && (
+                        <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
           )}
         </div>
 
-        {loading ? (
-          <p className='secao-vazia'>Carregando...</p>
-        ) : eventosDoMes().length === 0 ? (
-          <p className='secao-vazia'>Nenhum evento neste mês.</p>
-        ) : (
-          eventosDoMes().map(ev => {
-            const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
-            return (
-              <div
-                key={ev.id}
-                className='cal-evento'
-                style={{ borderLeftColor: tipo.cor, cursor: 'pointer' }}
-                onClick={() => {
-                  const dia = parseInt(ev.data.split('-')[2])
-                  setDiaSelecionado(dia)
-                }}
-              >
-                <div className='cal-evento-data'>{formatarData(ev.data)}</div>
-                <div className='cal-evento-nome'>{ev.titulo}</div>
-                <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                {isCoordenador && (
-                  <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
-                )}
-              </div>
-            )
-          })
-        )}
+        {/* ── Eventos do mês ── */}
+        <div className='card'>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos em: {MESES[mes]}</div>
+            {isCoordenador && (
+              <button className='btn-upload' style={{ marginTop: 0 }} onClick={() => abrirModal()}>
+                + Novo evento
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <p className='secao-vazia'>Carregando...</p>
+          ) : eventosDoMes().length === 0 ? (
+            <p className='secao-vazia'>Nenhum evento neste mês.</p>
+          ) : (
+            eventosDoMes().map(ev => {
+              const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
+              return (
+                <div
+                  key={ev.id}
+                  className='cal-evento'
+                  style={{ borderLeftColor: tipo.cor, cursor: 'pointer' }}
+                  onClick={() => {
+                    const dia = parseInt(ev.data.split('-')[2])
+                    setDiaSelecionado(dia)
+                  }}
+                >
+                  <div className='cal-evento-data'>{formatarData(ev.data)}</div>
+                  <div className='cal-evento-nome'>{ev.titulo}</div>
+                  <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
+                  {isCoordenador && (
+                    <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
       </div>
 
       {/* ── Modal novo evento ── */}
@@ -442,7 +467,6 @@ export default function Calendario({ uid, professor }) {
           onCancelar={() => setConfirmarDelete(null)}
         />
       )}
-
     </div>
   )
 }

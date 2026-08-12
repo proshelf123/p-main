@@ -152,17 +152,38 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
 
   return (
     <div className='cores-disc-container'>
-      <div className='cores-disc-topo'>
-        <div>
-          <span className='cores-disc-kicker'>Coordenador</span>
-          <h1>Cores das disciplinas</h1>
-          <p>Identidade visual para turmas e cronogramas.</p>
+      
+      {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+      <div 
+        className='cores-disc-topo' 
+        style={{ 
+          width: "100%",
+          marginBottom: "32px", 
+          paddingBottom: "24px", 
+          borderBottom: "1px solid var(--borda)" 
+        }}
+      >
+        <div 
+          style={{ 
+            paddingLeft: "15px",
+            borderLeft: "3px solid var(--roxo)" 
+          }}
+        >
+          <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
+          <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+            Cores das disciplinas
+          </h2>
+          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+            Identidade visual para turmas e cronogramas.
+          </p>
         </div>
+        
         <button className='cores-disc-salvar' onClick={salvarCores} disabled={salvando}>
           <Save size={16} />
           {salvando ? 'Salvando...' : 'Salvar cores'}
         </button>
       </div>
+      {/* --- FIM DO HEADER --- */}
 
       <section className='cores-disc-card'>
         <div className='cores-disc-card-header'>
@@ -251,4 +272,4 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
       </section>
     </div>
   )
-}
+} 

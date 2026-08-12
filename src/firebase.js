@@ -1,12 +1,12 @@
 import { initializeApp } from "firebase/app";
 // IMPORTANTE: Adicione o connectAuthEmulator aqui
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 // IMPORTANTE: Adicione o connectFirestoreEmulator aqui
-import { initializeFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 // IMPORTANTE: Adicione o connectStorageEmulator aqui
-import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getStorage } from "firebase/storage";
 // IMPORTANTE: Adicione o connectFunctionsEmulator aqui
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {

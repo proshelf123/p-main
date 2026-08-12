@@ -143,14 +143,6 @@ export default function CadastroProfessores() {
     setErro('')
   }
 
-  /**
-   * Garante que o documento users/{uid} existe no Firestore com role: "professor".
-   * Isso é necessário para que criarNotificacaoPorRole({ role: "professor" }) 
-   * consiga encontrar o professor pela query where("role", "==", "professor").
-   * 
-   * Usa { merge: true } para não sobrescrever dados caso o professor já tenha
-   * feito login e tenha dados adicionais no perfil.
-   */
   async function garantirPerfilNoFirestore(uid, dados) {
     try {
       await setDoc(doc(db, 'users', uid), {
@@ -161,8 +153,6 @@ export default function CadastroProfessores() {
         criadoEm: serverTimestamp(),
       }, { merge: true })
     } catch (err) {
-      // Não bloqueia o cadastro se falhar — o professor ainda pode logar
-      // e o criarPerfil() vai criar o documento no primeiro login
       console.warn('Não foi possível criar perfil no Firestore:', err)
     }
   }
@@ -218,10 +208,7 @@ export default function CadastroProfessores() {
         throw new Error('A função criou o professor, mas não retornou o UID.')
       }
 
-      // ── NOVO: cria users/{uid} com role: "professor" para que as
-      //         notificações por role funcionem imediatamente ──────
       await garantirPerfilNoFirestore(uidCriado, dados)
-
       await enviarNotificacaoBoasVindas(uidCriado, dados.nome)
 
       if (!componenteAtivoRef.current) return
@@ -274,18 +261,36 @@ export default function CadastroProfessores() {
   }
 
   return (
-    <div className='upload-container' style={{ maxWidth: 620 }}>
-      <div className='upload-header'>
-        <span className='upload-badge'>Coordenador</span>
-        <h2 className='upload-titulo'>Cadastro de Professores</h2>
-        <p className='upload-desc'>
-          Cadastre o professor criando a conta de acesso e vinculando ao nome
-          que aparece no PDF do horário. O coordenador não é deslogado!
-        </p>
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+      <div 
+        style={{ 
+          width: "100%",
+          marginBottom: "32px", 
+          paddingBottom: "24px", 
+          borderBottom: "1px solid var(--borda)" 
+        }}
+      >
+        <div 
+          style={{ 
+            paddingLeft: "15px",
+            borderLeft: "3px solid var(--roxo)" 
+          }}
+        >
+          <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
+          <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+            Cadastro de Professores
+          </h2>
+          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+            Cadastre o professor criando a conta de acesso e vinculando ao nome
+            que aparece no PDF do horário. O coordenador não é deslogado!
+          </p>
+        </div>
       </div>
+      {/* --- FIM DO HEADER --- */}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20, }}>
-
+      {/* --- FORMULÁRIO E LISTA DE PROFESSORES --- */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
         <div className='perfil-grupo'>
           <label className='perfil-label'>Nome completo do professor</label>
           <input className='perfil-input' name='nome' value={form.nome}
@@ -343,13 +348,13 @@ export default function CadastroProfessores() {
           </div>
         )}
 
-        <button className='upload-btn' type='button' onClick={handleSalvar} disabled={salvando}>
+        <button className='upload-btn' type='button' onClick={handleSalvar} disabled={salvando} style={{ marginTop: '8px' }}>
           {salvando ? 'Cadastrando...' : 'Cadastrar professor'}
         </button>
       </div>
 
       {/* Lista de professores */}
-      <div className='sec-titulo' style={{ fontFamily: 'Poppins, sans-serif' }}>
+      <div className='sec-titulo' style={{ fontFamily: 'Poppins, sans-serif', fontSize: '14px', marginBottom: '12px' }}>
         Professores cadastrados ({professores.length})
       </div>
 

@@ -6,7 +6,7 @@ import {
   updateDoc, deleteDoc,
   serverTimestamp, query, orderBy, where, onSnapshot, writeBatch
 } from "firebase/firestore";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { db, storage } from "../firebase";
 import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
 
@@ -925,6 +925,17 @@ export async function recusarSolicitacaoArquivo(solicitacao, usuarioAtual, motiv
 
   const motivoLimpo = String(motivo || "").trim();
 
+  // Exclui o arquivo do Storage, já que a solicitação foi recusada
+  if (solicitacao.arquivoStoragePath) {
+    try {
+      await deleteObject(storageRef(storage, solicitacao.arquivoStoragePath));
+    } catch (error) {
+      if (error.code !== "storage/object-not-found") {
+        console.error("Erro ao excluir arquivo do Storage:", error);
+      }
+    }
+  }
+
   await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), {
     status: "recusado",
     motivoRecusa: motivoLimpo,
@@ -949,5 +960,21 @@ export async function recusarSolicitacaoArquivo(solicitacao, usuarioAtual, motiv
 }
 
 export async function deletarArquivoAprovado(arquivoId) {
-  await deleteDoc(doc(db, "turmas_arquivos_aprovados", arquivoId));
+  const arquivoRef = doc(db, "turmas_arquivos_aprovados", arquivoId);
+  const snap = await getDoc(arquivoRef);
+
+  if (snap.exists()) {
+    const { arquivoStoragePath } = snap.data();
+    if (arquivoStoragePath) {
+      try {
+        await deleteObject(storageRef(storage, arquivoStoragePath));
+      } catch (error) {
+        if (error.code !== "storage/object-not-found") {
+          console.error("Erro ao excluir arquivo do Storage:", error);
+        }
+      }
+    }
+  }
+
+  await deleteDoc(arquivoRef);
 }

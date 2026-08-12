@@ -119,12 +119,21 @@
     margin-bottom: 4px;
 }
 
+.form-wrapper {
+    width: 100%;
+    max-width: 450px; /* Escolha a largura que preferir aqui (420px, 450px, 500px) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px; /* Espaçamento entre as áreas */
+}
+
 /* ── Campos ────────────────────────────────────────────────────────────────── */
 .campo {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 500px;
+    width: 100%; /* Agora ele obedece o form-wrapper */
 }
 
 .campo label {
@@ -140,6 +149,7 @@
     font-size: 15px;
     outline: none;
     width: 100%;
+    box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     color: #222;
 }
@@ -229,8 +239,9 @@
 
 /* ── Botão — mesma largura dos inputs ──────────────────────────────────────── */
 .btn-entrar {
-    width: 300px;
-    padding: 10px 20px;
+    width: 100%; /* Agora ele também obedece o form-wrapper e fica igual ao input! */
+    box-sizing: border-box;
+    padding: 12px 20px; /* Dei um ajuste sutil no padding para ficar mais elegante */
     background-color: #6F3B9D;
     color: white;
     border: none;
