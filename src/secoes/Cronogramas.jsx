@@ -193,6 +193,91 @@ function ModalConfirmarCurso({ curso, onConfirmar, onCancelar, deletando = false
   )
 }
 
+function ModalConfirmarAula({ aula, onConfirmar, onCancelar, coresDisciplinas }) {
+  const discPrincipal = aula?.dividida ? (aula?.A?.disciplina || aula?.B?.disciplina) : aula?.disciplina;
+  const gradeCores = corDisciplina(nomeDisciplina(discPrincipal), coresDisciplinas);
+  const bg = gradeCores?.bg || '#FFF0F3';
+  const cor = gradeCores?.cor || '#ED235C';
+  
+  const ordemLabel = aula?.ordem ? `${aula.ordem}ª Aula` : 'Aula';
+  const horarioLabel = aula?.horario ? `(${formatarHorarioCurto(aula.horario)})` : '';
+  const discLabel = aula?.dividida ? 'Turma Dividida (A/B)' : (aula?.disciplina || 'Sem disciplina');
+
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={onCancelar} />
+      <div className='modal-confirmar'>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <AlertTriangle size={26} color='#ED235C' strokeWidth={2.2} />
+        </div>
+
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover aula?
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Você está prestes a remover esta aula da grade
+        </p>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 14px', borderRadius: 12,
+          background: bg, margin: '0 0 6px',
+          animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: cor }}>
+              {ordemLabel} {horarioLabel}
+            </div>
+            <div style={{ fontSize: 11, color: cor, opacity: 0.8 }}>
+              {discLabel}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
+          Esta ação removerá a linha imediatamente do seu rascunho.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: '1px solid var(--borda)', background: 'var(--branco)',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              color: 'var(--texto)', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--borda)'; e.currentTarget.style.color = 'var(--texto-sec)' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Sim, remover
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function corDisciplina(disc, coresCustomizadas = {}) {
   return montarGradienteDisciplina(disc, coresCustomizadas)
 }
@@ -448,8 +533,14 @@ export default function Cronogramas({
   const [professoresEditor, setProfessoresEditor] = useState([])
   const [professoresDisciplinas, setProfessoresDisciplinas] = useState({})
   const [salvandoEditor, setSalvandoEditor] = useState(false)
+  
+  // Estado para exclusão do CURSO (já existente)
   const [deletandoCursoId, setDeletandoCursoId] = useState('')
   const [confirmarDeleteCurso, setConfirmarDeleteCurso] = useState(null)
+
+  // NOVO: Estado para exclusão de uma AULA da grade
+  const [confirmarDeleteAulaIndex, setConfirmarDeleteAulaIndex] = useState(null)
+
   const [erroEditor, setErroEditor] = useState('')
   const [sucessoEditor, setSucessoEditor] = useState('')
   const [dropdownEditorAberto, setDropdownEditorAberto] = useState(null)
@@ -590,6 +681,8 @@ export default function Cronogramas({
   const diaEditorAtivo = DIAS_EDITOR.includes(DIA_LABEL[diaAtivo])
     ? DIA_LABEL[diaAtivo]
     : 'Segunda'
+  
+  // Mapeamos armazenando o INDEX real da aula em "aulasEditor", para usarmos ao deletar
   const aulasEditorDoDia = aulasEditor
     .map((aula, index) => ({ aula, index }))
     .filter(({ aula }) => aula.dia === diaEditorAtivo)
@@ -622,6 +715,10 @@ export default function Cronogramas({
   }
 
   function voltarParaCursos() {
+    if (cursoSelecionado) {
+      setFormCurso(FORM_CURSO_INICIAL)
+      setAulasEditor(aulasEditorIniciais())
+    }
     setCursoSelecionado(null)
     setAbaEditor('curso')
     setDiaAtivo((diaAtual) => primeiroDiaComAula(cronograma, diaAtual))
@@ -926,16 +1023,14 @@ export default function Cronogramas({
   return (
     <div>
       <div className='crono-topo'>
-        {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
         <div 
           style={{ 
-            width: "100%", /* <-- ESSA LINHA FORÇA O TRAÇO A IR DE PONTA A PONTA */
+            width: "100%", 
             marginBottom: "32px", 
             paddingBottom: "24px", 
             borderBottom: "1px solid var(--borda)" 
           }}
         >
-          {/* A linha roxa agora fica isolada aqui, acompanhando apenas a altura do texto */}
           <div 
             style={{ 
               paddingLeft: "15px",
@@ -950,7 +1045,6 @@ export default function Cronogramas({
             </p>
           </div>
         </div>
-        {/* --- FIM DO HEADER --- */}
       </div>
 
       {isCoordenador && (
@@ -959,18 +1053,21 @@ export default function Cronogramas({
             <button
               type='button'
               className={`crono-editor-tab ${abaEditor === 'curso' ? 'ativo' : ''}`}
-              onClick={() => setAbaEditor('curso')}
+              onClick={voltarParaCursos}
             >
               Curso
             </button>
-            <button
-              type='button'
-              className={`crono-editor-tab ${abaEditor === 'grade' ? 'ativo' : ''}`}
-              onClick={avancarParaGrade}
-              disabled={!formCurso.curso.trim()}
-            >
-              Aulas
-            </button>
+            
+            {(cursoSelecionado || abaEditor === 'grade') && (
+              <button
+                type='button'
+                className={`crono-editor-tab ${abaEditor === 'grade' ? 'ativo' : ''}`}
+                onClick={avancarParaGrade}
+                disabled={!formCurso.curso.trim()}
+              >
+                Aulas
+              </button>
+            )}
           </div>
 
           <AnimatePresence mode='wait'>
@@ -1033,7 +1130,7 @@ export default function Cronogramas({
                   <div className='crono-editor-acoes'>
                     <button
                       className='crono-editor-btn secundario'
-                      onClick={() => setAbaEditor('curso')}
+                      onClick={voltarParaCursos}
                     >
                       <ArrowLeft size={16} />
                       Curso
@@ -1078,7 +1175,7 @@ export default function Cronogramas({
                     <span />
                   </div>
 
-{aulasEditorDoDia.map(({ aula, index }) => (
+                  {aulasEditorDoDia.map(({ aula, index }) => (
                     <div
                       key={aula.id}
                       className={`crono-editor-row ${aula.dividida ? 'dividida' : ''}`}
@@ -1216,9 +1313,10 @@ export default function Cronogramas({
                         </>
                       )}
 
+                      {/* Botão da Lixeira que agora abre o novo modal */}
                       <button
                         className='crono-editor-remover'
-                        onClick={() => removerLinhaAula(index)}
+                        onClick={() => setConfirmarDeleteAulaIndex(index)}
                         aria-label='Remover aula'
                       >
                         <Trash2 size={16} />
@@ -1297,7 +1395,6 @@ export default function Cronogramas({
               key={`curso-${cursoSelecionado.id}`}
               {...ANIMACAO_PAINEL}
             >
-              {/* Seletor de dias */}
               <div className='crono-dias'>
                 {DIAS.map((dia) => {
                   const temAula = aulasVisiveis.some((a) => a.dia === DIA_LABEL[dia])
@@ -1313,10 +1410,8 @@ export default function Cronogramas({
                 })}
               </div>
 
-              {/* Data atual */}
               <p className='crono-data'>{formatarData(diaAtivo)}</p>
 
-              {/* Períodos */}
               {Object.entries(periodos).map(([nomePeriodo, aulasGrupo]) => (
                 <div key={nomePeriodo} className='crono-periodo-bloco'>
                   <h3 className='crono-periodo-titulo'>
@@ -1387,6 +1482,7 @@ export default function Cronogramas({
         </AnimatePresence>
       )}
 
+      {/* Modal Deletar CURSO (Mantido) */}
       {confirmarDeleteCurso && (
         <ModalConfirmarCurso
           curso={confirmarDeleteCurso}
@@ -1395,6 +1491,20 @@ export default function Cronogramas({
           deletando={deletandoCursoId === confirmarDeleteCurso.id}
         />
       )}
+
+      {/* NOVO Modal Deletar AULA (Grade Editor) */}
+      {confirmarDeleteAulaIndex !== null && (
+        <ModalConfirmarAula
+          aula={aulasEditor[confirmarDeleteAulaIndex]}
+          coresDisciplinas={coresDisciplinas}
+          onConfirmar={() => {
+            removerLinhaAula(confirmarDeleteAulaIndex)
+            setConfirmarDeleteAulaIndex(null)
+          }}
+          onCancelar={() => setConfirmarDeleteAulaIndex(null)}
+        />
+      )}
+
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion"; // <-- Importação do framer-motion adicionada
 import { auth } from "../firebase";
 import { 
   buscarProfessores, 
@@ -142,7 +143,15 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 99999 }}>
-      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+      {/* Adicionada uma leve animação de entrada no próprio Modal opcionalmente */}
+      <motion.div 
+        className="modal" 
+        onClick={e => e.stopPropagation()} 
+        style={{ maxWidth: 500 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
           <div>
             <h3 className="modal-titulo" style={{ margin: 0, fontSize: 18 }}>Criação Unificada de Turma</h3>
@@ -210,19 +219,31 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
               onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
               placeholder="Digite o nome do professor..."
             />
-            {mostrarSugestoes && (
-              <div className="dropdown-menu" style={{ position: "absolute", top: "100%", left: 0, right: 0, maxHeight: "160px", overflowY: "auto", zIndex: 1300 }}>
-                {professoresFiltrados.length > 0 ? (
-                  professoresFiltrados.map(p => (
-                    <button key={p.id} type="button" className="dropdown-item" onMouseDown={() => { setForm({ ...form, professor: p.nome, professorId: p.id }); setMostrarSugestoes(false); }}>
-                      {p.nome}
-                    </button>
-                  ))
-                ) : (
-                  <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--texto-sec)" }}>Nenhum encontrado</div>
-                )}
-              </div>
-            )}
+            
+            {/* ANIMAÇÃO APLICADA AQUI COM ANIMATE PRESENCE */}
+            <AnimatePresence>
+              {mostrarSugestoes && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="dropdown-menu" 
+                  style={{ position: "absolute", top: "100%", left: 0, right: 0, maxHeight: "160px", overflowY: "auto", zIndex: 1300 }}
+                >
+                  {professoresFiltrados.length > 0 ? (
+                    professoresFiltrados.map(p => (
+                      <button key={p.id} type="button" className="dropdown-item" onMouseDown={() => { setForm({ ...form, professor: p.nome, professorId: p.id }); setMostrarSugestoes(false); }}>
+                        {p.nome}
+                      </button>
+                    ))
+                  ) : (
+                    <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--texto-sec)" }}>Nenhum encontrado</div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
           </div>
         </div>
 
@@ -240,7 +261,7 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
           </button>
           <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

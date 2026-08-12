@@ -104,7 +104,7 @@ function ModalConfirmar({ nomeTurma, nomePeriodo, corPeriodo, onConfirmar, onCan
 export default function Arquivos({ uid, professor }) {
   const [perfilCarregado, setPerfilCarregado] = useState(null)
   const [confirmarDelete, setConfirmarDelete] = useState(null)
-  const [carregando, setCarregando]           = useState(true)
+  const [carregando, setCarregando] = useState(true)
 
   const [turmasPorPeriodo, setTurmasPorPeriodo] = useState({})
   const [turmaSelecionada, setTurmaSelecionada] = useState(null)
@@ -184,19 +184,19 @@ export default function Arquivos({ uid, professor }) {
         style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}
       >
         {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
-        <div 
-          style={{ 
+        <div
+          style={{
             width: "100%", /* <-- ESSA LINHA FORÇA O TRAÇO A IR DE PONTA A PONTA */
-            marginBottom: "32px", 
-            paddingBottom: "24px", 
-            borderBottom: "1px solid var(--borda)" 
+            marginBottom: "32px",
+            paddingBottom: "24px",
+            borderBottom: "1px solid var(--borda)"
           }}
         >
           {/* A linha roxa agora fica isolada aqui, acompanhando apenas a altura do texto */}
-          <div 
-            style={{ 
+          <div
+            style={{
               paddingLeft: "15px",
-              borderLeft: "3px solid var(--roxo)" 
+              borderLeft: "3px solid var(--roxo)"
             }}
           >
             <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
@@ -247,35 +247,92 @@ export default function Arquivos({ uid, professor }) {
                 Nenhuma turma neste período.
               </p>
             ) : (
-              <MotionDiv
-                variants={containerVariants}
-                initial='hidden'
-                animate='show'
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
-                  gap: 14,
-                }}
-              >
-                {periodo.turmas.map(({ id: turmaDocId, nomeTurma }) => (
-                  <TurmaCard
-                    key={turmaDocId}
-                    turma={nomeTurma}
-                    periodo={periodo}
-                    isCoordenador={isCoordenador}
-                    onExcluir={() => setConfirmarDelete({
-                      turmaDocId,
-                      nomeTurma,
-                      nomePeriodo: periodo.nome,
-                      corPeriodo: periodo.cor,
-                    })}
-                    onClick={() => {
-                      setTurmaSelecionada(nomeTurma)
-                      setNomePeriodoSelecionado(periodo.nome)
-                    }}
-                  />
-                ))}
-              </MotionDiv>
+              /* INÍCIO DO NOVO AGRUPAMENTO */
+              (() => {
+                // 1. Separa as turmas pelo ano (1º, 2º, 3º...)
+                const turmasAgrupadas = {}
+                periodo.turmas.forEach(turmaObj => {
+                  const match = turmaObj.nomeTurma.match(/^(\d°)/)
+                  const ano = match ? match[1] : 'Outros'
+
+                  if (!turmasAgrupadas[ano]) {
+                    turmasAgrupadas[ano] = []
+                  }
+                  turmasAgrupadas[ano].push(turmaObj)
+                })
+
+                // 2. Ordena para o 1º aparecer antes do 2º, e as "Outras" ficarem por último
+                const anosOrdenados = Object.keys(turmasAgrupadas).sort((a, b) => {
+                  if (a === 'Outros') return 1
+                  if (b === 'Outros') return -1
+                  return a.localeCompare(b)
+                })
+
+                // 3. Renderiza os blocos
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    {anosOrdenados.map(ano => (
+                      <div key={ano}>
+                        {/* Título (Ex: 1º anos:) */}
+                        <h3 style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '20px',
+                          fontWeight: 700,
+                          color: 'var(--texto)',
+                          margin: '0 0 16px 0'
+                        }}>
+                          {ano === 'Outros' ? (
+                            <span>Outras turmas:</span>
+                          ) : (
+                            <>
+                              <span style={{ fontSize: '22px', fontWeight: 800, color: periodo.cor, lineHeight: 1 }}>
+                                {ano}
+                              </span>
+                              <span style={{ fontSize: '18px', fontWeight: 600, color: 'var(--texto)' }}>
+                                anos:
+                              </span>
+                            </>
+                          )}
+                        </h3>
+
+                        {/* O Grid idêntico ao original, sem alterar o formato das caixas */}
+                        <MotionDiv
+                          variants={containerVariants}
+                          initial='hidden'
+                          animate='show'
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                            gap: 14,
+                          }}
+                        >
+                          {turmasAgrupadas[ano].map(({ id: turmaDocId, nomeTurma }) => (
+                            <TurmaCard
+                              key={turmaDocId}
+                              turma={nomeTurma}
+                              periodo={periodo}
+                              isCoordenador={isCoordenador}
+                              onExcluir={() => setConfirmarDelete({
+                                turmaDocId,
+                                nomeTurma,
+                                nomePeriodo: periodo.nome,
+                                corPeriodo: periodo.cor,
+                              })}
+                              onClick={() => {
+                                setTurmaSelecionada(nomeTurma)
+                                setNomePeriodoSelecionado(periodo.nome)
+                              }}
+                            />
+                          ))}
+                        </MotionDiv>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()
+              /* FIM DO NOVO AGRUPAMENTO */
             )}
           </MotionDiv>
         ))
@@ -289,7 +346,7 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
   const [hover, setHover] = useState(false)
 
   const match = turma.match(/^(\d°)\s(.+)$/)
-  const numero    = match ? match[1] : ''
+  const numero = match ? match[1] : ''
   const nomeCurso = match ? match[2] : turma
 
   return (
@@ -306,11 +363,20 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
       }}
       onClick={onClick}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-        <span style={{ fontSize: 20, fontWeight: 800, color: periodo.cor, lineHeight: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 20, fontWeight: 800, color: periodo.cor, lineHeight: 1, flexShrink: 0 }}>
           {numero}
         </span>
-        <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--texto)', margin: 0, flexGrow: 1, paddingRight: isCoordenador ? 24 : 0 }}>
+        <p style={{
+          fontSize: 17,
+          fontWeight: 600,
+          color: 'var(--texto)',
+          margin: 0,
+          flexGrow: 1,
+          paddingRight: isCoordenador ? 24 : 0,
+          wordBreak: 'break-word',    /* Força a quebra da palavra se for muito longa */
+          overflowWrap: 'anywhere'    /* Garante que o texto fique dentro da caixa */
+        }}>
           {nomeCurso}
         </p>
 

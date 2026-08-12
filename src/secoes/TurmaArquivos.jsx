@@ -1,7 +1,10 @@
 // src/components/TurmaArquivos.jsx
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen, Send, CheckCircle, XCircle, Trash2, Upload } from "lucide-react";
+import { 
+  ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen, 
+  Send, CheckCircle, XCircle, Trash2, Upload, AlertTriangle 
+} from "lucide-react";
 import { 
   criarSolicitacaoArquivo, 
   escutarSolicitacoes, 
@@ -10,6 +13,75 @@ import {
   recusarSolicitacaoArquivo,
   deletarArquivoAprovado
 } from "../firebase/estrutura";
+
+// --- MODAL DE CONFIRMAÇÃO DE DELEÇÃO DE ARQUIVO ---
+function ModalConfirmarArquivo({ arquivo, onConfirmar, onCancelar }) {
+  return (
+    <>
+      <div className="modal-confirmar-overlay" onClick={onCancelar} style={{ zIndex: 99999 }} />
+      <div className="modal-confirmar" style={{ zIndex: 100000 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%', background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <AlertTriangle size={26} color="#ED235C" strokeWidth={2.2} />
+        </div>
+        
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover arquivo?
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Você está prestes a remover o documento desta turma:
+        </p>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
+          background: '#FFF0F3', margin: '0 0 6px', animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ED235C', flexShrink: 0 }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#ED235C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {arquivo?.nome}
+            </div>
+            <div style={{ fontSize: 11, color: '#ED235C', opacity: 0.8 }}>
+              Tamanho: {arquivo?.tamanho}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
+          Esta ação não poderá ser desfeita.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10, border: '1px solid var(--borda)', background: 'var(--branco)',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif", color: 'var(--texto)', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--borda)'; e.currentTarget.style.color = 'var(--texto-sec)' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif", fontWeight: 600, color: '#fff', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Sim, remover
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp, perfil, uid, onClose, onVoltar, turma, periodo }) {
   const idTurma = turmaIdProp || [periodo?.nome, turma].filter(Boolean).join(" - ");
@@ -29,6 +101,9 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   const [erroSolicitacao, setErroSolicitacao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState("");
+  
+  // ESTADO PARA O ARQUIVO QUE SERÁ DELETADO
+  const [arquivoParaDeletar, setArquivoParaDeletar] = useState(null);
 
   useEffect(() => {
     if (!idTurma) return;
@@ -114,6 +189,18 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
     }
   }
 
+  // FUNÇÃO QUE EXECUTA A DELEÇÃO APÓS A CONFIRMAÇÃO
+  async function handleConfirmarDeleteArquivo() {
+    if (!arquivoParaDeletar) return;
+    try {
+      await deletarArquivoAprovado(arquivoParaDeletar.id);
+    } catch (err) {
+      console.error("Erro ao deletar arquivo:", err);
+    } finally {
+      setArquivoParaDeletar(null);
+    }
+  }
+
   function getIconeArquivo(tipo) {
     if (tipo === "pdf") return <FileText size={24} color="#EF4444" />;
     if (["xlsx", "xls", "csv"].includes(tipo)) return <FileSpreadsheet size={24} color="#10B981" />;
@@ -174,7 +261,7 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
         }
       `}</style>
 
-{/* Header Interno */}
+      {/* Header Interno */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
           {handleVoltar && (
@@ -266,7 +353,7 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
 
                     {isCoordenador && (
                       <button
-                        onClick={() => deletarArquivoAprovado(arq.id)}
+                        onClick={() => setArquivoParaDeletar(arq)} // ABRE O NOVO MODAL
                         className="btn-lixeira"
                         style={{
                           background: '#FFF0F3',
@@ -408,6 +495,16 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
           </div>
         )}
       </AnimatePresence>
+
+      {/* RENDERIZA O MODAL SE HOUVER UM ARQUIVO SENDO EXCLUÍDO */}
+      {arquivoParaDeletar && (
+        <ModalConfirmarArquivo
+          arquivo={arquivoParaDeletar}
+          onConfirmar={handleConfirmarDeleteArquivo}
+          onCancelar={() => setArquivoParaDeletar(null)}
+        />
+      )}
+
     </div>
   );
 }

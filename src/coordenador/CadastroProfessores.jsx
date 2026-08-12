@@ -8,7 +8,7 @@ import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/fire
 import { httpsCallable } from 'firebase/functions'
 import { auth, functions, db } from '../firebase'
 import './coordenador.css'
-import { Trash2, TriangleAlert, CircleCheckBig } from 'lucide-react'
+import { Trash2, TriangleAlert, CircleCheckBig, AlertTriangle } from 'lucide-react'
 import { criarNotificacao } from '../notificacoes/notificacoes'
 
 const FORM_INICIAL = { nome: '', email: '', senha: '', nomePDF: '' }
@@ -82,6 +82,78 @@ async function chamarFuncaoProfessor(nomeFuncao, dados) {
   }
 }
 
+// --- NOVO MODAL DE CONFIRMAÇÃO ---
+function ModalConfirmarProfessor({ professor, onConfirmar, onCancelar }) {
+  const nome = obterNomeProfessor(professor);
+  const email = professor?.email || '';
+
+  return (
+    <>
+      <div className="modal-confirmar-overlay" onClick={onCancelar} style={{ zIndex: 99999 }} />
+      <div className="modal-confirmar" style={{ zIndex: 100000 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%', background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <AlertTriangle size={26} color="#ED235C" strokeWidth={2.2} />
+        </div>
+        
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover professor?
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Você está prestes a remover o professor:
+        </p>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
+          background: '#FFF0F3', margin: '0 0 6px', animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ED235C', flexShrink: 0 }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#ED235C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {nome}
+            </div>
+            <div style={{ fontSize: 11, color: '#ED235C', opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {email}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
+          Isso apagará a conta de acesso dele permanentemente.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10, border: '1px solid var(--borda)', background: 'var(--branco)',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif", color: 'var(--texto)', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--borda)'; e.currentTarget.style.color = 'var(--texto-sec)' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif", fontWeight: 600, color: '#fff', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Sim, remover
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function CadastroProfessores() {
   const [professores, setProfessores] = useState([])
   const [loading, setLoading]         = useState(true)
@@ -90,7 +162,10 @@ export default function CadastroProfessores() {
   const [salvo, setSalvo]             = useState(false)
   const [erro, setErro]               = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  
+  // Estados para o Modal de Exclusão
   const [excluindoId, setExcluindoId] = useState('')
+  const [professorParaDeletar, setProfessorParaDeletar] = useState(null)
 
   const componenteAtivoRef = useRef(true)
   const salvoTimeoutRef = useRef(null)
@@ -233,19 +308,27 @@ export default function CadastroProfessores() {
     }
   }
 
-  async function handleDeletar(professor) {
+  // --- PASSO 1: Abre o modal ---
+  function solicitarDelecao(professor) {
     const email = normalizarEmail(professor?.email)
-    const id = professor?.id || email
-
     if (!email) {
       setErro('Não foi possível remover: o professor está sem e-mail cadastrado.')
       return
     }
+    setProfessorParaDeletar(professor)
+  }
 
-    if (!window.confirm('Remover este professor? Isso apaga a conta de acesso dele.')) return
+  // --- PASSO 2: Executa a exclusão quando o botão do modal for clicado ---
+  async function executarDelecao() {
+    if (!professorParaDeletar) return
+
+    const email = normalizarEmail(professorParaDeletar?.email)
+    const id = professorParaDeletar?.id || email
 
     setErro('')
     setExcluindoId(id)
+    setProfessorParaDeletar(null) // Fecha o modal imediatamente para não prender o ecrã
+    
     try {
       await chamarFuncaoProfessor('deletarProfessor', { email })
       await carregarProfessores({ mostrarLoading: false })
@@ -261,7 +344,7 @@ export default function CadastroProfessores() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
       {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
       <div 
         style={{ 
@@ -396,7 +479,7 @@ export default function CadastroProfessores() {
               <button
                 className='professor-remover-btn'
                 type='button'
-                onClick={() => handleDeletar(professor)}
+                onClick={() => solicitarDelecao(professor)} // MUDOU AQUI: Chama o Modal!
                 disabled={excluindoEste || salvando}
                 title='Remover professor'
               >
@@ -406,6 +489,16 @@ export default function CadastroProfessores() {
           )
         })
       )}
+
+      {/* RENDERIZA O MODAL SE HOUVER UM PROFESSOR SENDO EXCLUÍDO */}
+      {professorParaDeletar && (
+        <ModalConfirmarProfessor
+          professor={professorParaDeletar}
+          onConfirmar={executarDelecao}
+          onCancelar={() => setProfessorParaDeletar(null)}
+        />
+      )}
+
     </div>
   )
 }

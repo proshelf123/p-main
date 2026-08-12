@@ -1490,6 +1490,8 @@ select.perfil-input option:checked {
   justify-content: center;
   color: #b42318;
   cursor: pointer;
+  border: none; /* <-- Adicione esta linha para remover a borda 3D */
+  outline: none; /* <-- Remove a borda preta que aparece quando você clica */
 }
 
 .crono-editor-remover:hover {
