@@ -97,7 +97,7 @@
 
 /* ── Lado branco ───────────────────────────────────────────────────────────── */
 .lado-branco {
-    --form-width: 420px; /* <-- Altere o valor aqui (antes era 380px) */
+    --form-width: 420px;
     width: 50%;
     display: flex;
     flex-direction: column;
@@ -105,12 +105,34 @@
     justify-content: center;
     gap: 20px;
     padding: 60px;
+    position: relative; /* <-- ADICIONE ESTA LINHA */
 }
 
 .logo-login {
     width: 300px;
     height: 85px;
     margin-bottom: 8px;
+}
+
+.btn-voltar {
+    position: absolute;
+    top: 30px;
+    left: 30px; 
+    color: #6F3B9D;
+    font-weight: 600;
+    font-size: 16px;
+    text-decoration: none;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    
+    /* 👇 NOVAS LINHAS PARA TRAVAR A SETA E O TEXTO 👇 */
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Define o espaço exato entre a seta e a palavra "Voltar" */
+}
+
+.btn-voltar:hover {
+    opacity: 0.8;
+    text-decoration: none;
 }
 
 #acessar {
@@ -121,7 +143,7 @@
 
 .form-wrapper {
     width: 100%;
-    max-width: 450px; /* Escolha a largura que preferir aqui (420px, 450px, 500px) */
+    max-width: 550px; /* Escolha a largura que preferir aqui (420px, 450px, 500px) */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -239,7 +261,7 @@
 
 /* ── Botão — mesma largura dos inputs ──────────────────────────────────────── */
 .btn-entrar {
-    width: 100%; /* Agora ele também obedece o form-wrapper e fica igual ao input! */
+    width: 60%; /* Agora ele também obedece o form-wrapper e fica igual ao input! */
     box-sizing: border-box;
     padding: 12px 20px; /* Dei um ajuste sutil no padding para ficar mais elegante */
     background-color: #6F3B9D;

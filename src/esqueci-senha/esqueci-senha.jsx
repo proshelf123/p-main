@@ -5,6 +5,7 @@ import LogoIcone from "../assets/Group 32 (2).png"
 import { auth } from "../firebase"; 
 import { sendPasswordResetEmail } from "firebase/auth";
 import { Link, useNavigate } from 'react-router';
+import { ArrowLeft } from 'lucide-react';
 
 function EsqueciSenha() {
     const [email, setEmail] = useState('');
@@ -79,7 +80,12 @@ function EsqueciSenha() {
                     ))}
                 </div>
 
-                <div className={styles['lado-branco']}>
+<div className={styles['lado-branco']}>
+                    {/* 👇 NOVO: Botão de voltar adicionado aqui 👇 */}
+                    <Link to="/login" className={styles['link-voltar']}>
+                        <ArrowLeft size={20} /> Voltar
+                    </Link>
+
                     <img src={LogoIcone} className={styles['logo-login']} alt="Logo" />
                     <h2 id={styles.acessar}>Redefinir senha</h2>
                     <p style={{ color: '#888', fontSize: '17px', textAlign: 'center', marginTop: '-1px', marginBottom: '20px' }}>
@@ -149,11 +155,6 @@ function EsqueciSenha() {
                         {carregando ? 'Enviando...' : 'Recuperar senha'}
                         {!carregando && <span className={styles.arrow}>›</span>}
                     </button>
-
-                    <p>
-                        Voltar para o{' '}
-                        <Link to='/login' className={styles.aqui}>Login</Link>
-                    </p>
                 </div>
             </div>
         </>

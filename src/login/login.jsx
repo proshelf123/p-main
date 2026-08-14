@@ -5,6 +5,7 @@ import LogoIcone from "../assets/Group 32 (2).png";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom"; // Ajustado para react-router-dom
+import { ArrowLeft } from "lucide-react"
 
 function Login() {
   const navigate = useNavigate();
@@ -78,7 +79,12 @@ function Login() {
           ))}
         </div>
 
-        <div className={styles["lado-branco"]}>
+<div className={styles["lado-branco"]}>
+          {/* 👇 NOVO: Botão de voltar adicionado aqui 👇 */}
+          <Link to="/" className={styles["btn-voltar"]}>
+            <ArrowLeft size={20}/> Voltar
+          </Link>
+          
           <img src={LogoIcone} className={styles["logo-login"]} alt="Logo" />
           {/* Transformamos o ID acessar em className */}
           <h2 id={styles.acessar}>Acessar a plataforma</h2>

@@ -101,7 +101,7 @@
 
 /* ── Lado branco ───────────────────────────────────────────────────────────── */
 .lado-branco {
-    --form-width: 400px; /* Largura padrão unificada para desktop */
+    --form-width: 400px;
     width: 50%;
     display: flex;
     flex-direction: column;
@@ -111,6 +111,7 @@
     padding: 60px;
     overflow-y: auto;
     box-sizing: border-box;
+    position: relative; /* 👇 ADICIONE ESTA LINHA PARA PRENDER O BOTÃO AQUI 👇 */
 }
 
 .logo-login {
@@ -309,16 +310,24 @@
 
 /* ── Link voltar ───────────────────────────────────────────────────────────── */
 .link-voltar {
+    position: absolute;
+    top: 30px;
+    left: 30px; 
     color: #6F3B9D;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     text-decoration: none;
-    transition: opacity 0.2s;
-    margin-top: 2px;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    
+    /* 👇 NOVAS LINHAS PARA TRAVAR A SETA E O TEXTO 👇 */
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Define o espaço exato entre a seta e a palavra "Voltar" */
 }
 
 .link-voltar:hover {
-    opacity: 0.7;
+    opacity: 0.8;
+    text-decoration: none;
 }
 
 /* ── Ícone de sucesso ──────────────────────────────────────────────────────── */

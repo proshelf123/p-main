@@ -6,6 +6,7 @@ import LogoMetade from '../assets/Group 28.png'
 import LogoIcone from "../assets/Group 32 (2).png"
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
+import { ArrowLeft } from 'lucide-react';
 
 function LadoRoxo() {
     return (
@@ -149,7 +150,10 @@ function Etapa1({ onProximo }) {
                 {!carregando && <span className={styles.arrow}>›</span>}
             </button>
 
-            <Link to="/login" className={styles['link-voltar']}>Voltar</Link>
+            <Link to="/login" className={styles['link-voltar']}>
+            
+            <ArrowLeft size={20}/> 
+            Voltar</Link>
         </motion.div>
     );
 }
@@ -261,7 +265,11 @@ function Etapa2({ user, onConcluido }) {
                 {!carregando && <span className={styles.arrow}>›</span>}
             </button>
 
-            <Link to="/login" className={styles['link-voltar']}>Voltar</Link>
+            <Link to="/login" className={styles['link-voltar']}>
+            
+            <ArrowLeft size={20}/> Voltar
+            
+            </Link>
         </motion.div>
     );
 }
