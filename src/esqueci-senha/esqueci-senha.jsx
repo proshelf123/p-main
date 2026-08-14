@@ -81,7 +81,7 @@ function EsqueciSenha() {
 
                 <div className={styles['lado-branco']}>
                     <img src={LogoIcone} className={styles['logo-login']} alt="Logo" />
-                    <h2 id='acessar'>Redefinir senha</h2>
+                    <h2 id={styles.acessar}>Redefinir senha</h2>
                     <p style={{ color: '#888', fontSize: '17px', textAlign: 'center', marginTop: '-1px', marginBottom: '20px' }}>
                         Insira seu e-mail e enviaremos um link para redefinir sua senha.
                     </p>

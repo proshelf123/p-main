@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Palette, Plus, Save } from 'lucide-react'
+import { Palette, Save } from 'lucide-react'
 import {
   buscarCronograma,
   buscarTurmas,
@@ -34,7 +34,6 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
   const coresSalvas = useCoresDisciplinas()
   const [coresDraft, setCoresDraft] = useState({})
   const [disciplinas, setDisciplinas] = useState([])
-  const [novaDisciplina, setNovaDisciplina] = useState('')
   const [status, setStatus] = useState('')
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -96,24 +95,6 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
     }))
   }
 
-  function adicionarDisciplina() {
-    const nome = novaDisciplina.trim()
-    const chave = normalizarDisciplina(nome)
-    if (!chave) return
-    const corInicial = resolverHexDisciplina(nome, coresDraft)
-
-    setDisciplinas((atuais) => (
-      atuais.some((disciplina) => normalizarDisciplina(disciplina) === chave)
-        ? atuais
-        : [...atuais, nome].sort((a, b) => a.localeCompare(b, 'pt-BR'))
-    ))
-    setCoresDraft((atual) => ({
-      ...atual,
-      [chave]: atual[chave] || { nome, cor: corInicial },
-    }))
-    setNovaDisciplina('')
-  }
-
   async function salvarCores() {
     const coresParaSalvar = disciplinasVisiveis.reduce((mapa, disciplina) => {
       const chave = normalizarDisciplina(disciplina)
@@ -152,21 +133,20 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
 
   return (
     <div className='cores-disc-container'>
-      
-      {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
-      <div 
-        className='cores-disc-topo' 
-        style={{ 
+
+      <div
+        className='cores-disc-topo'
+        style={{
           width: "100%",
-          marginBottom: "32px", 
-          paddingBottom: "24px", 
-          borderBottom: "1px solid var(--borda)" 
+          marginBottom: "32px",
+          paddingBottom: "24px",
+          borderBottom: "1px solid var(--borda)"
         }}
       >
-        <div 
-          style={{ 
+        <div
+          style={{
             paddingLeft: "15px",
-            borderLeft: "3px solid var(--roxo)" 
+            borderLeft: "3px solid var(--roxo)"
           }}
         >
           <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
@@ -177,13 +157,12 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
             Identidade visual para turmas e cronogramas.
           </p>
         </div>
-        
+
         <button className='cores-disc-salvar' onClick={salvarCores} disabled={salvando}>
           <Save size={16} />
           {salvando ? 'Salvando...' : 'Salvar cores'}
         </button>
       </div>
-      {/* --- FIM DO HEADER --- */}
 
       <section className='cores-disc-card'>
         <div className='cores-disc-card-header'>
@@ -209,24 +188,6 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
       </section>
 
       <section className='cores-disc-card-2'>
-        <div className='cores-disc-add'>
-          <div className='cores-disc-input-wrap'>
-            <label>Adicionar disciplina</label>
-            <input
-              value={novaDisciplina}
-              onChange={(e) => setNovaDisciplina(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') adicionarDisciplina()
-              }}
-              placeholder='Ex: Matemática aplicada'
-            />
-          </div>
-          <button className='cores-disc-add-btn' onClick={adicionarDisciplina}>
-            <Plus size={16} />
-            Adicionar
-          </button>
-        </div>
-
         {erro && <p className='cores-disc-feedback erro'>{erro}</p>}
         {status && <p className='cores-disc-feedback sucesso'>{status}</p>}
 
@@ -272,4 +233,4 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
       </section>
     </div>
   )
-} 
+}

@@ -108,8 +108,8 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   useEffect(() => {
     if (!idTurma) return;
 
-    const unsubArquivos = escutarArquivosDaTurma(idTurma, (dados) => setArquivos(dados));
-    const unsubSolicitacoes = escutarSolicitacoes(idTurma, (dados) => setSolicitacoes(dados));
+const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivos(dados));
+  const unsubSolicitacoes = escutarSolicitacoes(uid, idTurma, (dados) => setSolicitacoes(dados));
 
     return () => {
       unsubArquivos();

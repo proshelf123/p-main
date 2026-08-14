@@ -3,10 +3,11 @@ import { Plus, Save, Trash2, UsersRound } from 'lucide-react'
 import {
   buscarProfessores,
   escutarProfessoresDisciplinas,
+  salvarCoresDisciplinas,
   salvarProfessoresDisciplinas,
 } from '../firebase/estrutura'
 import useCoresDisciplinas from '../hooks/useCoresDisciplinas'
-import { montarCoresDisciplina, normalizarDisciplina } from '../secoes/coresDisciplinas'
+import { montarCoresDisciplina, normalizarDisciplina, resolverHexDisciplina } from '../secoes/coresDisciplinas'
 import { ehDisciplinaComSufixo } from '../secoes/vinculosDisciplinas'
 import DropdownComPortal from '../secoes/DropwdownComPortal'
 import './coordenador.css'
@@ -14,7 +15,7 @@ import './coordenador.css'
 const LETRAS_PROFESSORES = 'BCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 function valorProfessor(professor) {
-  return professor?.id || professor?.email || professor?.nomePDF || professor?.nome || ''
+  return professor?.id || professor?.email || professor?.nome || ''
 }
 
 function dadosProfessor(professores, valor) {
@@ -26,7 +27,6 @@ function montarVinculo(disciplina, professor) {
     disciplina,
     professorId: professor?.id || '',
     professorNome: professor?.nome || '',
-    professorNomePDF: professor?.nomePDF || professor?.nome || '',
     professorEmail: professor?.email || '',
   }
 }
@@ -41,14 +41,15 @@ export default function ProfessoresDisciplinas({ uid }) {
   const [erro, setErro] = useState('')
   const [dropdownAberto, setDropdownAberto] = useState(null)
   const [professoresExtras, setProfessoresExtras] = useState({})
+  const [novaDisciplina, setNovaDisciplina] = useState('')
+  const [adicionando, setAdicionando] = useState(false)
 
   useEffect(() => {
     let ativo = true
 
-    buscarProfessores()
-      .then((lista) => {
-        if (ativo) setProfessores(lista)
-      })
+    buscarProfessores(uid).then((lista) => {
+      if (ativo) setProfessores(lista)
+    })
       .catch((err) => {
         console.error('Erro ao carregar professores para disciplinas:', err)
         if (ativo) setErro('Nao foi possivel carregar os professores.')
@@ -58,7 +59,7 @@ export default function ProfessoresDisciplinas({ uid }) {
   }, [])
 
   useEffect(() => {
-    const unsubscribe = escutarProfessoresDisciplinas(
+    const unsubscribe = escutarProfessoresDisciplinas(uid,
       (vinculos) => {
         setVinculosDraft(vinculos)
         setCarregando(false)
@@ -88,10 +89,40 @@ export default function ProfessoresDisciplinas({ uid }) {
     ...professores
       .map((professor) => ({
         valor: valorProfessor(professor),
-        label: professor.nomePDF || professor.nome || professor.email || 'Professor',
+        label: professor.nome || professor.email || 'Professor',
       }))
       .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
   ]), [professores])
+
+  async function adicionarDisciplina() {
+    const nome = novaDisciplina.trim()
+    const chave = normalizarDisciplina(nome)
+    if (!chave) return
+
+    if (coresDisciplinas[chave]) {
+      setErro(`A disciplina "${nome}" já existe.`)
+      return
+    }
+
+    const cor = resolverHexDisciplina(nome, coresDisciplinas)
+
+    setAdicionando(true)
+    setErro('')
+    setStatus('')
+    try {
+      await salvarCoresDisciplinas(uid, {
+        ...coresDisciplinas,
+        [chave]: { nome, cor },
+      })
+      setNovaDisciplina('')
+      setStatus(`Disciplina "${nome}" adicionada.`)
+    } catch (err) {
+      console.error('Erro ao adicionar disciplina:', err)
+      setErro('Erro ao adicionar a disciplina. Verifique as permissoes do Firestore.')
+    } finally {
+      setAdicionando(false)
+    }
+  }
 
   function letrasVisiveis(disciplina) {
     const chaveBase = normalizarDisciplina(disciplina)
@@ -175,21 +206,20 @@ export default function ProfessoresDisciplinas({ uid }) {
 
   return (
     <div className='cores-disc-container'>
-      
-      {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
-      <div 
-        className='cores-disc-topo' 
-        style={{ 
+
+      <div
+        className='cores-disc-topo'
+        style={{
           width: "100%",
-          marginBottom: "32px", 
-          paddingBottom: "24px", 
-          borderBottom: "1px solid var(--borda)" 
+          marginBottom: "32px",
+          paddingBottom: "24px",
+          borderBottom: "1px solid var(--borda)"
         }}
       >
-        <div 
-          style={{ 
+        <div
+          style={{
             paddingLeft: "15px",
-            borderLeft: "3px solid var(--roxo)" 
+            borderLeft: "3px solid var(--roxo)"
           }}
         >
           <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
@@ -200,13 +230,32 @@ export default function ProfessoresDisciplinas({ uid }) {
             Vincule os professores às suas respetivas disciplinas.
           </p>
         </div>
-        
+
         <button className='cores-disc-salvar' onClick={salvarVinculos} disabled={salvando}>
           <Save size={16} />
           {salvando ? 'Salvando...' : 'Salvar vinculos'}
         </button>
       </div>
-      {/* --- FIM DO HEADER --- */}
+
+      <section className='cores-disc-card'>
+        <div className='cores-disc-add'>
+          <div className='cores-disc-input-wrap'>
+            <label>Adicionar disciplina</label>
+            <input
+              value={novaDisciplina}
+              onChange={(e) => setNovaDisciplina(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') adicionarDisciplina()
+              }}
+              placeholder='Ex: Matemática aplicada'
+            />
+          </div>
+          <button className='cores-disc-add-btn' onClick={adicionarDisciplina} disabled={adicionando}>
+            <Plus size={16} />
+            {adicionando ? 'Adicionando...' : 'Adicionar'}
+          </button>
+        </div>
+      </section>
 
       <section className='cores-disc-card'>
         <div className='cores-disc-card-header'>

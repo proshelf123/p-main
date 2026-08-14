@@ -103,7 +103,7 @@ function Etapa1({ onProximo }) {
             <img src={LogoIcone} className={styles['logo-login']} alt="Logo" />
             <div className={styles['logo-placeholder']} aria-label="Logo ProShelf" />
 
-            <h2 id="acessar">Primeiro acesso</h2>
+            <h2 id={styles.acessar}>Primeiro acesso</h2>
             <p className={styles.subtitulo}>Acesso disponibilizado pela coordenação</p>
 
             {erro && (

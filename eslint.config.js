@@ -8,6 +8,7 @@ export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{js,jsx}'],
+    ignores: ['functions/**'], // <- exclui functions daqui
     extends: [
       js.configs.recommended,
       reactHooks.configs.flat.recommended,
@@ -25,5 +26,14 @@ export default defineConfig([
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
+  },
+  {
+    files: ['functions/**/*.js'], // <- bloco novo pro backend
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'commonjs',
+      globals: globals.node,
+    },
+    extends: [js.configs.recommended],
   },
 ])

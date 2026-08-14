@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase'; 
 // IMPORTAÇÃO NOVA: Adicionado o deleteDoc
-import { collection, getDocs, query, where, doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged, 
   getAuth, 
-  createUserWithEmailAndPassword
 } from 'firebase/auth';
-import { initializeApp, deleteApp } from 'firebase/app';
 import emailjs from '@emailjs/browser';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Configuração do Firebase necessária para o app secundário de criação de contas
 const firebaseConfig = {
@@ -97,67 +96,45 @@ export default function AdminProShelf() {
   };
 
 const handleAprovar = async (escola) => {
-    if (!window.confirm(`Tem certeza que deseja aprovar a escola "${escola.nomeInstituicao}"?`)) return;
+  if (!window.confirm(`Tem certeza que deseja aprovar a escola "${escola.nomeInstituicao}"?`)) return;
 
-    setProcessandoId(escola.id);
-    try {
-      // 1. PRIMEIRO: Tenta criar a conta no Firebase Auth 
-      // (Se o e-mail já existir, vai dar erro aqui e pular direto para o "catch" lá embaixo, sem aprovar a escola!)
-      const tempApp = initializeApp(firebaseConfig, "TempAuthApp_" + Date.now());
-      const tempAuth = getAuth(tempApp);
-      // 🔥 AQUI ESTÁ A MÁGICA: Gera uma senha aleatória de 8 caracteres!
-      const senhaTemporaria = gerarSenhaAleatoria(8); 
-      
- await createUserWithEmailAndPassword(tempAuth, escola.email, senhaTemporaria);
-      await deleteApp(tempApp); // Fecha o app temporário
+  setProcessandoId(escola.id);
+  try {
+    const senhaTemporaria = gerarSenhaAleatoria(8); // Usando a sua função para gerar senha de 8 caracteres
 
-      // 2. SEGUNDO: Cria o documento do usuário coordenador no Firestore
-      await setDoc(doc(db, "usuarios", escola.email), {
-        email: escola.email,
-        nome: escola.responsavel,
-        cargo: "Coordenador",
-        escolaId: escola.id,
-        nomeInstituicao: escola.nomeInstituicao,
-        criadoEm: new Date()
-      });
+    // Chama a Cloud Function segura no Backend
+    const functions = getFunctions();
+    const aprovarEscola = httpsCallable(functions, 'aprovarEscola');
+    
+    await aprovarEscola({ 
+      escolaId: escola.id, 
+      senhaTemporaria: senhaTemporaria 
+    });
 
-      // 3. TERCEIRO: A conta foi criada com sucesso! Agora sim atualizamos o status da escola para 'aprovada'
-      const escolaRef = doc(db, "escolas", escola.id);
-      await updateDoc(escolaRef, { status: 'aprovada' });
+    // Envia o e-mail pelo EmailJS apenas após o Firebase aprovar com sucesso
+    const templateParams = {
+      to_email: escola.email,
+      to_name: escola.responsavel,
+      nome_escola: escola.nomeInstituicao,
+      senha_temp: senhaTemporaria,
+    };
 
-      // 4. QUARTO: Envia o e-mail automático via EmailJS
-      const templateParams = {
-        to_email: escola.email,
-        to_name: escola.responsavel,
-        nome_escola: escola.nomeInstituicao,
-        senha_temp: senhaTemporaria,
-      };
+    await emailjs.send('proshelf', 'template_q6rlqso', templateParams, 'e1dAcW59wam10IXZC');
 
-      await emailjs.send(
-        'proshelf',  
-        'template_q6rlqso',  
-        templateParams, 
-        'e1dAcW59wam10IXZC'   
-      );
-
-      alert(`Escola aprovada com sucesso e e-mail enviado para ${escola.email}!`);
-
-      // Remove da tela
-      setEscolasPendentes(prev => prev.filter(e => e.id !== escola.id));
-      
-    } catch (error) {
-      console.error("Erro ao aprovar escola ou enviar e-mail:", error);
-      
-      // Dá um aviso amigável se o e-mail já estiver em uso
-      if (error.code === 'auth/email-already-in-use') {
-        alert("Erro: O e-mail desta escola já possui uma conta no sistema. Exclua a conta antiga ou reprove esta solicitação.");
-      } else {
-        alert("Erro ao aprovar escola / enviar e-mail: " + error.message);
-      }
-    } finally {
-      setProcessandoId(null);
+    alert(`Escola aprovada com sucesso e e-mail enviado para ${escola.email}!`);
+    setEscolasPendentes(prev => prev.filter(e => e.id !== escola.id));
+  } catch (error) {
+    console.error("Erro ao aprovar escola:", error);
+    // Se o backend retornar que o e-mail já existe (nosso tratamento anti-conflito)
+    if (error.message.includes('already-exists')) {
+      alert("Conflito: Já existe um coordenador ou escola utilizando este e-mail.");
+    } else {
+      alert("Erro ao aprovar escola: " + error.message);
     }
-  };
+  } finally {
+    setProcessandoId(null);
+  }
+};
 
 // NOVA FUNÇÃO: Reprovar (Excluir) Escola
 const handleReprovar = async (escola) => {

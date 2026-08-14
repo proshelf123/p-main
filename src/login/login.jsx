@@ -81,7 +81,7 @@ function Login() {
         <div className={styles["lado-branco"]}>
           <img src={LogoIcone} className={styles["logo-login"]} alt="Logo" />
           {/* Transformamos o ID acessar em className */}
-          <h2 className={styles.acessar}>Acessar a plataforma</h2>
+          <h2 id={styles.acessar}>Acessar a plataforma</h2>
           {/* 👇 NOVA DIV ENVOLVENDO TUDO 👇 */}
           <div className={styles["form-wrapper"]}>
             <div className={styles.campo}>

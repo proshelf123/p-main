@@ -252,14 +252,13 @@ export default function Turmas({ uid, professor }) {
 
   useEffect(() => {
     if (uid && isCoordenador) {
-      buscarProfessores().then((dados) => setProfessores(dados));
-    }
+buscarProfessores(uid).then((dados) => setProfessores(dados));    }
   }, [uid, isCoordenador]);
 
   useEffect(() => {
     if (!uid || !isCoordenador) return;
 
-    return escutarProfessoresDisciplinas(setProfessoresDisciplinas, (err) => {
+    return escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => {
       console.error("Erro ao carregar professores por disciplina:", err);
       setProfessoresDisciplinas({});
     });
@@ -451,7 +450,7 @@ export default function Turmas({ uid, professor }) {
     formTurma.professor.trim() === ""
       ? professores
       : professores.filter((p) =>
-          String(p.nome || p.nomePDF || p.email || "")
+          String(p.nome || p.email || "")
             .toLowerCase()
             .includes(formTurma.professor.toLowerCase())
         );
@@ -491,16 +490,13 @@ export default function Turmas({ uid, professor }) {
           valor:
             professorItem.id ||
             professorItem.email ||
-            professorItem.nomePDF ||
             professorItem.nome ||
             "",
           label:
-            professorItem.nomePDF ||
             professorItem.nome ||
             professorItem.email ||
             "Professor",
           professor:
-            professorItem.nomePDF ||
             professorItem.nome ||
             professorItem.email ||
             "",

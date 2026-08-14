@@ -127,12 +127,12 @@ export default function Arquivos({ uid, professor }) {
   }, [professor, uid])
 
   useEffect(() => {
-    const unsub = escutarTurmasPeriodo((mapa) => {
+    const unsub = escutarTurmasPeriodo(uid, (mapa) =>  {
       setTurmasPorPeriodo(mapa)
       setCarregando(false)
     })
     return () => unsub()
-  }, [])
+  },)
 
   const listaPeriodos = PERIODOS_BASE.map(periodo => ({
     ...periodo,

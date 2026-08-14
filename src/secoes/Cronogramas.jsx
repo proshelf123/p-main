@@ -804,10 +804,8 @@ export default function Cronogramas({
 
   function professorOpcoes() {
     return professoresEditor.map((professorItem) => {
-      const valor = professorItem.nomePDF || professorItem.nome || ''
+      const valor = professorItem.nome || ''
       const label = professorItem.nome
-        ? `${professorItem.nome}${professorItem.nomePDF ? ` (${professorItem.nomePDF})` : ''}`
-        : valor
       return { valor, label }
     })
       .filter((item) => item.valor)
@@ -999,7 +997,7 @@ export default function Cronogramas({
       setErroEditor('')
       setSucessoEditor('')
 
-      await deletarCronogramaCursoManual({ nomeTurma: curso.id })
+await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
 
       if (normalizarTextoCronograma(nomeTurmaEditor()) === curso.id) {
         limparRascunhoCronograma(uid)

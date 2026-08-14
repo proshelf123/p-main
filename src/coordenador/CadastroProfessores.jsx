@@ -4,7 +4,7 @@
 // sem deslogar o coordenador.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc, setDoc, serverTimestamp, query, where } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { auth, functions, db } from '../firebase'
 import './coordenador.css'
@@ -170,7 +170,24 @@ export default function CadastroProfessores() {
     if (mostrarLoading) setLoading(true)
 
     try {
-      const snap = await getDocs(collection(db, 'professores_escola'))
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Usuário não autenticado.");
+
+      // 1. Busca o perfil do coordenador logado para descobrir o escolaId
+      const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
+      const escolaId = userSnap.data()?.escolaId;
+
+      if (!escolaId) {
+        throw new Error("Escola não identificada para este coordenador.");
+      }
+
+      // 2. Busca os professores APENAS dessa escola
+      const q = query(
+        collection(db, 'professores_escola'),
+        where('escolaId', '==', escolaId)
+      );
+      
+      const snap = await getDocs(q);
       const lista = snap.docs
         .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
         .sort((a, b) => obterNomeProfessor(a).localeCompare(
@@ -209,12 +226,13 @@ export default function CadastroProfessores() {
   }
 
 
-  async function garantirPerfilNoFirestore(uid, dados) {
+  async function garantirPerfilNoFirestore(uid, dados, escolaId) {
     try {
       await setDoc(doc(db, 'users', uid), {
         nome: dados.nome,
         email: dados.email,
         role: 'professor',
+        escolaId: escolaId, // Garante que o perfil tenha a escolaId caso a cloud function não tenha posto
         criadoEm: serverTimestamp(),
       }, { merge: true })
     } catch (err) {
@@ -250,7 +268,7 @@ export default function CadastroProfessores() {
       senha: form.senha,
     }
 
-    if (!dados.nome || !dados.email || !dados.senh) {
+    if (!dados.nome || !dados.email || !dados.senha) {
       setErro('Preencha todos os campos.'); return
     }
     if (!dados.email.includes('@')) {
@@ -272,7 +290,11 @@ export default function CadastroProfessores() {
         throw new Error('A função criou o professor, mas não retornou o UID.')
       }
 
-      await garantirPerfilNoFirestore(uidCriado, dados)
+      // Pega a escola do usuário atual para garantir que o perfil frontend salve certinho
+      const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      const escolaId = userSnap.data()?.escolaId;
+
+      await garantirPerfilNoFirestore(uidCriado, dados, escolaId)
       await enviarNotificacaoBoasVindas(uidCriado, dados.nome)
 
       if (!componenteAtivoRef.current) return
@@ -454,7 +476,7 @@ export default function CadastroProfessores() {
               <button
                 className='professor-remover-btn'
                 type='button'
-                onClick={() => solicitarDelecao(professor)} // MUDOU AQUI: Chama o Modal!
+                onClick={() => solicitarDelecao(professor)}
                 disabled={excluindoEste || salvando}
                 title='Remover professor'
               >

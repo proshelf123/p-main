@@ -130,7 +130,7 @@ const handleCadastro = async (e) => {
             // 3. Dispara o e-mail de RECEÇÃO DE CADASTRO
             await emailjs.send(
                 'proshelf',           // Seu Service ID
-                'template_recebido',  // SUBSTITUA PELO ID DO TEMPLATE DE "RECEBEMOS O SEU CADASTRO"
+                'template_zqo10yi',  // SUBSTITUA PELO ID DO TEMPLATE DE "RECEBEMOS O SEU CADASTRO"
                 templateParams,
                 'e1dAcW59wam10IXZC'   // Sua Public Key
             );

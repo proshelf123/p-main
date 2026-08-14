@@ -326,7 +326,6 @@ async function sincronizarProfessoresDoAuth(uidCoordenador) {
         String(perfil.nome || perfil.displayName || user.displayName || '').trim()
         || user.email.split('@')[0]
       const email = String(user.email).trim().toLowerCase()
-      const nomePDF = String(perfil.nomePDF || nome).trim().toUpperCase()
       const agora = FieldValue.serverTimestamp()
 
       await Promise.all([
@@ -337,14 +336,12 @@ async function sincronizarProfessoresDoAuth(uidCoordenador) {
           modalidade: perfil.modalidade || 'Presencial',
           email,
           role: 'professor',
-          nomePDF,
           atualizadoEm: agora,
         }, { merge: true }),
         db.doc(`professores_escola/${sanitizarEmail(email)}`).set({
           uid: user.uid,
           nome,
           email,
-          nomePDF,
           atualizadoEm: agora,
         }, { merge: true }),
       ])
@@ -359,50 +356,55 @@ async function sincronizarProfessoresDoAuth(uidCoordenador) {
 }
 
 async function criarProfessorHandler(request) {
-    await exigirCoordenador(request)
+    await exigirCoordenador(request);
 
-    if (request.data?.acao === 'sincronizarProfessores') {
-      return await sincronizarProfessoresDoAuth(request.auth.uid)
+    // 1. DESCOBRIR A ESCOLA DO COORDENADOR QUE ESTÁ FAZENDO A REQUISIÇÃO
+    const coordenadorRef = await getDb().doc(`users/${request.auth.uid}`).get();
+    const escolaIdDoCoordenador = coordenadorRef.data()?.escolaId;
+
+    if (!escolaIdDoCoordenador) {
+        throw new HttpsError('failed-precondition', 'Este coordenador não está vinculado a nenhuma escola.');
     }
 
-    const nome = String(request.data?.nome || '').trim()
-    const email = String(request.data?.email || '').trim().toLowerCase()
-    const senha = String(request.data?.senha || '')
-    const nomePDF = String(request.data?.nomePDF || '').trim().toUpperCase()
+    if (request.data?.acao === 'sincronizarProfessores') {
+      // Se usar sincronização, precisará passar o escolaIdDoCoordenador para a função sincronizarProfessoresDoAuth também.
+      return await sincronizarProfessoresDoAuth(request.auth.uid);
+    }
 
-    if (!nome || !email || !senha || !nomePDF) {
-      throw new HttpsError('invalid-argument', 'Nome, e-mail, senha e nomePDF são obrigatórios.')
+    const nome = String(request.data?.nome || '').trim();
+    const email = String(request.data?.email || '').trim().toLowerCase();
+    const senha = String(request.data?.senha || '');
+
+    if (!nome || !email || !senha) {
+      throw new HttpsError('invalid-argument', 'Nome, e-mail e senha são obrigatórios.');
     }
 
     if (senha.length < 6) {
-      throw new HttpsError('invalid-argument', 'A senha deve ter pelo menos 6 caracteres.')
+      throw new HttpsError('invalid-argument', 'A senha deve ter pelo menos 6 caracteres.');
     }
 
-    const auth = getAuth()
-    let userRecord
+    const auth = getAuth();
+    let userRecord;
 
     try {
       userRecord = await auth.createUser({
         email,
         password: senha,
         displayName: nome,
-      })
+      });
     } catch (err) {
       if (err.code !== 'auth/email-already-exists') {
-        throw new HttpsError('internal', err.message || 'Erro ao criar usuário.')
+        throw new HttpsError('internal', err.message || 'Erro ao criar usuário.');
       }
-
-      userRecord = await auth.getUserByEmail(email)
-      await auth.updateUser(userRecord.uid, {
-        displayName: nome,
-        password: senha,
-      })
+      userRecord = await auth.getUserByEmail(email);
+      await auth.updateUser(userRecord.uid, { displayName: nome, password: senha });
     }
 
-    const db = getDb()
-    const agora = FieldValue.serverTimestamp()
-    const emailId = sanitizarEmail(email)
+    const db = getDb();
+    const agora = FieldValue.serverTimestamp();
+    const emailId = sanitizarEmail(email);
 
+    // 2. SALVAR O PROFESSOR COM O CARIMBO DO escolaId
     await Promise.all([
       db.doc(`users/${userRecord.uid}`).set({
         nome,
@@ -411,21 +413,23 @@ async function criarProfessorHandler(request) {
         modalidade: 'Presencial',
         email,
         role: 'professor',
-        nomePDF,
+        escolaId: escolaIdDoCoordenador, // <--- ADICIONADO AQUI
         criadoEm: agora,
         atualizadoEm: agora,
       }, { merge: true }),
+      
       db.doc(`professores_escola/${emailId}`).set({
         uid: userRecord.uid,
         nome,
         email,
-        nomePDF,
+        escolaId: escolaIdDoCoordenador, // <--- ADICIONADO AQUI
         atualizadoEm: agora,
       }, { merge: true }),
-    ])
+    ]);
 
-  return { uid: userRecord.uid }
+  return { uid: userRecord.uid };
 }
+
 
 exports.criarProfessor = onCall(
   {
@@ -532,3 +536,93 @@ exports.criarNotificacaoPorRole = onCall(
     })
   }
 )
+
+// Função para checar se é um Admin Geral
+async function exigirAdminGeral(request) {
+  if (!request.auth?.uid) {
+    throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+  }
+
+  const adminSnap = await getDb().doc(`admins/${request.auth.uid}`).get();
+  if (!adminSnap.exists) {
+    throw new HttpsError('permission-denied', 'Acesso negado. Apenas administradores gerais podem executar esta ação.');
+  }
+}
+
+// Lógica de aprovação de escola
+async function aprovarEscolaHandler(request) {
+  // 1. Garante que só o Admin Geral pode rodar isso
+  await exigirAdminGeral(request);
+
+  const escolaId = request.data?.escolaId;
+  const senhaTemporaria = request.data?.senhaTemporaria;
+
+  if (!escolaId || !senhaTemporaria) {
+    throw new HttpsError('invalid-argument', 'ID da escola e senha são obrigatórios.');
+  }
+
+  const db = getDb();
+  const auth = getAuth();
+  
+  // 2. Busca os dados da Escola Pendente
+  const escolaRef = db.collection('escolas').doc(escolaId);
+  const escolaSnap = await escolaRef.get();
+
+  if (!escolaSnap.exists) {
+    throw new HttpsError('not-found', 'Escola não encontrada.');
+  }
+
+  const escolaData = escolaSnap.data();
+
+  // 3. Verifica conflitos (ID único de e-mail)
+  // O Firebase já cuida do conflito do ID do documento (escolaId). Aqui garantimos que não exista outra conta com o mesmo e-mail.
+  try {
+    await auth.getUserByEmail(escolaData.email);
+    // Se não der erro, o e-mail já existe!
+    throw new HttpsError('already-exists', 'Já existe um usuário registrado com este e-mail.');
+  } catch (err) {
+    if (err.code !== 'auth/user-not-found' && err.code !== 'already-exists') {
+      throw new HttpsError('internal', 'Erro ao verificar conflito de e-mail.');
+    }
+    if (err.code === 'already-exists') throw err;
+  }
+
+  // 4. Cria o usuário coordenador de forma segura no Firebase Auth
+  const userRecord = await auth.createUser({
+    email: escolaData.email,
+    password: senhaTemporaria,
+    displayName: escolaData.responsavel,
+  });
+
+  const novoUid = userRecord.uid;
+  const agora = FieldValue.serverTimestamp();
+
+  // 5. Salva os dados no Firestore (Tudo ao mesmo tempo para evitar erros)
+  await Promise.all([
+    // Atualiza status da escola
+    escolaRef.update({ status: 'aprovada', aprovadaEm: agora }),
+    
+    // Cria o perfil do coordenador na coleção users
+    db.doc(`users/${novoUid}`).set({
+      email: escolaData.email,
+      nome: escolaData.responsavel,
+      role: 'coordenador',
+      escolaId: escolaId, // Vínculo com a escola
+      nomeInstituicao: escolaData.nomeInstituicao,
+      criadoEm: agora,
+      atualizadoEm: agora,
+    })
+  ]);
+
+  return { sucesso: true, novoUid, email: escolaData.email };
+}
+
+// Exportar a função para ser chamada pelo front-end
+exports.aprovarEscola = onCall(
+  {
+    ...PUBLIC_CALLABLE_OPTIONS,
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  aprovarEscolaHandler
+);

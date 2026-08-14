@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // <-- Importação do framer-motion adicionada
+import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "../firebase";
 import { 
   buscarProfessores, 
@@ -39,41 +39,34 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
   
   const coresDisciplinas = useCoresDisciplinas();
 
-  // Carrega os professores e vínculos (Igual ao Turmas.jsx)
   useEffect(() => {
-    buscarProfessores().then(setProfessores);
-    const unsub = escutarProfessoresDisciplinas(setProfessoresDisciplinas, (err) => console.error(err));
+buscarProfessores(uid).then(setProfessores);
+  const unsub = escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => console.error(err));
     return () => unsub();
   }, []);
 
   const disciplinasCadastradas = useMemo(() => listarDisciplinasComCor(coresDisciplinas), [coresDisciplinas]);
 
   const opcoesDisciplinasTurma = useMemo(() => {
-    const opcoes = disciplinasCadastradas.map(d => ({ valor: d, label: d }));
-    if (form.disciplina && !opcoes.some(o => normalizarDisciplina(o.valor) === normalizarDisciplina(form.disciplina))) {
-      opcoes.push({ valor: form.disciplina, label: form.disciplina });
+    const opcoes = [...disciplinasCadastradas];
+    
+    if (form.disciplina && !opcoes.some(o => normalizarDisciplina(o) === normalizarDisciplina(form.disciplina))) {
+      opcoes.push(form.disciplina);
     }
+    
     return [
-      { valor: "", label: "Selecione a disciplina" },
-      ...opcoes.sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
+      "Selecione a disciplina",
+      ...opcoes.sort((a, b) => a.localeCompare(b, "pt-BR")),
     ];
   }, [disciplinasCadastradas, form.disciplina]);
 
-  const professoresOrdenados = useMemo(() => professores
-    .map(p => ({ valor: p.id || p.email || p.nome, label: p.nomePDF || p.nome || p.email, professor: p.nomePDF || p.nome, professorId: p.id || "" }))
-    .filter(item => item.valor && item.professor)
-    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR")), [professores]);
-
-  const opcoesProfessoresTurma = useMemo(() => {
-    const vinculados = listarVinculosDisciplina(form.disciplina, professoresDisciplinas)
-      .map(v => ({ valor: v.professorId || v.nome, label: v.nome, professor: v.nome, professorId: v.professorId || "" }))
-      .filter(item => item.valor && item.professor)
-      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
-    const base = vinculados.length > 0 ? vinculados : professoresOrdenados;
-    return [{ valor: "", label: "Sem professor", professor: "", professorId: "" }, ...base];
-  }, [form.disciplina, professoresDisciplinas, professoresOrdenados]);
-
   function selecionarDisciplina(disciplina) {
+    if (!disciplina) {
+      setForm(atual => ({ ...atual, disciplina: "", professor: "", professorId: "" }));
+      setErro("");
+      return;
+    }
+
     const professoresDaDisciplina = listarVinculosDisciplina(disciplina, professoresDisciplinas)
       .map(v => ({ professor: v.nome, professorId: v.professorId || "" }))
       .filter(item => item.professor)
@@ -84,7 +77,9 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
     setErro("");
   }
 
-  const professoresFiltrados = form.professor.trim() === "" ? professores : professores.filter(p => String(p.nome || "").toLowerCase().includes(form.professor.toLowerCase()));
+  const professoresFiltrados = form.professor.trim() === "" 
+    ? professores 
+    : professores.filter(p => String(p.nome || "").toLowerCase().includes(form.professor.toLowerCase()));
 
   async function handleSalvar() {
     if (!form.curso.trim()) { setErro("Informe o nome do curso."); return; }
@@ -93,15 +88,12 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
     setSalvando(true);
     setErro("");
 
-    // Monta o nome final (Ex: 1° Informática - Modular)
     const nomeTurmaFinal = `${form.ano} ${form.curso.trim()}${form.modular ? ' - Modular' : ''}`;
     const nomePeriodoFormatado = `Período ${form.periodo}`;
 
     try {
-      // 1. Cria a base em "Arquivos" (estrutura de Período -> Turma)
       await adicionarTurmaPeriodo(nomeTurmaFinal, nomePeriodoFormatado, uid);
 
-      // 2. Cria a turma específica em "Turmas" (Vinculando à Disciplina)
       await criarTurma(uid, {
         nome: nomeTurmaFinal,
         disciplina: form.disciplina,
@@ -110,7 +102,6 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
         professorId: form.professorId
       });
 
-      // 3. Dispara Notificações
       await criarNotificacaoPorRole({
         role: "professor",
         titulo: "Nova turma criada",
@@ -142,124 +133,159 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 99999 }}>
-      {/* Adicionada uma leve animação de entrada no próprio Modal opcionalmente */}
+    <div 
+      className="modal-overlay" 
+      onClick={onClose} 
+      style={{ 
+        zIndex: 99999,
+        padding: "20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+    >
+      {/* CARD BRANCO PRINCIPAL */}
       <motion.div 
         className="modal" 
         onClick={e => e.stopPropagation()} 
-        style={{ maxWidth: 500 }}
+        style={{ 
+          maxWidth: 500,
+          width: "100%",
+          maxHeight: "85vh", 
+          display: "flex", 
+          flexDirection: "column",
+          overflow: "hidden", // ISSO CORTA QUALQUER VAZAMENTO
+          padding: 0, // Removemos o padding externo para o scrollbar ficar no canto certo
+          borderRadius: "12px",
+          backgroundColor: "var(--branco, #ffffff)"
+        }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-          <div>
-            <h3 className="modal-titulo" style={{ margin: 0, fontSize: 18 }}>Criação Unificada de Turma</h3>
-            <p style={{ fontSize: 12, color: "var(--texto-sec)", margin: "4px 0 0" }}>
-              Cria a pasta nos Arquivos e o vínculo de disciplina nas Turmas simultaneamente.
-            </p>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texto-sec)" }}>
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* --- PASSO 1: DADOS BASE (ARQUIVOS) --- */}
-        <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
-          <h4 style={{ fontSize: 12, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>1. Dados Gerais</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <DropdownComPortal
-              label="Ano"
-              opcoes={ANOS.map(a => `${a} Ano`)}
-              valor={`${form.ano} Ano`}
-              onChange={opt => setForm({ ...form, ano: opt.replace(" Ano", "") })}
-              id="uni-ano" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
-            />
-            <DropdownComPortal
-              label="Período"
-              opcoes={PERIODOS}
-              valor={form.periodo}
-              onChange={opt => setForm({ ...form, periodo: opt })}
-              id="uni-periodo" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
-            />
-          </div>
+        
+        {/* CONTAINER INTERNO COM SCROLL */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px", boxSizing: "border-box" }}>
           
-          <div className="perfil-grupo" style={{ marginTop: 12 }}>
-            <label className="perfil-label">Nome do Curso</label>
-            <input className="perfil-input" value={form.curso} onChange={e => setForm({ ...form, curso: e.target.value })} placeholder="Ex: Informática para Internet" />
-          </div>
-
-          <div className="perfil-grupo" style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 12 }} onClick={() => setForm({ ...form, modular: !form.modular })}>
-            <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${form.modular ? "var(--roxo)" : "#D1D5DB"}`, background: form.modular ? "var(--roxo)" : "var(--branco)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {form.modular && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+            <div>
+              <h3 className="modal-titulo" style={{ margin: 0, fontSize: 18 }}>Criação Unificada de Turma</h3>
+              <p style={{ fontSize: 12, color: "var(--texto-sec)", margin: "4px 0 0" }}>
+                Cria a pasta nos Arquivos e o vínculo de disciplina nas Turmas.
+              </p>
             </div>
-            <span style={{ fontSize: 13, color: "var(--texto)", fontWeight: 500 }}>Turma Modular</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texto-sec)" }}>
+              <X size={20} />
+            </button>
           </div>
-        </div>
 
-        {/* --- PASSO 2: DISCIPLINA (TURMAS) --- */}
-        <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8 }}>
-          <h4 style={{ fontSize: 12, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>2. Vínculo de Disciplina Inicial</h4>
-          
-          <DropdownComPortal
-            label="Disciplina"
-            opcoes={opcoesDisciplinasTurma}
-            valor={form.disciplina}
-            onChange={selecionarDisciplina}
-            id="uni-disciplina" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
-          />
-
-          <div className="perfil-grupo" style={{ marginTop: 12, position: "relative" }}>
-            <label className="perfil-label">Professor</label>
-            <input
-              className="perfil-input"
-              value={form.professor}
-              onChange={e => { setForm({ ...form, professor: e.target.value, professorId: "" }); setMostrarSugestoes(true); }}
-              onFocus={() => setMostrarSugestoes(true)}
-              onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
-              placeholder="Digite o nome do professor..."
-            />
+          {/* --- PASSO 1: DADOS BASE (ARQUIVOS) --- */}
+          <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
+            <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>1. Dados Gerais</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <DropdownComPortal
+                label="Ano"
+                opcoes={ANOS.map(a => `${a} Ano`)}
+                valor={`${form.ano} Ano`}
+                onChange={opt => setForm({ ...form, ano: opt.replace(" Ano", "") })}
+                id="uni-ano" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+              />
+              <DropdownComPortal
+                label="Período"
+                opcoes={PERIODOS}
+                valor={form.periodo}
+                onChange={opt => setForm({ ...form, periodo: opt })}
+                id="uni-periodo" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+              />
+            </div>
             
-            {/* ANIMAÇÃO APLICADA AQUI COM ANIMATE PRESENCE */}
-            <AnimatePresence>
-              {mostrarSugestoes && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="dropdown-menu" 
-                  style={{ position: "absolute", top: "100%", left: 0, right: 0, maxHeight: "160px", overflowY: "auto", zIndex: 1300 }}
-                >
-                  {professoresFiltrados.length > 0 ? (
-                    professoresFiltrados.map(p => (
-                      <button key={p.id} type="button" className="dropdown-item" onMouseDown={() => { setForm({ ...form, professor: p.nome, professorId: p.id }); setMostrarSugestoes(false); }}>
-                        {p.nome}
-                      </button>
-                    ))
-                  ) : (
-                    <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--texto-sec)" }}>Nenhum encontrado</div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="perfil-grupo" style={{ marginTop: 12, marginBottom: 0 }}>
+              <label className="perfil-label">Nome do Curso</label>
+              <input className="perfil-input" value={form.curso} onChange={e => setForm({ ...form, curso: e.target.value })} placeholder="Ex: Informática para Internet" />
+            </div>
 
+            <div className="perfil-grupo" style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 12, marginBottom: 0 }} onClick={() => setForm({ ...form, modular: !form.modular })}>
+              <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${form.modular ? "var(--roxo)" : "#D1D5DB"}`, background: form.modular ? "var(--roxo)" : "var(--branco)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {form.modular && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
+              </div>
+              <span style={{ fontSize: 13, color: "var(--texto)", fontWeight: 500 }}>Turma Modular</span>
+            </div>
           </div>
-        </div>
 
-        {form.curso.trim() && form.disciplina && (
-          <div style={{ background: "var(--roxo-claro)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--roxo)", fontWeight: 600, marginTop: 12 }}>
-            Ação: Criando Arquivos e Turma ({form.disciplina}) para "{form.ano} {form.curso.trim()}{form.modular ? ' - Modular' : ''}"
+          {/* --- PASSO 2: DISCIPLINA (TURMAS) --- */}
+          <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8 }}>
+            <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>2. Vínculo de Disciplina Inicial</h4>
+            
+            <DropdownComPortal
+              label="Disciplina"
+              opcoes={opcoesDisciplinasTurma}
+              valor={form.disciplina || "Selecione a disciplina"}
+              onChange={opt => selecionarDisciplina(opt === "Selecione a disciplina" ? "" : opt)}
+              id="uni-disciplina" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+            />
+
+            <div className="perfil-grupo" style={{ marginTop: 12, marginBottom: 0, position: "relative" }}>
+              <label className="perfil-label">Professor</label>
+              <input
+                className="perfil-input"
+                value={form.professor}
+                onChange={e => { setForm({ ...form, professor: e.target.value, professorId: "" }); setMostrarSugestoes(true); }}
+                onFocus={() => setMostrarSugestoes(true)}
+                onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
+                placeholder="Digite o nome do professor..."
+              />
+              
+              <AnimatePresence>
+                {mostrarSugestoes && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="dropdown-menu" 
+                    style={{ 
+                      position: "absolute", top: "100%", left: 0, right: 0, 
+                      maxHeight: "160px", overflowY: "auto", zIndex: 1300,
+                      background: "var(--branco, #fff)", border: "1px solid var(--borda, #D1D5DB)", 
+                      borderRadius: "8px", marginTop: "4px", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                    }}
+                  >
+                    {professoresFiltrados.length > 0 ? (
+                      professoresFiltrados.map(p => (
+                        <button 
+                          key={p.id} type="button" className="dropdown-item" 
+                          onMouseDown={() => { setForm({ ...form, professor: p.nome, professorId: p.id }); setMostrarSugestoes(false); }}
+                          style={{ width: "100%", textAlign: "left", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "var(--texto)" }}
+                        >
+                          {p.nome}
+                        </button>
+                      ))
+                    ) : (
+                      <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--texto-sec)" }}>Nenhum encontrado</div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        )}
 
-        {erro && <p style={{ color: "#c0392b", fontSize: 12, margin: "8px 0 0" }}>{erro}</p>}
+          {form.curso.trim() && form.disciplina && (
+            <div style={{ background: "var(--roxo-claro)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--roxo)", fontWeight: 600, marginTop: 16 }}>
+              Ação: Criando Arquivos e Turma ({form.disciplina}) para "{form.ano} {form.curso.trim()}{form.modular ? ' - Modular' : ''}"
+            </div>
+          )}
 
-        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-          <button className="perfil-salvar" onClick={handleSalvar} disabled={salvando}>
-            {salvando ? "Criando Turma..." : "Criar Turma Unificada"}
-          </button>
-          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
+          {erro && <p style={{ color: "#c0392b", fontSize: 12, margin: "12px 0 0" }}>{erro}</p>}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+            <button className="perfil-salvar" onClick={handleSalvar} disabled={salvando} style={{ flex: 1 }}>
+              {salvando ? "Criando..." : "Criar Turma Unificada"}
+            </button>
+            <button className="btn-cancelar" onClick={onClose} style={{ flex: 1 }}>
+              Cancelar
+            </button>
+          </div>
+          
         </div>
       </motion.div>
     </div>

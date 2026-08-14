@@ -24,7 +24,7 @@ export function listarDisciplinasComCor(coresDisciplinas = {}) {
 }
 
 export function nomeProfessorVinculo(vinculo = {}) {
-  return vinculo.professorNomePDF || vinculo.professorNome || vinculo.professorEmail || ''
+  return vinculo.professorNome || vinculo.professorEmail || ''
 }
 
 export function listarVinculosDisciplina(disciplina, vinculos = {}) {

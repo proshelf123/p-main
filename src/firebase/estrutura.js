@@ -7,21 +7,49 @@ import {
   serverTimestamp, query, orderBy, where, onSnapshot, writeBatch
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { db, storage } from "../firebase";
-import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
+import { db, storage, auth } from "../firebase";
+import { criarNotificacaoPorRole } from "../notificacoes/notificacoes";
+
+// ═══════════════════════════════════════════════════════════
+//  SISTEMA MULTI-TENANCY (ISOLAMENTO POR ESCOLA)
+// ═══════════════════════════════════════════════════════════
+const _escolaIdCache = {};
+
+export async function getEscolaId(uidParam) {
+  const uid = uidParam || auth?.currentUser?.uid;
+  if (!uid) throw new Error("UID obrigatório para identificar a escola.");
+  
+  // Retorna do cache se já buscamos a escola deste usuário antes
+  if (_escolaIdCache[uid]) return _escolaIdCache[uid];
+
+  const snap = await getDoc(doc(db, "users", uid));
+  const escolaId = snap.data()?.escolaId;
+
+  if (!escolaId) {
+    console.warn(`[Multi-tenant] Escola não encontrada para o usuário ${uid}`);
+    return null;
+  }
+
+  _escolaIdCache[uid] = escolaId;
+  return escolaId;
+}
 
 // ═══════════════════════════════════════════════════════════
 //  PROFESSORES & PERFIL
 // ═══════════════════════════════════════════════════════════
 
-export async function buscarProfessores() {
-  const q = query(collection(db, "users"), where("role", "==", "professor"));
+export async function buscarProfessores(uid) {
+  const escolaId = await getEscolaId(uid);
+  const q = query(
+    collection(db, "users"), 
+    where("role", "==", "professor"),
+    where("escolaId", "==", escolaId) // ISOLAMENTO APLICADO
+  );
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({
     id: d.id,
     nome: d.data().nome,
     email: d.data().email,
-    nomePDF: d.data().nomePDF,
   }));
 }
 
@@ -31,6 +59,7 @@ export async function criarPerfil(uid, email) {
   if (snap.exists()) return;
 
   const emailNormalizado = String(email || "").trim().toLowerCase();
+  const escolaId = await getEscolaId(auth?.currentUser?.uid); // Pega do coordenador que está criando
 
   await setDoc(ref, {
     nome: "",
@@ -39,6 +68,7 @@ export async function criarPerfil(uid, email) {
     modalidade: "Presencial",
     email: emailNormalizado,
     role: "professor",
+    escolaId: escolaId,
     criadoEm: serverTimestamp(),
   });
 }
@@ -63,11 +93,8 @@ export async function buscarPerfil(uid) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  TURMAS
+//  CONFIGURAÇÕES (CORES E DISCIPLINAS)
 // ═══════════════════════════════════════════════════════════
-
-const CORES_DISCIPLINAS_REF = doc(db, "configuracoes_escola", "cores_disciplinas");
-const PROFESSORES_DISCIPLINAS_REF = doc(db, "configuracoes_escola", "professores_disciplinas");
 
 function normalizarMapaCoresDisciplinas(dados = {}) {
   const cores = dados.cores || {};
@@ -76,53 +103,70 @@ function normalizarMapaCoresDisciplinas(dados = {}) {
       acc[chave] = { nome: chave, cor: valor };
       return acc;
     }
-    acc[chave] = {
-      nome: valor?.nome || chave,
-      cor: valor?.cor || "",
-    };
+    acc[chave] = { nome: valor?.nome || chave, cor: valor?.cor || "" };
     return acc;
   }, {});
 }
 
-export async function buscarCoresDisciplinas() {
-  const snap = await getDoc(CORES_DISCIPLINAS_REF);
+export async function buscarCoresDisciplinas(uid) {
+  const escolaId = await getEscolaId(uid);
+  const snap = await getDoc(doc(db, "configuracoes_escola", `${escolaId}_cores_disciplinas`));
   if (!snap.exists()) return {};
   return normalizarMapaCoresDisciplinas(snap.data());
 }
 
-export function escutarCoresDisciplinas(callback, onErro = () => {}) {
-  return onSnapshot(
-    CORES_DISCIPLINAS_REF,
-    (snap) => callback(snap.exists() ? normalizarMapaCoresDisciplinas(snap.data()) : {}),
-    onErro
-  );
+export function escutarCoresDisciplinas(uid, callback, onErro = () => {}) {
+  let unsubscribe = () => {};
+  let isUnsubscribed = false;
+  
+  getEscolaId(uid).then(escolaId => {
+    if (isUnsubscribed) return;
+    const ref = doc(db, "configuracoes_escola", `${escolaId}_cores_disciplinas`);
+    unsubscribe = onSnapshot(ref, (snap) => callback(snap.exists() ? normalizarMapaCoresDisciplinas(snap.data()) : {}), onErro);
+  });
+  
+  return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
 export async function salvarCoresDisciplinas(uid, cores) {
-  await setDoc(CORES_DISCIPLINAS_REF, {
+  const escolaId = await getEscolaId(uid);
+  await setDoc(doc(db, "configuracoes_escola", `${escolaId}_cores_disciplinas`), {
     cores: cores || {},
     atualizadoPorUid: uid || "",
+    escolaId: escolaId,
     atualizadoEm: serverTimestamp(),
   }, { merge: true });
 }
 
-export function escutarProfessoresDisciplinas(callback, onErro = () => {}) {
-  return onSnapshot(
-    PROFESSORES_DISCIPLINAS_REF,
-    (snap) => callback(snap.exists() ? (snap.data().vinculos || {}) : {}),
-    onErro
-  );
+export function escutarProfessoresDisciplinas(uid, callback, onErro = () => {}) {
+  let unsubscribe = () => {};
+  let isUnsubscribed = false;
+
+  getEscolaId(uid).then(escolaId => {
+    if (isUnsubscribed) return;
+    const ref = doc(db, "configuracoes_escola", `${escolaId}_professores_disciplinas`);
+    unsubscribe = onSnapshot(ref, (snap) => callback(snap.exists() ? (snap.data().vinculos || {}) : {}), onErro);
+  });
+
+  return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
 export async function salvarProfessoresDisciplinas(uid, vinculos) {
-  await setDoc(PROFESSORES_DISCIPLINAS_REF, {
+  const escolaId = await getEscolaId(uid);
+  await setDoc(doc(db, "configuracoes_escola", `${escolaId}_professores_disciplinas`), {
     vinculos: vinculos || {},
     atualizadoPorUid: uid || "",
+    escolaId: escolaId,
     atualizadoEm: serverTimestamp(),
   }, { merge: true });
 }
 
+// ═══════════════════════════════════════════════════════════
+//  TURMAS
+// ═══════════════════════════════════════════════════════════
+
 export async function criarTurma(uid, dados) {
+  const escolaId = await getEscolaId(uid);
   const ref = collection(db, "turmas", uid, "lista");
   return await addDoc(ref, {
     nome: dados.nome || "",
@@ -130,25 +174,23 @@ export async function criarTurma(uid, dados) {
     professor: dados.professor || "",
     professorId: dados.professorId || "",
     periodo: dados.periodo || "Matutino",
+    escolaId: escolaId,
     criadoPorUid: uid,
     criadoEm: serverTimestamp(),
   });
 }
 
 function dadosTurmaDoSnap(d) {
-  return {
-    id: d.id,
-    ownerUid: d.ref.parent.parent?.id || "",
-    sourcePath: d.ref.path,
-    ...d.data(),
-  };
+  return { id: d.id, ownerUid: d.ref.parent.parent?.id || "", sourcePath: d.ref.path, ...d.data() };
 }
 
 export async function buscarTurmas(uid, perfil = null) {
+  const escolaId = await getEscolaId(uid);
+  
   if (perfil?.role === "professor") {
     const [minhasSnap, vinculadasSnap] = await Promise.all([
-      getDocs(collection(db, "turmas", uid, "lista")),
-      getDocs(query(collectionGroup(db, "lista"), where("professorId", "==", uid))),
+      getDocs(query(collection(db, "turmas", uid, "lista"), where("escolaId", "==", escolaId))),
+      getDocs(query(collectionGroup(db, "lista"), where("professorId", "==", uid), where("escolaId", "==", escolaId))),
     ]);
 
     const turmas = [...minhasSnap.docs, ...vinculadasSnap.docs].map(dadosTurmaDoSnap);
@@ -161,7 +203,7 @@ export async function buscarTurmas(uid, perfil = null) {
     });
   }
 
-  const snap = await getDocs(collection(db, "turmas", uid, "lista"));
+  const snap = await getDocs(query(collection(db, "turmas", uid, "lista"), where("escolaId", "==", escolaId)));
   return snap.docs.map(dadosTurmaDoSnap);
 }
 
@@ -178,6 +220,7 @@ export async function deletarTurma(uid, turmaId) {
 // ═══════════════════════════════════════════════════════════
 
 export async function criarRegistroAula(uid, turmaId, dados) {
+  const escolaId = await getEscolaId(uid);
   const ref = collection(db, "turmas", uid, "lista", turmaId, "registros");
   return await addDoc(ref, {
     data: dados.data || "",
@@ -186,6 +229,7 @@ export async function criarRegistroAula(uid, turmaId, dados) {
     informacoes: dados.informacoes || "",
     tipo: dados.tipo || "teorica",
     anexos: dados.anexos || [],
+    escolaId: escolaId,
     criadoEm: serverTimestamp(),
   });
 }
@@ -197,10 +241,7 @@ export async function buscarRegistros(uid, turmaId) {
 }
 
 export async function atualizarRegistro(uid, turmaId, registroId, dados) {
-  await updateDoc(
-    doc(db, "turmas", uid, "lista", turmaId, "registros", registroId),
-    dados
-  );
+  await updateDoc(doc(db, "turmas", uid, "lista", turmaId, "registros", registroId), dados);
 }
 
 export async function deletarRegistro(uid, turmaId, registroId) {
@@ -211,117 +252,28 @@ export async function deletarRegistro(uid, turmaId, registroId) {
 //  CRONOGRAMA
 // ═══════════════════════════════════════════════════════════
 
-export async function criarAulaCronograma(uid, dados) {
-  const ref = collection(db, "cronogramas", uid, "aulas");
-  return await addDoc(ref, {
-    dia: dados.dia || "SEG",
-    ordem: dados.ordem || 1,
-    periodo: dados.periodo || "Matutino",
-    disciplina: dados.disciplina || "",
-    turma: dados.turma || "",
-    sala: dados.sala || "",
-    criadoEm: serverTimestamp(),
-  });
-}
-
 function normalizarChaveCronograma(valor) {
-  return String(valor || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
+  return String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
 }
 
 function nomeDocumentoCronograma(valor) {
   return String(valor || "").trim().toUpperCase();
 }
 
-function sanitizarEmailCronograma(email) {
-  return String(email || "").trim().toLowerCase().replace(/[@.]/g, "_");
-}
-
-async function buscarNomesProfessorCronograma(perfil = null) {
-  const nomes = [
-    perfil?.nomePDF,
-    perfil?.nome,
-    normalizarChaveCronograma(perfil?.nomePDF),
-    normalizarChaveCronograma(perfil?.nome),
-  ];
-  const emailId = sanitizarEmailCronograma(perfil?.email);
-
-  if (emailId) {
-    const vinculoSnap = await getDoc(doc(db, "professores_escola", emailId));
-    if (vinculoSnap.exists()) {
-      const vinculo = vinculoSnap.data();
-      nomes.push(
-        vinculo.nomePDF,
-        vinculo.nome,
-        normalizarChaveCronograma(vinculo.nomePDF),
-        normalizarChaveCronograma(vinculo.nome)
-      );
-    }
-  }
-
-  const professoresSnap = await getDocs(collection(db, "professores_escola"));
-  professoresSnap.docs.forEach((professorDoc) => {
-    const professor = professorDoc.data();
-    const mesmoEmail = professor.email
-      && perfil?.email
-      && String(professor.email).trim().toLowerCase() === String(perfil.email).trim().toLowerCase();
-    const mesmoUid = professor.uid && perfil?.id && professor.uid === perfil.id;
-
-    if (mesmoEmail || mesmoUid) {
-      nomes.push(
-        professor.nomePDF,
-        professor.nome,
-        normalizarChaveCronograma(professor.nomePDF),
-        normalizarChaveCronograma(professor.nome)
-      );
-    }
-  });
-
-  return [...new Set(nomes.map(nomeDocumentoCronograma).filter(Boolean))];
+function idSeguroCronograma(valor) {
+  return String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, "_").replace(/[/.#[\]]/g, "-").toUpperCase();
 }
 
 function dadosAulaCronograma(d, origem = "") {
-  return {
-    id: d.id,
-    sourcePath: d.ref.path,
-    origem,
-    ...d.data(),
-  };
+  return { id: d.id, sourcePath: d.ref.path, origem, ...d.data() };
 }
 
-async function buscarTodasAulasCronogramasEscola() {
-  const nomesCronogramas = new Set();
-  const adicionarNome = (valor) => {
-    const nome = nomeDocumentoCronograma(valor);
-    if (nome) nomesCronogramas.add(nome);
-  };
-
-  const [cronogramasSnap, professoresSnap, turmasPeriodoSnap] = await Promise.all([
-    getDocs(collection(db, "cronogramas_escola")),
-    getDocs(collection(db, "professores_escola")),
-    getDocs(collection(db, "turmas_periodo")),
-  ]);
-
-  cronogramasSnap.docs.forEach((d) => adicionarNome(d.id));
-
-  professoresSnap.docs.forEach((professorDoc) => {
-    const professor = professorDoc.data();
-    adicionarNome(professor.nomePDF);
-    adicionarNome(professor.nome);
-  });
-
-  turmasPeriodoSnap.docs.forEach((turmaDoc) => {
-    const turma = turmaDoc.data();
-    adicionarNome(turma.nomeTurma);
-    adicionarNome(turma.nome);
-    adicionarNome(turmaDoc.id);
-  });
-
+async function buscarTodasAulasCronogramasEscola(uid) {
+  const escolaId = await getEscolaId(uid);
+  const cronogramasSnap = await getDocs(query(collection(db, "cronogramas_escola"), where("escolaId", "==", escolaId)));
+  
   const snaps = await Promise.allSettled(
-    [...nomesCronogramas].map((nome) => getDocs(collection(db, "cronogramas_escola", nome, "aulas")))
+    cronogramasSnap.docs.map((docSnap) => getDocs(collection(docSnap.ref, "aulas")))
   );
 
   return snaps.flatMap((resultado) => {
@@ -332,168 +284,17 @@ async function buscarTodasAulasCronogramasEscola() {
 
 function chaveAulaCronograma(aula) {
   return [
-    aula.dia || "",
-    aula.ordem || "",
-    aula.periodo || "",
-    aula.turma || "",
-    aula.disciplina || "",
-    aula.professor || "",
+    aula.dia || "", aula.ordem || "", aula.periodo || "",
+    aula.turma || "", aula.disciplina || "", aula.professor || ""
   ].map(normalizarChaveCronograma).join("|");
 }
 
 export function filtrarCronogramaDoProfessor(aulas = [], perfil = null) {
   if (normalizarChaveCronograma(perfil?.role) !== "PROFESSOR") return aulas;
-
-  const nomesProfessor = [
-    perfil?.nomePDF,
-    perfil?.nome,
-    perfil?.nomeUsuario,
-    perfil?.email,
-  ].map(normalizarChaveCronograma).filter(Boolean);
-
+  const nomesProfessor = [perfil?.nome, perfil?.nomeUsuario, perfil?.email].map(normalizarChaveCronograma).filter(Boolean);
   if (nomesProfessor.length === 0) return [];
   return aulas.filter((aula) => nomesProfessor.includes(normalizarChaveCronograma(aula.professor)));
 }
-
-function idSeguroCronograma(valor) {
-  return String(valor || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .replace(/\s+/g, "_")
-    .replace(/[/.#[\]]/g, "-")
-    .toUpperCase();
-}
-
-export async function salvarCronogramaTurmaManual({
-  uid,
-  curso,
-  ano,
-  nomeTurma,
-  periodo = "Matutino",
-  aulas = [],
-}) {
-  const turmaBase = nomeDocumentoCronograma(nomeTurma || `${ano} ${curso}`);
-  if (!turmaBase) throw new Error("Informe o curso antes de salvar.");
-  if (!Array.isArray(aulas) || aulas.length === 0) throw new Error("Adicione pelo menos uma aula.");
-
-  const batch = writeBatch(db);
-  const turmasAfetadas = new Set([turmaBase]);
-
-  aulas.forEach((aula) => {
-    if (aula?.turma) turmasAfetadas.add(nomeDocumentoCronograma(aula.turma));
-  });
-
-  for (const turma of turmasAfetadas) {
-    const aulasSnap = await getDocs(collection(db, "cronogramas_escola", turma, "aulas"));
-    aulasSnap.docs.forEach((aulaDoc) => batch.delete(aulaDoc.ref));
-  }
-
-  const agora = serverTimestamp();
-
-  turmasAfetadas.forEach((turma) => {
-    batch.set(doc(db, "cronogramas_escola", turma), {
-      tipo: "turma",
-      nomeTurma: turma,
-      turmaBase,
-      curso: String(curso || "").trim(),
-      ano: String(ano || "").trim(),
-      periodo,
-      criadoPorUid: uid || "",
-      atualizadoEm: agora,
-    }, { merge: true });
-  });
-
-  aulas.forEach((aula, index) => {
-    const turma = nomeDocumentoCronograma(aula.turma || turmaBase);
-    const aulaId = idSeguroCronograma([
-      aula.dia || "Segunda",
-      aula.ordem || index + 1,
-      aula.horario || "",
-      turma,
-      aula.divisao || "",
-      aula.periodo || periodo,
-    ].join("_"));
-
-    batch.set(doc(db, "cronogramas_escola", turma, "aulas", aulaId), {
-      dia: aula.dia || "Segunda",
-      ordem: Number(aula.ordem || index + 1),
-      horario: aula.horario || "",
-      periodo: aula.periodo || periodo,
-      disciplina: aula.disciplina || "",
-      professor: aula.professor || "",
-      sala: aula.sala || "",
-      turma,
-      turmaBase,
-      divisao: aula.divisao || "",
-      atualizadoEm: agora,
-      criadoPorUid: uid || "",
-    }, { merge: true });
-  });
-
-  await batch.commit();
-
-  try {
-    await criarNotificacaoPorRole({
-      role: "professor",
-      titulo: "Cronograma atualizado",
-      mensagem: `O cronograma da turma ${turmaBase} foi atualizado pela coordenação.`,
-      tipo: "horario",
-      link: "/cronograma",
-      criadoPorUid: uid || "coordenacao",
-      criadoPorNome: "Coordenação",
-    });
-  } catch (erro) {
-    console.error("Erro ao notificar atualização de cronograma:", erro);
-  }
-
-  return { totalAulas: aulas.length, nomeTurma: turmaBase };
-}
-
-export async function deletarCronogramaCursoManual({ nomeTurma }) {
-  const turmaBase = nomeDocumentoCronograma(nomeTurma);
-  if (!turmaBase) throw new Error("Informe o curso para deletar.");
-
-  const cronogramasRef = collection(db, "cronogramas_escola");
-  const turmasParaRemover = new Map();
-  const adicionarTurma = (turmaDoc) => {
-    turmasParaRemover.set(turmaDoc.ref.path, turmaDoc);
-  };
-
-  const turmasSnap = await getDocs(query(cronogramasRef, where("turmaBase", "==", turmaBase)));
-  turmasSnap.docs.forEach(adicionarTurma);
-
-  await Promise.all(
-    [turmaBase, `${turmaBase} A`, `${turmaBase} B`].map(async (turma) => {
-      const turmaSnap = await getDoc(doc(db, "cronogramas_escola", turma));
-      if (turmaSnap.exists()) adicionarTurma(turmaSnap);
-    })
-  );
-
-  const batch = writeBatch(db);
-
-  for (const turmaDoc of turmasParaRemover.values()) {
-    const aulasSnap = await getDocs(collection(turmaDoc.ref, "aulas"));
-    aulasSnap.docs.forEach((aulaDoc) => batch.delete(aulaDoc.ref));
-    batch.delete(turmaDoc.ref);
-  }
-
-  const turmasPeriodoParaRemover = new Map();
-  const turmaPeriodoRef = doc(db, "turmas_periodo", idSeguroCronograma(turmaBase));
-  turmasPeriodoParaRemover.set(turmaPeriodoRef.path, turmaPeriodoRef);
-  const turmasPeriodoSnap = await getDocs(query(
-    collection(db, "turmas_periodo"),
-    where("nomeTurma", "==", turmaBase)
-  ));
-  turmasPeriodoSnap.docs.forEach((turmaDoc) => {
-    turmasPeriodoParaRemover.set(turmaDoc.ref.path, turmaDoc.ref);
-  });
-  turmasPeriodoParaRemover.forEach((turmaRef) => batch.delete(turmaRef));
-
-  await batch.commit();
-  return { nomeTurma: turmaBase, totalTurmas: turmasParaRemover.size };
-}
-
 const ORDEM_DIA_CRONOGRAMA = {
   DOMINGO: 0,
   SEGUNDA: 1,
@@ -512,11 +313,13 @@ function minutosInicioAula(aula) {
 
   const ordem = Number(aula.ordem || 1);
   const periodo = normalizarChaveCronograma(aula.periodo);
+  
   if (periodo.includes("MATUTINO") || periodo.includes("MANHA")) {
     return HORARIOS_MATUTINO[Math.max(0, ordem - 1)] ?? (420 + (ordem - 1) * 50);
   }
   if (periodo.includes("VESPERTINO") || periodo.includes("TARDE")) return 780 + (ordem - 1) * 50;
   if (periodo.includes("NOTURNO") || periodo.includes("NOITE")) return 1140 + (ordem - 1) * 50;
+  
   return 420 + (ordem - 1) * 50;
 }
 
@@ -539,56 +342,114 @@ export function buscarProximaAulaDoProfessor(aulas = [], perfil = null, agora = 
     ?.aula || null;
 }
 
+export async function salvarCronogramaTurmaManual({ uid, curso, ano, nomeTurma, periodo = "Matutino", aulas = [] }) {
+  const escolaId = await getEscolaId(uid);
+  const turmaBase = nomeDocumentoCronograma(nomeTurma || `${ano} ${curso}`);
+  if (!turmaBase) throw new Error("Informe o curso antes de salvar.");
+  if (!Array.isArray(aulas) || aulas.length === 0) throw new Error("Adicione pelo menos uma aula.");
+
+  const batch = writeBatch(db);
+  const turmasAfetadas = new Set([turmaBase]);
+  aulas.forEach((aula) => { if (aula?.turma) turmasAfetadas.add(nomeDocumentoCronograma(aula.turma)); });
+
+  for (const turma of turmasAfetadas) {
+    // Documento inclui escolaId no ID para não sobrescrever turmas com o mesmo nome de outras escolas
+    const docIdSeguro = idSeguroCronograma(`${escolaId}_${turma}`);
+    const aulasSnap = await getDocs(collection(db, "cronogramas_escola", docIdSeguro, "aulas"));
+    aulasSnap.docs.forEach((aulaDoc) => batch.delete(aulaDoc.ref));
+  }
+
+  const agora = serverTimestamp();
+
+  turmasAfetadas.forEach((turma) => {
+    const docIdSeguro = idSeguroCronograma(`${escolaId}_${turma}`);
+    batch.set(doc(db, "cronogramas_escola", docIdSeguro), {
+      tipo: "turma",
+      nomeTurma: turma,
+      turmaBase,
+      curso: String(curso || "").trim(),
+      ano: String(ano || "").trim(),
+      periodo,
+      escolaId: escolaId,
+      criadoPorUid: uid || "",
+      atualizadoEm: agora,
+    }, { merge: true });
+  });
+
+  aulas.forEach((aula, index) => {
+    const turma = nomeDocumentoCronograma(aula.turma || turmaBase);
+    const docIdSeguro = idSeguroCronograma(`${escolaId}_${turma}`);
+    const aulaId = idSeguroCronograma([aula.dia || "Segunda", aula.ordem || index + 1, aula.horario || "", turma, aula.divisao || "", aula.periodo || periodo].join("_"));
+
+    batch.set(doc(db, "cronogramas_escola", docIdSeguro, "aulas", aulaId), {
+      dia: aula.dia || "Segunda",
+      ordem: Number(aula.ordem || index + 1),
+      horario: aula.horario || "",
+      periodo: aula.periodo || periodo,
+      disciplina: aula.disciplina || "",
+      professor: aula.professor || "",
+      sala: aula.sala || "",
+      turma,
+      turmaBase,
+      divisao: aula.divisao || "",
+      escolaId: escolaId,
+      atualizadoEm: agora,
+      criadoPorUid: uid || "",
+    }, { merge: true });
+  });
+
+  await batch.commit();
+
+  try {
+    await criarNotificacaoPorRole({
+      role: "professor",
+      titulo: "Cronograma atualizado",
+      mensagem: `O cronograma da turma ${turmaBase} foi atualizado pela coordenação.`,
+      tipo: "horario",
+      link: "/cronograma",
+      criadoPorUid: uid || "coordenacao",
+      criadoPorNome: "Coordenação",
+    });
+  } catch (erro) {}
+
+  return { totalAulas: aulas.length, nomeTurma: turmaBase };
+}
+
+export async function deletarCronogramaCursoManual({ uid, nomeTurma }) {
+  const escolaId = await getEscolaId(uid);
+  const turmaBase = nomeDocumentoCronograma(nomeTurma);
+  if (!turmaBase) throw new Error("Informe o curso para deletar.");
+
+  const cronogramasRef = collection(db, "cronogramas_escola");
+  const turmasParaRemover = new Map();
+
+  const turmasSnap = await getDocs(query(cronogramasRef, where("turmaBase", "==", turmaBase), where("escolaId", "==", escolaId)));
+  turmasSnap.docs.forEach(d => turmasParaRemover.set(d.ref.path, d));
+
+  const batch = writeBatch(db);
+  for (const turmaDoc of turmasParaRemover.values()) {
+    const aulasSnap = await getDocs(collection(turmaDoc.ref, "aulas"));
+    aulasSnap.docs.forEach((aulaDoc) => batch.delete(aulaDoc.ref));
+    batch.delete(turmaDoc.ref);
+  }
+
+  // Também deleta da lista global de turmas_periodo
+  const turmasPeriodoSnap = await getDocs(query(collection(db, "turmas_periodo"), where("nomeTurma", "==", turmaBase), where("escolaId", "==", escolaId)));
+  turmasPeriodoSnap.docs.forEach((turmaDoc) => batch.delete(turmaDoc.ref));
+
+  await batch.commit();
+  return { nomeTurma: turmaBase, totalTurmas: turmasParaRemover.size };
+}
+
 export async function buscarCronograma(uid, perfil = null) {
   const aulas = [];
   const rolePerfil = normalizarChaveCronograma(perfil?.role);
 
-  const adicionar = (novasAulas) => {
-    aulas.push(...novasAulas);
-  };
-
   const snapPessoal = await getDocs(collection(db, "cronogramas", uid, "aulas"));
-  adicionar(snapPessoal.docs.map((d) => dadosAulaCronograma(d, "pessoal")));
+  aulas.push(...snapPessoal.docs.map((d) => dadosAulaCronograma(d, "pessoal")));
 
   if (rolePerfil === "COORDENADOR" || rolePerfil === "PROFESSOR") {
-    adicionar(await buscarTodasAulasCronogramasEscola());
-  } else {
-    const nomesProfessorDocumento = await buscarNomesProfessorCronograma(perfil);
-    const nomesProfessorComparacao = nomesProfessorDocumento.map(normalizarChaveCronograma);
-
-    if (rolePerfil === "PROFESSOR" && nomesProfessorDocumento.length > 0) {
-      const snapsProfessor = await Promise.allSettled(
-        nomesProfessorDocumento.map((nomePDF) => getDocs(collection(db, "cronogramas_escola", nomePDF, "aulas")))
-      );
-
-      snapsProfessor.forEach((resultado) => {
-        if (resultado.status === "fulfilled") {
-          adicionar(resultado.value.docs.map((d) => dadosAulaCronograma(d, "professor")));
-        }
-      });
-    }
-
-    const turmasPeriodoSnap = await getDocs(collection(db, "turmas_periodo"));
-    const nomesTurmas = [...new Set(
-      turmasPeriodoSnap.docs.map((d) => d.data().nomeTurma).filter(Boolean)
-    )];
-
-    const snapsTurmas = await Promise.allSettled(
-      nomesTurmas.map((nomeTurma) => getDocs(collection(db, "cronogramas_escola", nomeTurma, "aulas")))
-    );
-
-    snapsTurmas.forEach((resultado) => {
-      if (resultado.status !== "fulfilled") return;
-
-      const aulasDaTurma = resultado.value.docs
-        .map((d) => dadosAulaCronograma(d, "turma"))
-        .filter((aula) => {
-          if (rolePerfil !== "PROFESSOR" || nomesProfessorComparacao.length === 0) return true;
-          return nomesProfessorComparacao.includes(normalizarChaveCronograma(aula.professor));
-        });
-
-      adicionar(aulasDaTurma);
-    });
+    aulas.push(...(await buscarTodasAulasCronogramasEscola(uid)));
   }
 
   const vistas = new Set();
@@ -600,74 +461,28 @@ export async function buscarCronograma(uid, perfil = null) {
   });
 }
 
-export async function atualizarAulaCronograma(uid, aulaId, dados) {
-  await updateDoc(doc(db, "cronogramas", uid, "aulas", aulaId), dados);
-}
-
-export async function deletarAulaCronograma(uid, aulaId) {
-  await deleteDoc(doc(db, "cronogramas", uid, "aulas", aulaId));
-}
-
 // ═══════════════════════════════════════════════════════════
-//  ARQUIVOS DO PROFESSOR
-// ═══════════════════════════════════════════════════════════
-
-export async function salvarArquivo(uid, dados) {
-  const ref = collection(db, "arquivos", uid, "lista");
-  return await addDoc(ref, {
-    nome: dados.nome || "",
-    url: dados.url || "",
-    tipo: dados.tipo || "pdf",
-    fixado: dados.fixado || false,
-    criadoEm: serverTimestamp(),
-  });
-}
-
-export async function buscarArquivos(uid) {
-  const snap = await getDocs(
-    query(collection(db, "arquivos", uid, "lista"), orderBy("criadoEm", "desc"))
-  );
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-}
-
-export async function toggleFixarArquivo(uid, arquivoId, fixado) {
-  await updateDoc(doc(db, "arquivos", uid, "lista", arquivoId), { fixado });
-}
-
-export async function deletarArquivo(uid, arquivoId) {
-  await deleteDoc(doc(db, "arquivos", uid, "lista", arquivoId));
-}
-
-// ═══════════════════════════════════════════════════════════
-//  CALENDÁRIO
-//
-//  Arquitetura:
-//  - eventos_escola/{id}  → eventos do coordenador, visíveis para todos
-//  - calendario/{uid}/eventos/{id} → eventos pessoais do professor (só ele vê)
-//
-//  buscarEventos() retorna a união dos dois para cada role.
+//  CALENDÁRIO & EVENTOS
 // ═══════════════════════════════════════════════════════════
 
 export async function criarEvento(uid, dados) {
+  const escolaId = await getEscolaId(uid);
   const compartilhar = dados.compartilharComProfessores === true;
 
   if (compartilhar) {
-    // Salva na coleção global — todos os professores veem automaticamente
-    const ref = collection(db, "eventos_escola");
-    return await addDoc(ref, {
+    return await addDoc(collection(db, "eventos_escola"), {
       titulo: dados.titulo || "",
       data: dados.data || "",
       tipo: dados.tipo || "reuniao",
       descricao: dados.descricao || "",
       criadoPorUid: uid,
+      escolaId: escolaId,
       compartilhadoComProfessores: true,
       criadoEm: serverTimestamp(),
     });
   }
 
-  // Evento pessoal do coordenador (sem compartilhamento)
-  const ref = collection(db, "calendario", uid, "eventos");
-  return await addDoc(ref, {
+  return await addDoc(collection(db, "calendario", uid, "eventos"), {
     titulo: dados.titulo || "",
     data: dados.data || "",
     tipo: dados.tipo || "reuniao",
@@ -679,7 +494,6 @@ export async function criarEvento(uid, dados) {
 }
 
 export async function deletarEvento(uid, eventoId) {
-  // Tenta deletar nas duas coleções (um dos dois vai simplesmente não encontrar)
   await Promise.allSettled([
     deleteDoc(doc(db, "eventos_escola", eventoId)),
     deleteDoc(doc(db, "calendario", uid, "eventos", eventoId)),
@@ -687,115 +501,83 @@ export async function deletarEvento(uid, eventoId) {
 }
 
 export async function buscarEventos(uid) {
-  // Sempre busca os eventos globais da escola (coordenador compartilhou)
+  const escolaId = await getEscolaId(uid);
   const escolaSnap = await getDocs(
-    query(collection(db, "eventos_escola"), orderBy("data", "asc"))
+    query(collection(db, "eventos_escola"), where("escolaId", "==", escolaId), orderBy("data", "asc"))
   );
-  const eventosEscola = escolaSnap.docs.map((d) => ({
-    id: d.id,
-    _origem: "escola",
-    ...d.data(),
-  }));
+  const eventosEscola = escolaSnap.docs.map((d) => ({ id: d.id, _origem: "escola", ...d.data() }));
 
-  // Busca também os eventos pessoais do usuário logado
   const pessoalSnap = await getDocs(
     query(collection(db, "calendario", uid, "eventos"), orderBy("data", "asc"))
   );
-  const eventosPessoais = pessoalSnap.docs.map((d) => ({
-    id: d.id,
-    _origem: "pessoal",
-    ...d.data(),
-  }));
+  const eventosPessoais = pessoalSnap.docs.map((d) => ({ id: d.id, _origem: "pessoal", ...d.data() }));
 
-  // Une e ordena por data, removendo duplicatas por id
   const todos = [...eventosEscola, ...eventosPessoais];
   const vistos = new Set();
-  return todos
-    .filter((e) => {
-      if (vistos.has(e.id)) return false;
-      vistos.add(e.id);
-      return true;
-    })
-    .sort((a, b) => (a.data || "").localeCompare(b.data || ""));
+  return todos.filter((e) => {
+    if (vistos.has(e.id)) return false;
+    vistos.add(e.id);
+    return true;
+  }).sort((a, b) => (a.data || "").localeCompare(b.data || ""));
 }
 
 // ═══════════════════════════════════════════════════════════
-//  TURMAS DE ARQUIVOS — coleção global (Arquivos.jsx)
-//  Substitui o localStorage — visível para todos os usuários
+//  TURMAS DE ARQUIVOS (Arquivos.jsx)
 // ═══════════════════════════════════════════════════════════
 
-/**
- * Retorna a lista de períodos com suas turmas salvas no Firestore.
- * Retorna sempre os 3 períodos; turmas novas do coordenador aparecem para todos.
- */
-export function escutarTurmasPeriodo(callback) {
-  const q = query(
-    collection(db, "turmas_periodo"),
-    orderBy("criadoEm", "asc")
-  );
-  return onSnapshot(q, (snap) => {
-    // Agrupa por período mantendo a estrutura esperada pelo Arquivos.jsx
-    const mapa = {};
-    snap.docs.forEach((d) => {
-      const { nomePeriodo, nomeTurma } = d.data();
-      if (!mapa[nomePeriodo]) mapa[nomePeriodo] = [];
-      mapa[nomePeriodo].push({ id: d.id, nomeTurma });
+export function escutarTurmasPeriodo(uid, callback) {
+  let unsubscribe = () => {};
+  let isUnsubscribed = false;
+
+  getEscolaId(uid).then(escolaId => {
+    if (isUnsubscribed) return;
+    const q = query(collection(db, "turmas_periodo"), where("escolaId", "==", escolaId), orderBy("criadoEm", "asc"));
+    unsubscribe = onSnapshot(q, (snap) => {
+      const mapa = {};
+      snap.docs.forEach((d) => {
+        const { nomePeriodo, nomeTurma } = d.data();
+        if (!mapa[nomePeriodo]) mapa[nomePeriodo] = [];
+        mapa[nomePeriodo].push({ id: d.id, nomeTurma });
+      });
+      callback(mapa);
     });
-    callback(mapa);
   });
+
+  return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
-/**
- * Adiciona uma nova turma ao período (chamado pelo coordenador).
- */
-export async function adicionarTurmaPeriodo(nomeTurma, nomePeriodo, criadoPorUid) {
+export async function adicionarTurmaPeriodo(nomeTurma, nomePeriodo, uid) {
+  const escolaId = await getEscolaId(uid);
   return await addDoc(collection(db, "turmas_periodo"), {
     nomeTurma,
     nomePeriodo,
-    criadoPorUid,
+    escolaId: escolaId,
+    criadoPorUid: uid,
     criadoEm: serverTimestamp(),
   });
 }
 
-/**
- * Remove uma turma do período (chamado pelo coordenador).
- */
 export async function removerTurmaPeriodo(turmaDocId) {
   await deleteDoc(doc(db, "turmas_periodo", turmaDocId));
 }
 
 // ═══════════════════════════════════════════════════════════
-//  ARQUIVOS & SOLICITAÇÕES (FLUXO COMPLETO DE NOTIFICAÇÕES)
+//  ARQUIVOS & SOLICITAÇÕES (FLUXO COMPLETO)
 // ═══════════════════════════════════════════════════════════
 
-/**
- * 1. O Professor cria uma solicitação de arquivo e o Coordenador é notificado.
- */
 export async function criarSolicitacaoArquivo(turmaId, dadosSolicitacao, usuarioAtual) {
-  const ref = collection(db, "solicitacoes_arquivos");
+  const escolaId = await getEscolaId(usuarioAtual.uid);
   const arquivo = dadosSolicitacao.arquivo || null;
   let arquivoDados = {};
 
   if (arquivo) {
-    const tamanhoMaximo = 20 * 1024 * 1024;
-    if (arquivo.size > tamanhoMaximo) {
-      throw new Error("O arquivo deve ter no máximo 20 MB.");
-    }
-
-    const turmaSegura = String(turmaId)
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w.-]+/g, "_");
     const nomeSeguro = arquivo.name.replace(/[^\w.-]+/g, "_");
-    const caminho = `solicitacoes_arquivos/${turmaSegura}/${Date.now()}-${nomeSeguro}`;
+    const caminho = `solicitacoes_arquivos/${escolaId}/${Date.now()}-${nomeSeguro}`;
     const arquivoRef = storageRef(storage, caminho);
-
+    
     await uploadBytes(arquivoRef, arquivo, {
       contentType: arquivo.type || undefined,
-      customMetadata: {
-        turmaId: String(turmaId),
-        professorId: usuarioAtual.uid || "",
-      },
+      customMetadata: { escolaId, professorId: usuarioAtual.uid || "" },
     });
 
     arquivoDados = {
@@ -814,71 +596,63 @@ export async function criarSolicitacaoArquivo(turmaId, dadosSolicitacao, usuario
     professorNome: usuarioAtual.nome,
     nome: dadosSolicitacao.nome || arquivo?.name || "",
     descricao: dadosSolicitacao.descricao || "",
+    escolaId: escolaId,
     ...arquivoDados,
     status: "pendente",
     criadoEm: serverTimestamp()
   };
 
-  const docRef = await addDoc(ref, novaSolicitacao);
-
-  await criarNotificacaoPorRole({
-    role: "coordenador",
-    titulo: "Nova Solicitação de Arquivo",
-    mensagem: `${usuarioAtual.nome} solicitou a inclusão do arquivo: "${dadosSolicitacao.nome}".`,
-    tipo: "aviso",
-    link: "/arquivos",
-    criadoPorUid: usuarioAtual.uid,
-    criadoPorNome: usuarioAtual.nome
-  });
-
+  const docRef = await addDoc(collection(db, "solicitacoes_arquivos"), novaSolicitacao);
   return docRef.id;
 }
 
-/**
- * Escuta em tempo real as solicitações de uma turma.
- * Por padrão, oculta pedidos já aprovados ou recusados da fila principal.
- */
-export function escutarSolicitacoes(turmaId, callback, opcoes = {}) {
-  const q = query(
-    collection(db, "solicitacoes_arquivos"),
-    where("turmaId", "==", turmaId),
-    orderBy("criadoEm", "desc")
-  );
-  return onSnapshot(q, (snapshot) => {
-    const incluirResolvidas = opcoes.incluirResolvidas === true;
-    const lista = snapshot.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter((solicitacao) => incluirResolvidas || (solicitacao.status || "pendente") === "pendente");
-    callback(lista);
+export function escutarSolicitacoes(uid, turmaId, callback, opcoes = {}) {
+  let unsubscribe = () => {};
+  let isUnsubscribed = false;
+
+  getEscolaId(uid).then(escolaId => {
+    if (isUnsubscribed) return;
+    const q = query(
+      collection(db, "solicitacoes_arquivos"),
+      where("turmaId", "==", turmaId),
+      where("escolaId", "==", escolaId),
+      orderBy("criadoEm", "desc")
+    );
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      const incluirResolvidas = opcoes.incluirResolvidas === true;
+      const lista = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter((sol) => incluirResolvidas || (sol.status || "pendente") === "pendente");
+      callback(lista);
+    });
   });
+
+  return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
-/**
- * Escuta em tempo real os arquivos finais aprovados e disponíveis nesta turma.
- */
-export function escutarArquivosDaTurma(turmaId, callback) {
-  const q = query(
-    collection(db, "turmas_arquivos_aprovados"),
-    where("turmaId", "==", turmaId),
-    orderBy("criadoEm", "desc")
-  );
-  return onSnapshot(q, (snapshot) => {
-    const lista = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    callback(lista);
+export function escutarArquivosDaTurma(uid, turmaId, callback) {
+  let unsubscribe = () => {};
+  let isUnsubscribed = false;
+
+  getEscolaId(uid).then(escolaId => {
+    if (isUnsubscribed) return;
+    const q = query(
+      collection(db, "turmas_arquivos_aprovados"),
+      where("turmaId", "==", turmaId),
+      where("escolaId", "==", escolaId),
+      orderBy("criadoEm", "desc")
+    );
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(lista);
+    });
   });
+
+  return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
-/**
- * 2. O Coordenador aprova a solicitação, anexa o metadado do arquivo e o Professor é avisado.
- */
 export async function aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuarioAtual) {
-  if (!solicitacao?.id) {
-    throw new Error("Solicitacao invalida para aprovacao.");
-  }
-  if (solicitacao.status && solicitacao.status !== "pendente") {
-    throw new Error("Esta solicitacao ja foi resolvida.");
-  }
-
+  const escolaId = await getEscolaId(usuarioAtual.uid);
   const arquivosRef = collection(db, "turmas_arquivos_aprovados");
   const arquivoRef = await addDoc(arquivosRef, {
     turmaId: solicitacao.turmaId,
@@ -889,6 +663,7 @@ export async function aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuario
     arquivoNome: metaArquivo.arquivoNome || solicitacao.arquivoNome || solicitacao.nome,
     arquivoStoragePath: metaArquivo.storagePath || solicitacao.arquivoStoragePath || "",
     enviadoPor: usuarioAtual.nome,
+    escolaId: escolaId,
     criadoEm: serverTimestamp()
   });
 
@@ -896,85 +671,26 @@ export async function aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuario
     status: "aprovado",
     arquivoAprovadoId: arquivoRef.id,
     resolvidoEm: serverTimestamp(),
-    resolvidoPorUid: usuarioAtual.uid || "",
-    resolvidoPorNome: usuarioAtual.nome || "Coordenacao",
   });
-
-  if (solicitacao.professorId) {
-    await criarNotificacao({
-      titulo: "Arquivo Solicitado Disponível!",
-      mensagem: `A coordenação aprovou e adicionou o arquivo "${solicitacao.nome}" à sua turma.`,
-      tipo: "turma",
-      link: "/arquivos",
-      destinatarioUids: [solicitacao.professorId],
-      criadoPorUid: usuarioAtual.uid,
-      criadoPorNome: usuarioAtual.nome
-    });
-  }
-
   return arquivoRef.id;
 }
 
 export async function recusarSolicitacaoArquivo(solicitacao, usuarioAtual, motivo = "") {
-  if (!solicitacao?.id) {
-    throw new Error("Solicitacao invalida para recusa.");
-  }
-  if (solicitacao.status && solicitacao.status !== "pendente") {
-    throw new Error("Esta solicitacao ja foi resolvida.");
-  }
-
-  const motivoLimpo = String(motivo || "").trim();
-
-  // Exclui o arquivo do Storage, já que a solicitação foi recusada
   if (solicitacao.arquivoStoragePath) {
-    try {
-      await deleteObject(storageRef(storage, solicitacao.arquivoStoragePath));
-    } catch (error) {
-      if (error.code !== "storage/object-not-found") {
-        console.error("Erro ao excluir arquivo do Storage:", error);
-      }
-    }
+    try { await deleteObject(storageRef(storage, solicitacao.arquivoStoragePath)); } catch (e) {}
   }
-
   await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), {
     status: "recusado",
-    motivoRecusa: motivoLimpo,
+    motivoRecusa: motivo,
     resolvidoEm: serverTimestamp(),
-    resolvidoPorUid: usuarioAtual.uid || "",
-    resolvidoPorNome: usuarioAtual.nome || "Coordenacao",
   });
-
-  if (solicitacao.professorId) {
-    await criarNotificacao({
-      titulo: "Solicitacao de Arquivo Recusada",
-      mensagem: motivoLimpo
-        ? `A coordenacao recusou o arquivo "${solicitacao.nome}". Motivo: ${motivoLimpo}`
-        : `A coordenacao recusou o arquivo "${solicitacao.nome}".`,
-      tipo: "aviso",
-      link: "/arquivos",
-      destinatarioUids: [solicitacao.professorId],
-      criadoPorUid: usuarioAtual.uid,
-      criadoPorNome: usuarioAtual.nome
-    });
-  }
 }
 
 export async function deletarArquivoAprovado(arquivoId) {
   const arquivoRef = doc(db, "turmas_arquivos_aprovados", arquivoId);
   const snap = await getDoc(arquivoRef);
-
-  if (snap.exists()) {
-    const { arquivoStoragePath } = snap.data();
-    if (arquivoStoragePath) {
-      try {
-        await deleteObject(storageRef(storage, arquivoStoragePath));
-      } catch (error) {
-        if (error.code !== "storage/object-not-found") {
-          console.error("Erro ao excluir arquivo do Storage:", error);
-        }
-      }
-    }
+  if (snap.exists() && snap.data().arquivoStoragePath) {
+    try { await deleteObject(storageRef(storage, snap.data().arquivoStoragePath)); } catch (e) {}
   }
-
   await deleteDoc(arquivoRef);
 }
