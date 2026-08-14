@@ -581,13 +581,13 @@ export default function Cronogramas({
     if (!isCoordenador) return
 
     return escutarProfessoresDisciplinas(
-      setProfessoresDisciplinas,
+      setProfessoresDisciplinas, uid,
       (err) => {
         console.error('Erro ao carregar professores por disciplina:', err)
         setProfessoresDisciplinas({})
       }
     )
-  }, [isCoordenador])
+  }, [uid, isCoordenador])
 
   useEffect(() => {
     if (!uid || !isCoordenador) {
