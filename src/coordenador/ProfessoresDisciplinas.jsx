@@ -30,6 +30,77 @@ function montarVinculo(disciplina, professor) {
     professorEmail: professor?.email || '',
   }
 }
+// --- MODAL DE CONFIRMAÇÃO DE DESVÍNCULO DE PROFESSOR ---
+function ModalConfirmarDesvinculo({ disciplina, professorLetra, professorValor, onConfirmar, onCancelar }) {
+  // Caso a letra seja 'B', 'C', etc., usamos isso para mostrar. Se for o principal, não tem letra.
+  const tituloProfessor = professorLetra ? `Professor ${professorLetra}` : 'Professor Principal';
+
+  return (
+    <>
+      <div className="modal-confirmar-overlay" onClick={onCancelar} style={{ zIndex: 99999 }} />
+      <div className="modal-confirmar" style={{ zIndex: 100000 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%', background: '#FFF0F3',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <Trash2 size={26} color="#ED235C" strokeWidth={2.2} />
+        </div>
+        
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Remover professor?
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 6px', textAlign: 'center', lineHeight: 1.5 }}>
+          Você está prestes a desvincular o professor da disciplina:
+        </p>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
+          background: '#FFF0F3', margin: '0 0 6px', animation: 'confirm-card-slide 0.3s ease 0.15s both'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ED235C', flexShrink: 0 }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#ED235C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {disciplina}
+            </div>
+            <div style={{ fontSize: 11, color: '#ED235C', opacity: 0.8 }}>
+              Remover: {tituloProfessor}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center' }}>
+          Esta ação removerá o professor desta disciplina.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancelar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10, border: '1px solid var(--borda)', background: 'var(--branco)',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif", color: 'var(--texto)', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--roxo)'; e.currentTarget.style.color = 'var(--roxo)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--borda)'; e.currentTarget.style.color = 'var(--texto-sec)' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#ED235C',
+              fontSize: 13, fontFamily: "'Poppins', sans-serif", fontWeight: 600, color: '#fff', cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#c71b4d'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ED235C'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Sim, remover
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function ProfessoresDisciplinas({ uid }) {
   const coresDisciplinas = useCoresDisciplinas()
@@ -43,6 +114,7 @@ export default function ProfessoresDisciplinas({ uid }) {
   const [professoresExtras, setProfessoresExtras] = useState({})
   const [novaDisciplina, setNovaDisciplina] = useState('')
   const [adicionando, setAdicionando] = useState(false)
+  const [confirmarDeleteProfessor, setConfirmarDeleteProfessor] = useState(null);
 
   useEffect(() => {
     let ativo = true
@@ -151,21 +223,36 @@ export default function ProfessoresDisciplinas({ uid }) {
     }))
   }
 
+// Função ativada ao clicar na lixeira (abre o modal)
   function removerProfessorExtra(disciplina, letra) {
-    const chaveBase = normalizarDisciplina(disciplina)
-    const chaveLetra = normalizarDisciplina(`${disciplina} ${letra}`)
+    setConfirmarDeleteProfessor({ disciplina, letra });
+  }
 
-    setStatus('')
-    setErro('')
+  // Função ativada ao confirmar no modal (executa a deleção)
+  function executarRemocaoProfessorExtra() {
+    if (!confirmarDeleteProfessor) return;
+
+    const { disciplina, letra } = confirmarDeleteProfessor;
+    const chaveBase = normalizarDisciplina(disciplina);
+    const chaveLetra = normalizarDisciplina(`${disciplina} ${letra}`);
+
+    setStatus('');
+    setErro('');
+    
+    // 1. Remove da lista de visíveis
     setProfessoresExtras((atual) => ({
       ...atual,
       [chaveBase]: (atual[chaveBase] || []).filter((item) => item !== letra),
-    }))
+    }));
+    
+    // 2. Remove do rascunho (draft) para não ser salvo
     setVinculosDraft((atual) => {
-      const proximo = { ...atual }
-      delete proximo[chaveLetra]
-      return proximo
-    })
+      const proximo = { ...atual };
+      delete proximo[chaveLetra];
+      return proximo;
+    });
+
+    setConfirmarDeleteProfessor(null);
   }
 
   function atualizarVinculo(disciplina, professorValor, sufixo = '') {
@@ -227,7 +314,7 @@ export default function ProfessoresDisciplinas({ uid }) {
             Professores por disciplina
           </h2>
           <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
-            Vincule os professores às suas respetivas disciplinas.
+            Vincule os professores às suas respectivas disciplinas.
           </p>
         </div>
 
@@ -285,78 +372,104 @@ export default function ProfessoresDisciplinas({ uid }) {
 
               return (
                 <div key={chave} className='disc-prof-item'>
-                  <div className='disc-prof-preview' style={{ background: preview.bg, color: preview.cor }}>
-                    <span className='cores-disc-dot' style={{ background: preview.ativo }} />
-                    <strong>{disciplina}</strong>
-                  </div>
+  
+  {/* COLUNA 1: Caixa da Matéria */}
+  <div className='disc-prof-preview' style={{ background: preview.bg, color: preview.cor }}>
+    <span className='cores-disc-dot' style={{ background: preview.ativo }} />
+    <strong>{disciplina}</strong>
+  </div>
 
-                  <div className='disc-prof-dropdown'>
-                    <DropdownComPortal
-                      label='Professor'
-                      opcoes={opcoesProfessores}
-                      valor={principal}
-                      onChange={(valor) => atualizarVinculo(disciplina, valor)}
-                      id={`disc-prof-${chave}`}
-                      dropdownAberto={dropdownAberto}
-                      setDropdownAberto={setDropdownAberto}
-                    />
-                  </div>
+  {/* COLUNA 2: Grid com os selects dos professores */}
+  <div className='disc-prof-professores-grid'>
+    
+    {/* Professor Principal */}
+    <div className='disc-prof-dropdown'>
+      <DropdownComPortal
+        label='Professor'
+        opcoes={opcoesProfessores}
+        valor={principal}
+        onChange={(valor) => atualizarVinculo(disciplina, valor)}
+        id={`disc-prof-${chave}`}
+        dropdownAberto={dropdownAberto}
+        setDropdownAberto={setDropdownAberto}
+      />
+    </div>
 
-                  <div className='disc-prof-extras'>
-                    {letras.map((letra) => {
-                      const chaveLetra = normalizarDisciplina(`${disciplina} ${letra}`)
-                      const valorLetra = vinculosDraft[chaveLetra]?.professorId || vinculosDraft[chaveLetra]?.professorEmail || ''
-                      const opcoesLetra = [
-                        { valor: '', label: `Sem professor ${letra}` },
-                        ...opcoesProfessores.slice(1),
-                      ]
+    {/* Professores Extras (B, C, D...) */}
+    {letras.map((letra) => {
+      const chaveLetra = normalizarDisciplina(`${disciplina} ${letra}`)
+      const valorLetra = vinculosDraft[chaveLetra]?.professorId || vinculosDraft[chaveLetra]?.professorEmail || ''
+      const opcoesLetra = [
+        { valor: '', label: `Sem professor ${letra}` },
+        ...opcoesProfessores.slice(1),
+      ]
 
-                      return (
-                        <div key={letra} className='disc-prof-extra-linha'>
-                          <div className='disc-prof-dropdown'>
-                            <DropdownComPortal
-                              label={`Professor ${letra}`}
-                              opcoes={opcoesLetra}
-                              valor={valorLetra}
-                              onChange={(valor) => atualizarVinculo(disciplina, valor, letra)}
-                              id={`disc-prof-${letra.toLowerCase()}-${chave}`}
-                              dropdownAberto={dropdownAberto}
-                              setDropdownAberto={setDropdownAberto}
-                            />
-                          </div>
+      return (
+        <div key={letra} className='disc-prof-extra-linha'>
+          <div className='disc-prof-dropdown'>
+            <DropdownComPortal
+              label={`Professor ${letra}`}
+              opcoes={opcoesLetra}
+              valor={valorLetra}
+              onChange={(valor) => atualizarVinculo(disciplina, valor, letra)}
+              id={`disc-prof-${letra.toLowerCase()}-${chave}`}
+              dropdownAberto={dropdownAberto}
+              setDropdownAberto={setDropdownAberto}
+            />
+          </div>
 
-                          {letra !== 'B' && (
-                            <button
-                              type='button'
-                              className='disc-prof-remover'
-                              onClick={() => removerProfessorExtra(disciplina, letra)}
-                              title={`Remover professor ${letra}`}
-                              aria-label={`Remover professor ${letra}`}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
+          {letra !== 'B' && (
+            <button
+              type='button'
+              className='disc-prof-remover'
+              onClick={() => removerProfessorExtra(disciplina, letra)}
+              title={`Remover professor ${letra}`}
+              aria-label={`Remover professor ${letra}`}
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+        </div>
+      )
+    })}
+  </div>
 
-                    {proximaLetra && (
-                      <button
-                        type='button'
-                        className='disc-prof-add'
-                        onClick={() => adicionarProfessorExtra(disciplina)}
-                      >
-                        <Plus size={15} />
-                        Professor {proximaLetra}
-                      </button>
-                    )}
-                  </div>
-                </div>
+  {/* COLUNA 3: Botão "+" fixo na direita */}
+  {proximaLetra && (
+    <button
+      type='button'
+      className='disc-prof-add-fixo'
+      onClick={() => adicionarProfessorExtra(disciplina)}
+      title={`Adicionar Professor ${proximaLetra}`}
+    >
+      <Plus size={20} />
+    </button>
+  )}
+  
+</div>
+
+
+
               )
             })}
+
+            
           </div>
         )}
       </section>
+
+      {/* ... fechamento do <section className='cores-disc-card'> */}
+      
+      {/* RENDERIZA O MODAL DE CONFIRMAÇÃO SE HOUVER UM PROFESSOR SENDO REMOVIDO */}
+      {confirmarDeleteProfessor && (
+        <ModalConfirmarDesvinculo
+          disciplina={confirmarDeleteProfessor.disciplina}
+          professorLetra={confirmarDeleteProfessor.letra}
+          onConfirmar={executarRemocaoProfessorExtra}
+          onCancelar={() => setConfirmarDeleteProfessor(null)}
+        />
+      )}
+
     </div>
   )
 }

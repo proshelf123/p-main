@@ -546,15 +546,23 @@ export function escutarTurmasPeriodo(uid, callback) {
   return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
-export async function adicionarTurmaPeriodo(nomeTurma, nomePeriodo, uid) {
+export async function buscarOuCriarTurmaPeriodo(nomeTurma, nomePeriodo, uid) {
   const escolaId = await getEscolaId(uid);
-  return await addDoc(collection(db, "turmas_periodo"), {
-    nomeTurma,
-    nomePeriodo,
-    escolaId: escolaId,
+  const q = query(
+    collection(db, "turmas_periodo"),
+    where("escolaId", "==", escolaId),
+    where("nomeTurma", "==", nomeTurma),
+    where("nomePeriodo", "==", nomePeriodo)
+  );
+  const snap = await getDocs(q);
+  if (!snap.empty) return snap.docs[0].id; // pasta já existe, reaproveita
+
+  const novaRef = await addDoc(collection(db, "turmas_periodo"), {
+    nomeTurma, nomePeriodo, escolaId,
     criadoPorUid: uid,
     criadoEm: serverTimestamp(),
   });
+  return novaRef.id;
 }
 
 export async function removerTurmaPeriodo(turmaDocId) {

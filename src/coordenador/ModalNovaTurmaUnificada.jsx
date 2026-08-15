@@ -5,8 +5,9 @@ import { auth } from "../firebase";
 import { 
   buscarProfessores, 
   escutarProfessoresDisciplinas, 
-  adicionarTurmaPeriodo, 
-  criarTurma 
+  buscarOuCriarTurmaPeriodo, 
+  criarTurma,
+  atualizarTurma
 } from "../firebase/estrutura";
 import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
 import DropdownComPortal from "../secoes/DropwdownComPortal";
@@ -27,8 +28,29 @@ const FORM_INICIAL = {
   professorId: ""
 };
 
-export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose }) {
-  const [form, setForm] = useState(FORM_INICIAL);
+// Reconstrói o form a partir de uma turma existente (nome = "1° Curso - Modular")
+function mapearTurmaParaForm(turma) {
+  const nomeCompleto = turma.nome || "";
+  const modular = nomeCompleto.endsWith(" - Modular");
+  const semSufixo = modular ? nomeCompleto.slice(0, -" - Modular".length) : nomeCompleto;
+  const [anoDetectado, ...restoPartes] = semSufixo.split(" ");
+  const curso = restoPartes.join(" ");
+
+  return {
+    ano: ANOS.includes(anoDetectado) ? anoDetectado : "1°",
+    curso,
+    modular,
+    periodo: turma.periodo || "Matutino",
+    disciplina: turma.disciplina || "",
+    professor: turma.professor || "",
+    professorId: turma.professorId || ""
+  };
+}
+
+export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaParaEditar = null, onClose }) {
+  const modoEdicao = Boolean(turmaParaEditar);
+
+  const [form, setForm] = useState(() => modoEdicao ? mapearTurmaParaForm(turmaParaEditar) : FORM_INICIAL);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [dropdownAberto, setDropdownAberto] = useState(null);
@@ -40,10 +62,10 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, onClose 
   const coresDisciplinas = useCoresDisciplinas();
 
   useEffect(() => {
-buscarProfessores(uid).then(setProfessores);
-  const unsub = escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => console.error(err));
+    buscarProfessores(uid).then(setProfessores);
+    const unsub = escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => console.error(err));
     return () => unsub();
-  }, []);
+  }, [uid]);
 
   const disciplinasCadastradas = useMemo(() => listarDisciplinasComCor(coresDisciplinas), [coresDisciplinas]);
 
@@ -82,51 +104,70 @@ buscarProfessores(uid).then(setProfessores);
     : professores.filter(p => String(p.nome || "").toLowerCase().includes(form.professor.toLowerCase()));
 
   async function handleSalvar() {
-    if (!form.curso.trim()) { setErro("Informe o nome do curso."); return; }
+    if (!modoEdicao && !form.curso.trim()) { setErro("Informe o nome do curso."); return; }
     if (!form.disciplina.trim()) { setErro("Informe a disciplina base da turma."); return; }
 
     setSalvando(true);
     setErro("");
 
-    const nomeTurmaFinal = `${form.ano} ${form.curso.trim()}${form.modular ? ' - Modular' : ''}`;
-    const nomePeriodoFormatado = `Período ${form.periodo}`;
-
     try {
-      await adicionarTurmaPeriodo(nomeTurmaFinal, nomePeriodoFormatado, uid);
-
-      await criarTurma(uid, {
-        nome: nomeTurmaFinal,
-        disciplina: form.disciplina,
-        periodo: form.periodo,
-        professor: form.professor,
-        professorId: form.professorId
-      });
-
-      await criarNotificacaoPorRole({
-        role: "professor",
-        titulo: "Nova turma criada",
-        mensagem: `A turma ${nomeTurmaFinal} (${form.periodo}) foi adicionada com a disciplina ${form.disciplina}.`,
-        tipo: "turma",
-        link: "/arquivos",
-        criadoPorUid: uid,
-        criadoPorNome: professorLogado?.nome || "Coordenação"
-      });
-
-      if (form.professorId) {
-        await criarNotificacao({
-          titulo: "Nova Turma Vinculada",
-          mensagem: `Você foi associado à turma "${nomeTurmaFinal}" no período ${form.periodo}.`,
-          tipo: "turma",
-          link: "/turmas",
-          destinatarioUids: [form.professorId],
-          criadoPorNome: "Coordenação",
+      if (modoEdicao) {
+        await atualizarTurma(uid, turmaParaEditar.id, {
+          disciplina: form.disciplina,
+          professor: form.professor,
+          professorId: form.professorId
         });
+
+        if (form.professorId && form.professorId !== turmaParaEditar.professorId) {
+          await criarNotificacao({
+            titulo: "Turma Atualizada",
+            mensagem: `Você foi associado à turma "${turmaParaEditar.nome}" (${form.disciplina}) no período ${form.periodo}.`,
+            tipo: "turma",
+            link: "/turmas",
+            destinatarioUids: [form.professorId],
+            criadoPorNome: "Coordenação",
+          });
+        }
+      } else {
+        const nomeTurmaFinal = `${form.ano} ${form.curso.trim()}${form.modular ? ' - Modular' : ''}`;
+        const nomePeriodoFormatado = `Período ${form.periodo}`;
+
+        await buscarOuCriarTurmaPeriodo(nomeTurmaFinal, nomePeriodoFormatado, uid);
+
+        await criarTurma(uid, {
+          nome: nomeTurmaFinal,
+          disciplina: form.disciplina,
+          periodo: form.periodo,
+          professor: form.professor,
+          professorId: form.professorId
+        });
+
+        await criarNotificacaoPorRole({
+          role: "professor",
+          titulo: "Nova turma criada",
+          mensagem: `A turma ${nomeTurmaFinal} (${form.periodo}) foi adicionada com a disciplina ${form.disciplina}.`,
+          tipo: "turma",
+          link: "/arquivos",
+          criadoPorUid: uid,
+          criadoPorNome: professorLogado?.nome || "Coordenação"
+        });
+
+        if (form.professorId) {
+          await criarNotificacao({
+            titulo: "Nova Turma Vinculada",
+            mensagem: `Você foi associado à turma "${nomeTurmaFinal}" no período ${form.periodo}.`,
+            tipo: "turma",
+            link: "/turmas",
+            destinatarioUids: [form.professorId],
+            criadoPorNome: "Coordenação",
+          });
+        }
       }
 
       onClose();
     } catch (err) {
       console.error(err);
-      setErro("Ocorreu um erro ao criar a turma. Tente novamente.");
+      setErro(modoEdicao ? "Ocorreu um erro ao atualizar a turma. Tente novamente." : "Ocorreu um erro ao criar a turma. Tente novamente.");
     } finally {
       setSalvando(false);
     }
@@ -144,7 +185,6 @@ buscarProfessores(uid).then(setProfessores);
         justifyContent: "center"
       }}
     >
-      {/* CARD BRANCO PRINCIPAL */}
       <motion.div 
         className="modal" 
         onClick={e => e.stopPropagation()} 
@@ -154,8 +194,8 @@ buscarProfessores(uid).then(setProfessores);
           maxHeight: "85vh", 
           display: "flex", 
           flexDirection: "column",
-          overflow: "hidden", // ISSO CORTA QUALQUER VAZAMENTO
-          padding: 0, // Removemos o padding externo para o scrollbar ficar no canto certo
+          overflow: "hidden",
+          padding: 0,
           borderRadius: "12px",
           backgroundColor: "var(--branco, #ffffff)"
         }}
@@ -164,14 +204,17 @@ buscarProfessores(uid).then(setProfessores);
         transition={{ duration: 0.2 }}
       >
         
-        {/* CONTAINER INTERNO COM SCROLL */}
         <div style={{ flex: 1, overflowY: "auto", padding: "24px", boxSizing: "border-box" }}>
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
-              <h3 className="modal-titulo" style={{ margin: 0, fontSize: 18 }}>Criação Unificada de Turma</h3>
+              <h3 className="modal-titulo" style={{ margin: 0, fontSize: 18 }}>
+                {modoEdicao ? "Editar Turma" : "Criação Unificada de Turma"}
+              </h3>
               <p style={{ fontSize: 12, color: "var(--texto-sec)", margin: "4px 0 0" }}>
-                Cria a pasta nos Arquivos e o vínculo de disciplina nas Turmas.
+                {modoEdicao 
+                  ? "Atualize a disciplina e o professor vinculados a esta turma." 
+                  : "Cria a pasta nos Arquivos e o vínculo de disciplina nas Turmas."}
               </p>
             </div>
             <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texto-sec)" }}>
@@ -179,42 +222,56 @@ buscarProfessores(uid).then(setProfessores);
             </button>
           </div>
 
-          {/* --- PASSO 1: DADOS BASE (ARQUIVOS) --- */}
-          <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
-            <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>1. Dados Gerais</h4>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <DropdownComPortal
-                label="Ano"
-                opcoes={ANOS.map(a => `${a} Ano`)}
-                valor={`${form.ano} Ano`}
-                onChange={opt => setForm({ ...form, ano: opt.replace(" Ano", "") })}
-                id="uni-ano" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
-              />
-              <DropdownComPortal
-                label="Período"
-                opcoes={PERIODOS}
-                valor={form.periodo}
-                onChange={opt => setForm({ ...form, periodo: opt })}
-                id="uni-periodo" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
-              />
+          {/* --- PASSO 1: DADOS BASE --- */}
+          {modoEdicao ? (
+            <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
+              <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 6 }}>Turma</h4>
+              <p style={{ fontSize: 13, color: "var(--texto)", margin: 0, fontWeight: 500 }}>
+                {form.ano} {form.curso}{form.modular ? " - Modular" : ""} · {form.periodo}
+              </p>
+              <p style={{ fontSize: 11, color: "var(--texto-sec)", margin: "4px 0 0" }}>
+                Ano, curso e período não podem ser alterados aqui — eles já definem a pasta em Arquivos.
+              </p>
             </div>
-            
-            <div className="perfil-grupo" style={{ marginTop: 12, marginBottom: 0 }}>
-              <label className="perfil-label">Nome do Curso</label>
-              <input className="perfil-input" value={form.curso} onChange={e => setForm({ ...form, curso: e.target.value })} placeholder="Ex: Informática para Internet" />
-            </div>
-
-            <div className="perfil-grupo" style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 12, marginBottom: 0 }} onClick={() => setForm({ ...form, modular: !form.modular })}>
-              <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${form.modular ? "var(--roxo)" : "#D1D5DB"}`, background: form.modular ? "var(--roxo)" : "var(--branco)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {form.modular && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
+          ) : (
+            <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
+              <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>1. Dados Gerais</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <DropdownComPortal
+                  label="Ano"
+                  opcoes={ANOS.map(a => `${a} Ano`)}
+                  valor={`${form.ano} Ano`}
+                  onChange={opt => setForm({ ...form, ano: opt.replace(" Ano", "") })}
+                  id="uni-ano" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+                />
+                <DropdownComPortal
+                  label="Período"
+                  opcoes={PERIODOS}
+                  valor={form.periodo}
+                  onChange={opt => setForm({ ...form, periodo: opt })}
+                  id="uni-periodo" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+                />
               </div>
-              <span style={{ fontSize: 13, color: "var(--texto)", fontWeight: 500 }}>Turma Modular</span>
-            </div>
-          </div>
+              
+              <div className="perfil-grupo" style={{ marginTop: 12, marginBottom: 0 }}>
+                <label className="perfil-label">Nome do Curso</label>
+                <input className="perfil-input" value={form.curso} onChange={e => setForm({ ...form, curso: e.target.value })} placeholder="Ex: Informática para Internet" />
+              </div>
 
-          {/* --- PASSO 2: DISCIPLINA (TURMAS) --- */}
+              <div className="perfil-grupo" style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 12, marginBottom: 0 }} onClick={() => setForm({ ...form, modular: !form.modular })}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${form.modular ? "var(--roxo)" : "#D1D5DB"}`, background: form.modular ? "var(--roxo)" : "var(--branco)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {form.modular && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
+                </div>
+                <span style={{ fontSize: 13, color: "var(--texto)", fontWeight: 500 }}>Turma Modular</span>
+              </div>
+            </div>
+          )}
+
+          {/* --- PASSO 2: DISCIPLINA --- */}
           <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8 }}>
-            <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>2. Vínculo de Disciplina Inicial</h4>
+            <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>
+              {modoEdicao ? "Disciplina e Professor" : "2. Vínculo de Disciplina Inicial"}
+            </h4>
             
             <DropdownComPortal
               label="Disciplina"
@@ -269,7 +326,7 @@ buscarProfessores(uid).then(setProfessores);
             </div>
           </div>
 
-          {form.curso.trim() && form.disciplina && (
+          {!modoEdicao && form.curso.trim() && form.disciplina && (
             <div style={{ background: "var(--roxo-claro)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--roxo)", fontWeight: 600, marginTop: 16 }}>
               Ação: Criando Arquivos e Turma ({form.disciplina}) para "{form.ano} {form.curso.trim()}{form.modular ? ' - Modular' : ''}"
             </div>
@@ -279,7 +336,7 @@ buscarProfessores(uid).then(setProfessores);
 
           <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
             <button className="perfil-salvar" onClick={handleSalvar} disabled={salvando} style={{ flex: 1 }}>
-              {salvando ? "Criando..." : "Criar Turma Unificada"}
+              {salvando ? (modoEdicao ? "Salvando..." : "Criando...") : (modoEdicao ? "Salvar Alterações" : "Criar Turma Unificada")}
             </button>
             <button className="btn-cancelar" onClick={onClose} style={{ flex: 1 }}>
               Cancelar

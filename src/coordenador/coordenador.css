@@ -112,8 +112,8 @@ main, .pagina-conteudo {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FAEEDA;
-  color: #F38100;
+  background: #D7C6E6;
+  color: #6F3B9D;
   flex-shrink: 0;
 }
 
@@ -213,12 +213,19 @@ main, .pagina-conteudo {
 
 .disc-prof-item {
   display: grid;
-  grid-template-columns: minmax(210px, 0.8fr) minmax(180px, 1fr) minmax(220px, 1.2fr);
-  gap: 12px;
+  grid-template-columns: minmax(210px, 0.8fr) 1fr auto;
+  gap: 16px;
   align-items: start;
   border: 1px solid var(--borda);
   border-radius: 10px;
   padding: 12px;
+}
+
+.disc-prof-professores-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-items: end;
 }
 
 .disc-prof-preview {
@@ -228,6 +235,28 @@ main, .pagina-conteudo {
   min-height: 48px;
   border-radius: 8px;
   padding: 10px 14px;
+  margin-top: 22px; 
+}
+
+.disc-prof-add-fixo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-top: 22px; /* Alinha a base do botão com a base dos inputs, ignorando a altura das labels */
+  border: 1px dashed var(--borda);
+  border-radius: 8px;
+  background: var(--branco);
+  color: var(--roxo);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.disc-prof-add-fixo:hover {
+  background: var(--roxo-claro);
+  border-color: var(--roxo);
+  transform: translateY(-1px);
 }
 
 .disc-prof-preview strong {
@@ -282,6 +311,7 @@ main, .pagina-conteudo {
   justify-content: center;
   gap: 8px;
   min-height: 38px;
+  width: 100%; /* Força ele a não passar da largura de sua coluna no grid */
   border: 1px dashed var(--borda);
   border-radius: 8px;
   background: var(--branco);
@@ -467,6 +497,19 @@ main, .pagina-conteudo {
   }
   .cores-disc-lista {
     grid-template-columns: 1fr; 
+  }
+}
+
+@media (max-width: 768px) {
+.disc-prof-item {
+    grid-template-columns: 1fr;
+  }
+  .disc-prof-professores-grid {
+    grid-template-columns: 1fr;
+  }
+  .disc-prof-add-fixo {
+    width: 100%;
+    margin-top: 0;
   }
 }
 

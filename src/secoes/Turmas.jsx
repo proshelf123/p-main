@@ -2,61 +2,28 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   buscarTurmas,
-  criarTurma,
   deletarTurma,
+  atualizarTurma,
   buscarRegistros,
   criarRegistroAula,
   deletarRegistro,
-  buscarProfessores,
-  escutarProfessoresDisciplinas,
 } from "../firebase/estrutura";
 import "./secoes.css";
-import { Trash2, AlertTriangle, X, Users } from "lucide-react";
+import { Trash2, AlertTriangle, X, Pencil, Plus } from "lucide-react";
 import CustomDatePicker from "./dropdown-calendario";
 import {
   criarNotificacao,
   criarNotificacaoPorRole,
 } from "../notificacoes/notificacoes";
 import useCoresDisciplinas from "../hooks/useCoresDisciplinas";
-import {
-  montarCoresDisciplina,
-  normalizarDisciplina,
-} from "./coresDisciplinas";
-import DropdownComPortal from "./DropwdownComPortal";
-import {
-  listarDisciplinasComCor,
-  listarVinculosDisciplina,
-} from "./vinculosDisciplinas";
-
-const COR_DISCIPLINA = {
-  Matemática: { ativo: "#FF0000", bg: "#fff0f0", cor: "#b30000" },
-  Física: { ativo: "#188AF5", bg: "#e3f0fe", cor: "#0a5eaa" },
-  Química: { ativo: "#FFE100", bg: "#fffbe0 ", cor: "#8a7200" },
-  Biologia: { ativo: "#0BDB23", bg: "#e6fbed ", cor: "#057d19" },
-  História: { ativo: "#AA6803", bg: "#f5ece0 ", cor: "#7a4b02" },
-  Geografia: { ativo: "#006500", bg: "#e0f0e0 ", cor: "#004500" },
-  Português: { ativo: "#00D5ED", bg: "#e0fafd ", cor: "#007f8f" },
-  Artes: { ativo: "#FF00AA", bg: "#ffe8f6 ", cor: "#a80070" },
-  Filosofia: { ativo: "#760507", bg: "#f2e5e6 ", cor: "#520305" },
-  Inglês: { ativo: "#2F00FF", bg: "#eaebff ", cor: "#1e00b3" },
-  "Educação Física": { ativo: "#FF6A00", bg: "#fff0e5 ", cor: "#b34900" },
-};
+import { montarCoresDisciplina } from "./coresDisciplinas";
+import ModalNovaTurmaUnificada from "../coordenador/ModalNovaTurmaUnificada";
 
 const COR_TIPO = {
   teorica: { bg: "#0BDB23", cor: "#fff", label: "Aula teórica" },
   pratica: { bg: "#ED235C", cor: "#fff", label: "Aula Prática" },
   atividade: { bg: "#FFBB00", cor: "#fff", label: "Atividades" },
   avaliacao: { bg: "#188AF5", cor: "#fff", label: "Avaliações" },
-};
-
-const PERIODOS = ["Matutino", "Vespertino", "Noturno"];
-
-const FORM_TURMA_INICIAL = {
-  nome: "",
-  disciplina: "",
-  periodo: "Matutino",
-  professor: "",
-  professorId: "",
 };
 const FORM_REGISTRO_INICIAL = {
   data: "",
@@ -78,7 +45,6 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
     <>
       <div className="modal-confirmar-overlay" onClick={onCancelar} />
       <div className="modal-confirmar">
-        {/* Ícone */}
         <div
           style={{
             width: 52,
@@ -96,7 +62,6 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
           <AlertTriangle size={26} color="#ED235C" strokeWidth={2.2} />
         </div>
 
-        {/* Texto */}
         <h3
           style={{
             fontSize: 16,
@@ -120,7 +85,6 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
           Você está prestes a remover a turma
         </p>
 
-        {/* Card da turma */}
         <div
           style={{
             display: "flex",
@@ -163,7 +127,6 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
           Todos os registros de aula serão removidos permanentemente.
         </p>
 
-        {/* Botões */}
         <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={onCancelar}
@@ -231,38 +194,20 @@ export default function Turmas({ uid, professor }) {
   const [turmaAberta, setTurmaAberta] = useState(null);
   const [registros, setRegistros] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalTurma, setModalTurma] = useState(false);
   const [painelRegistro, setPainelRegistro] = useState(false);
   const [registroAberto, setRegistroAberto] = useState(null);
-  const [formTurma, setFormTurma] = useState(FORM_TURMA_INICIAL);
   const [formRegistro, setFormRegistro] = useState(FORM_REGISTRO_INICIAL);
   const [salvando, setSalvando] = useState(false);
   const [erroTurma, setErroTurma] = useState("");
   const [erroRegistro, setErroRegistro] = useState("");
   const [dropdownAberto, setDropdownAberto] = useState(null);
   const [confirmarDelete, setConfirmarDelete] = useState(null);
-
-  const [professores, setProfessores] = useState([]);
-  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
-  const [professoresDisciplinas, setProfessoresDisciplinas] = useState({});
+  const [turmaEditando, setTurmaEditando] = useState(null);
+  const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false);
 
   useEffect(() => {
     if (uid) carregarTurmas();
   }, [uid, professor?.role]);
-
-  useEffect(() => {
-    if (uid && isCoordenador) {
-buscarProfessores(uid).then((dados) => setProfessores(dados));    }
-  }, [uid, isCoordenador]);
-
-  useEffect(() => {
-    if (!uid || !isCoordenador) return;
-
-    return escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => {
-      console.error("Erro ao carregar professores por disciplina:", err);
-      setProfessoresDisciplinas({});
-    });
-  }, [uid, isCoordenador]);
 
   async function carregarTurmas() {
     setLoading(true);
@@ -307,44 +252,23 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
     }
   }
 
-  async function handleSalvarTurma() {
-    if (!isCoordenador) return;
-    if (!formTurma.nome.trim()) {
-      setErroTurma("Informe o nome da turma.");
-      return;
-    }
-    if (!formTurma.disciplina.trim()) {
-      setErroTurma("Informe a disciplina.");
-      return;
-    }
-    setSalvando(true);
-    try {
-      await criarTurma(uid, formTurma);
-      if (formTurma.professorId) {
-        try {
-          await criarNotificacao({
-            titulo: "Nova Turma Vinculada",
-            mensagem: `Você foi associado à turma "${formTurma.nome}" no período ${formTurma.periodo}.`,
-            tipo: "turma",
-            link: "/turmas",
-            destinatarioUids: [formTurma.professorId],
-            criadoPorNome: "Coordenação",
-          });
-        } catch (notifErr) {
-          console.error(
-            "Erro ao enviar notificação de vínculo de turma:",
-            notifErr
-          );
-        }
-      }
-      await carregarTurmas();
-      setModalTurma(false);
-      setFormTurma(FORM_TURMA_INICIAL);
-    } catch {
-      setErroTurma("Erro ao salvar. Tente novamente.");
-    } finally {
-      setSalvando(false);
-    }
+  function handleAbrirCriarTurma() {
+    setTurmaEditando(null);
+    setErroTurma("");
+    setModalNovaTurmaAberto(true);
+  }
+
+  function handleEditarTurma(turma, e) {
+    e.stopPropagation();
+    setTurmaEditando(turma);
+    setErroTurma("");
+    setModalNovaTurmaAberto(true);
+  }
+
+  async function fecharModalNovaTurma() {
+    setModalNovaTurmaAberto(false);
+    setTurmaEditando(null);
+    await carregarTurmas();
   }
 
   function handleDeletarTurma(turma, e) {
@@ -433,137 +357,9 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
     setRegistros((prev) => prev.filter((r) => r.id !== registroId));
   }
 
-  function DropdownCustomizado({ label, opcoes, valor, onChange, id }) {
-    void label;
-    void opcoes;
-    void valor;
-    void onChange;
-    void id;
-    return null;
-  }
-
   const turmasFiltradas = turmas.filter(
     (t) => t.disciplina === disciplinaAtiva
   );
-
-  const professoresFiltrados =
-    formTurma.professor.trim() === ""
-      ? professores
-      : professores.filter((p) =>
-          String(p.nome || p.email || "")
-            .toLowerCase()
-            .includes(formTurma.professor.toLowerCase())
-        );
-
-  const disciplinasCadastradas = useMemo(
-    () => listarDisciplinasComCor(coresDisciplinas),
-    [coresDisciplinas]
-  );
-
-  const opcoesDisciplinasTurma = useMemo(() => {
-    const opcoes = disciplinasCadastradas.map((disciplina) => ({
-      valor: disciplina,
-      label: disciplina,
-    }));
-
-    if (
-      formTurma.disciplina &&
-      !opcoes.some(
-        (opcao) =>
-          normalizarDisciplina(opcao.valor) ===
-          normalizarDisciplina(formTurma.disciplina)
-      )
-    ) {
-      opcoes.push({ valor: formTurma.disciplina, label: formTurma.disciplina });
-    }
-
-    return [
-      { valor: "", label: "Selecione a disciplina" },
-      ...opcoes.sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
-    ];
-  }, [disciplinasCadastradas, formTurma.disciplina]);
-
-  const professoresOrdenados = useMemo(
-    () =>
-      professores
-        .map((professorItem) => ({
-          valor:
-            professorItem.id ||
-            professorItem.email ||
-            professorItem.nome ||
-            "",
-          label:
-            professorItem.nome ||
-            professorItem.email ||
-            "Professor",
-          professor:
-            professorItem.nome ||
-            professorItem.email ||
-            "",
-          professorId: professorItem.id || "",
-        }))
-        .filter((item) => item.valor && item.professor)
-        .sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
-    [professores]
-  );
-
-  const opcoesProfessoresTurma = useMemo(() => {
-    const vinculados = listarVinculosDisciplina(
-      formTurma.disciplina,
-      professoresDisciplinas
-    )
-      .map((vinculo) => ({
-        valor: vinculo.professorId || vinculo.professorEmail || vinculo.nome,
-        label: vinculo.nome,
-        professor: vinculo.nome,
-        professorId: vinculo.professorId || "",
-      }))
-      .filter((item) => item.valor && item.professor)
-      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
-
-    const base = vinculados.length > 0 ? vinculados : professoresOrdenados;
-
-    return [
-      { valor: "", label: "Sem professor", professor: "", professorId: "" },
-      ...base,
-    ];
-  }, [formTurma.disciplina, professoresDisciplinas, professoresOrdenados]);
-
-  function selecionarDisciplinaTurma(disciplina) {
-    const professoresDaDisciplina = listarVinculosDisciplina(
-      disciplina,
-      professoresDisciplinas
-    )
-      .map((vinculo) => ({
-        professor: vinculo.nome,
-        professorId: vinculo.professorId || "",
-      }))
-      .filter((item) => item.professor)
-      .sort((a, b) => a.professor.localeCompare(b.professor, "pt-BR"));
-
-    const professorSelecionado = professoresDaDisciplina[0] || {
-      professor: "",
-      professorId: "",
-    };
-
-    setFormTurma((atual) => ({
-      ...atual,
-      disciplina,
-      professor: professorSelecionado.professor,
-      professorId: professorSelecionado.professorId,
-    }));
-    setErroTurma("");
-  }
-
-  function selecionarProfessorTurma(valor) {
-    const opcao = opcoesProfessoresTurma.find((item) => item.valor === valor);
-    setFormTurma((atual) => ({
-      ...atual,
-      professor: opcao?.professor || "",
-      professorId: opcao?.professorId || "",
-    }));
-    setErroTurma("");
-  }
 
   // ══════════════════════════════════════
   //  TELA: registros de uma turma
@@ -572,7 +368,6 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <div className="card" style={{ position: "relative", minHeight: 400 }}>
-          {/* Header */}
           <div
             style={{
               display: "flex",
@@ -598,15 +393,14 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
               >
                 ← Voltar
               </button>
-              <div 
+              <div
                 className="registro-info"
                 style={{
                   flexDirection: "column",
                   alignItems: "flex-start",
-                  gap: "4px"
+                  gap: "4px",
                 }}
               >
-                {/* Linha 1: Disciplina e Professor */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                   <div style={{ fontSize: 16, color: "var(--texto)", fontWeight: 600 }}>
                     {turmaAberta.disciplina}
@@ -617,14 +411,11 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                     </div>
                   )}
                 </div>
-                
-                {/* Linha 2: Apenas o texto cinza (Nome da turma) */}
                 <div style={{ fontSize: 15, color: "var(--texto-sec)", wordBreak: "break-word" }}>
-                  {turmaAberta.nome}
+                  {turmaAberta.nome} · {turmaAberta.periodo}
                 </div>
               </div>
             </div>
-            {/* A legenda foi movida para a caixa inferior */}
           </div>
 
           {erroRegistro && (
@@ -633,7 +424,6 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
             </p>
           )}
 
-          {/* Lista de registros */}
           {registros.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
               <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>
@@ -648,11 +438,11 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                   <div
                     key={r.id}
                     className="registro-pill"
-                    onClick={() => setRegistroAberto(r)} // <-- Clique para abrir o modal
+                    onClick={() => setRegistroAberto(r)}
                     style={{
                       background: tipo.bg,
                       animationDelay: `${idx * 50}ms`,
-                      cursor: "pointer" // <-- Feedback visual de que é clicável
+                      cursor: "pointer",
                     }}
                   >
                     <span style={{ color: tipo.cor, fontSize: 15, flex: 1 }}>
@@ -664,7 +454,7 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                         className="arquivo-acao"
                         style={{ color: tipo.cor, opacity: 0.6 }}
                         onClick={(e) => {
-                          e.stopPropagation(); // <-- Impede o modal de abrir ao clicar em remover
+                          e.stopPropagation();
                           handleDeletarRegistro(r.id);
                         }}
                         title="Remover"
@@ -703,69 +493,32 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
           )}
         </div>
 
-        {/* --- CAIXA BRANCA INFERIOR COM A LEGENDA --- */}
         <div className="card" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, padding: "20px" }}>
           {Object.entries(COR_TIPO).map(([k, v]) => (
-            <div
-              key={k}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <div
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  background: v.bg,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{ fontSize: 14, color: "var(--texto)", fontWeight: 500, lineHeight: 1 }}
-              >
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 12, height: 12, borderRadius: "50%", background: v.bg, flexShrink: 0 }} />
+              <span style={{ fontSize: 14, color: "var(--texto)", fontWeight: 500, lineHeight: 1 }}>
                 {v.label}
               </span>
             </div>
           ))}
         </div>
 
-        {/* --- MODAL DE VISUALIZAÇÃO DE REGISTRO (NOVO) --- */}
         {registroAberto && (
           <>
             <div
               onClick={() => setRegistroAberto(null)}
-              style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(0,0,0,0.25)",
-                zIndex: 1100,
-                backdropFilter: "blur(2px)",
-              }}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1100, backdropFilter: "blur(2px)" }}
             />
             <div
               className="registro-modal"
               style={{
-                position: "fixed",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "100%",
-                maxWidth: 480,
-                background: "var(--branco)",
-                borderRadius: 16,
-                padding: 28,
-                zIndex: 9999,
-                boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+                width: "100%", maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28,
+                zIndex: 9999, boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
                 animation: "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
-                maxHeight: "85vh",
-                overflowY: "auto",
-                overflowX: "hidden" // <-- Evita barra de rolagem horizontal inteira
+                display: "flex", flexDirection: "column", gap: 16, maxHeight: "85vh",
+                overflowY: "auto", overflowX: "hidden",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -800,7 +553,6 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                     {registroAberto.descricao || <span style={{ fontStyle: "italic", opacity: 0.6 }}>Nenhuma descrição informada.</span>}
                   </div>
                 </div>
-
                 <div>
                   <h4 style={{ fontSize: 15, fontWeight: 600, color: "var(--roxo)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
                     Informações Adicionais
@@ -814,77 +566,34 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
           </>
         )}
 
-        {/* Painel de novo registro */}
         {painelRegistro && (
           <>
             <div
               onClick={() => setPainelRegistro(false)}
-              style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(0,0,0,0.25)",
-                zIndex: 1100,
-                backdropFilter: "blur(2px)",
-              }}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1100, backdropFilter: "blur(2px)" }}
             />
             <div
               className="registro-modal"
               style={{
-                position: "fixed",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "100%",
-                maxWidth: 480,
-                background: "var(--branco)",
-                borderRadius: 16,
-                padding: 28,
-                zIndex: 9999,
-                boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
-                animation:
-                  "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
+                position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+                width: "100%", maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28,
+                zIndex: 9999, boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                animation: "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
+                display: "flex", flexDirection: "column", gap: 16,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <h3
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 700,
-                      color: "var(--texto)",
-                      margin: "0 0 2px",
-                    }}
-                  >
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--texto)", margin: "0 0 2px" }}>
                     Novo registro de aula
                   </h3>
-                  <p
-                    style={{
-                      fontSize: 15,
-                      color: "var(--texto-sec)",
-                      margin: 0,
-                    }}
-                  >
+                  <p style={{ fontSize: 15, color: "var(--texto-sec)", margin: 0 }}>
                     {turmaAberta.disciplina} · {turmaAberta.nome}
                   </p>
                 </div>
                 <button
                   onClick={() => setPainelRegistro(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#999",
-                    padding: 4,
-                  }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#999", padding: 4 }}
                 >
                   <X size={20} />
                 </button>
@@ -892,9 +601,7 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
 
               <CustomDatePicker
                 value={formRegistro.data}
-                onChange={(dataStr) =>
-                  setFormRegistro({ ...formRegistro, data: dataStr })
-                }
+                onChange={(dataStr) => setFormRegistro({ ...formRegistro, data: dataStr })}
                 registros={registros}
                 dropdownAberto={dropdownAberto}
                 setDropdownAberto={setDropdownAberto}
@@ -905,12 +612,7 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                 <input
                   className="perfil-input"
                   value={formRegistro.conteudo}
-                  onChange={(e) =>
-                    setFormRegistro({
-                      ...formRegistro,
-                      conteudo: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setFormRegistro({ ...formRegistro, conteudo: e.target.value })}
                   placeholder="Digite o conteúdo que será aplicado na aula"
                 />
               </div>
@@ -921,12 +623,7 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                   className="perfil-input"
                   rows={2}
                   value={formRegistro.descricao}
-                  onChange={(e) =>
-                    setFormRegistro({
-                      ...formRegistro,
-                      descricao: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setFormRegistro({ ...formRegistro, descricao: e.target.value })}
                   placeholder="Descreva o conteúdo que será aplicado na aula"
                 />
               </div>
@@ -937,12 +634,7 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
                   className="perfil-input"
                   rows={2}
                   value={formRegistro.informacoes}
-                  onChange={(e) =>
-                    setFormRegistro({
-                      ...formRegistro,
-                      informacoes: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setFormRegistro({ ...formRegistro, informacoes: e.target.value })}
                   placeholder="Digite outras informações"
                 />
               </div>
@@ -950,70 +642,36 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
               <div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                   {Object.entries(COR_TIPO).map(([key, v]) => (
-                    <label
-                      key={key}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                        cursor: "pointer",
-                        marginLeft: 4,
-                      }}
-                    >
+                    <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", marginLeft: 4 }}>
                       <input
                         type="radio"
                         name="tipo-registro"
                         value={key}
                         checked={formRegistro.tipo === key}
-                        onChange={() =>
-                          setFormRegistro({ ...formRegistro, tipo: key })
-                        }
-                        style={{
-                          accentColor: "var(--roxo)",
-                          width: 16,
-                          height: 16,
-                        }}
+                        onChange={() => setFormRegistro({ ...formRegistro, tipo: key })}
+                        style={{ accentColor: "var(--roxo)", width: 16, height: 16 }}
                       />
-                      <span style={{ fontSize: 12, color: "var(--texto)" }}>
-                        {v.label}
-                      </span>
+                      <span style={{ fontSize: 12, color: "var(--texto)" }}>{v.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {erroRegistro && (
-                <p style={{ color: "#c0392b", fontSize: 12, margin: 0 }}>
-                  {erroRegistro}
-                </p>
+                <p style={{ color: "#c0392b", fontSize: 12, margin: 0 }}>{erroRegistro}</p>
               )}
 
               <button
                 onClick={handleSalvarRegistro}
                 disabled={salvando}
                 style={{
-                  marginTop: 10,
-                  width: "100%",
-                  padding: "14px",
-                  borderRadius: 40,
-                  border: "none",
-                  background: "var(--roxo)",
-                  color: "#fff",
-                  fontSize: 14,
-                  fontFamily: "'Poppins', sans-serif",
-                  fontWeight: 600,
-                  cursor: salvando ? "not-allowed" : "pointer",
-                  opacity: salvando ? 0.6 : 1,
+                  marginTop: 10, width: "100%", padding: "14px", borderRadius: 40, border: "none",
+                  background: "var(--roxo)", color: "#fff", fontSize: 14, fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 600, cursor: salvando ? "not-allowed" : "pointer", opacity: salvando ? 0.6 : 1,
                   transition: "opacity 0.15s, transform 0.15s",
                 }}
-                onMouseEnter={(e) => {
-                  if (!salvando)
-                    e.currentTarget.style.transform = "scale(1.02)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
+                onMouseEnter={(e) => { if (!salvando) e.currentTarget.style.transform = "scale(1.02)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
               >
                 {salvando ? "Salvando..." : "Salvar novo registro de aula"}
               </button>
@@ -1028,31 +686,36 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
   //  TELA: lista de turmas
   // ══════════════════════════════════════
   return (
-<div style={{ padding: "10px 0" }}>
-{/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
-      <div 
-        style={{ 
-          marginBottom: "32px", 
-          paddingBottom: "24px", /* O espaço que empurra a linha cinza para baixo */
-          borderBottom: "1px solid var(--borda)" /* A linha horizontal cinza */
+    <div style={{ padding: "10px 0" }}>
+      {/* --- HEADER --- */}
+      <div
+        style={{
+          marginBottom: "28px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          gap: 16,
+          flexWrap: "wrap",
         }}
       >
-        {/* A linha roxa agora fica isolada aqui, acompanhando apenas a altura do texto */}
-        <div 
-          style={{ 
-            paddingLeft: "14px",
-            borderLeft: "3px solid var(--roxo)" 
-          }}
-        >
+        <div>
           <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
             Turmas
           </h2>
-          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
-            Disciplinas e turmas ministradas
+          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "4px 0 0" }}>
+            Disciplinas ministradas
           </p>
         </div>
+        {isCoordenador && (
+          <button
+            className="perfil-salvar"
+            style={{ width: "auto", padding: "10px 18px", display: "flex", alignItems: "center", gap: 6 }}
+            onClick={handleAbrirCriarTurma}
+          >
+            <Plus size={16} /> Nova turma
+          </button>
+        )}
       </div>
-      {/* --- FIM DO HEADER --- */}
 
       {erroTurma && (
         <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>
@@ -1065,10 +728,18 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
       ) : turmas.length === 0 ? (
         <>
           <p className="secao-vazia">Nenhuma turma cadastrada.</p>
+          {isCoordenador && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+              <button className="btn-upload" onClick={handleAbrirCriarTurma}>
+                <Plus size={14} style={{ marginRight: 4 }} /> Criar primeira turma
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <>
-          <div className="turma-tabs" style={{ marginBottom: 40 }}>
+          {/* --- ABAS DE DISCIPLINA --- */}
+          <div className="turma-tabs" style={{ marginBottom: 28 }}>
             {disciplinas.map((d) => {
               const c = coresDe(d, coresDisciplinas);
               const ativa = disciplinaAtiva === d;
@@ -1090,86 +761,76 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
             })}
           </div>
 
-          <p
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              margin: "0 0 12px",
-            }}
-          >
+          <p style={{ fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>
             {disciplinaAtiva}
           </p>
 
-<div className="turmas-grid">
-            {turmasFiltradas.map((t, idx) => {
-              const c = coresDe(t.disciplina, coresDisciplinas);
-              return (
-                <div key={t.id} style={{ position: "relative" }}>
-<button
-                    className="turma-card-pill"
-                    style={{
-                      background: c.bg,
-                      color: c.cor,
-                      animationDelay: `${idx * 60}ms`,
-                      maxWidth: "100%", /* Bloqueia o crescimento infinito */
-                      boxSizing: "border-box"
-                    }}
-
-                    onClick={() => abrirTurma(t)}
-                  >
-                    {/* flex: 1 e minWidth: 0 avisam que essa caixa PODE encolher */}
-                    <div style={{ textAlign: "left", flex: 1, minWidth: 0, paddingRight: 32 }}>
-                      <span
-                        style={{
-                          display: "block",
-                          fontWeight: 600,
-                          fontSize: 15,
-                          whiteSpace: "normal", 
-                          wordBreak: "break-all", /* Corta a palavra gigante no meio */
-                        }}
-                      >
-                        {t.nome}
-                      </span>
-                      <span style={{ display: "block", fontSize: 14, opacity: 0.75 }}>
-                        {t.periodo}
-                      </span>
-                    </div>
-                    {/* flexShrink: 0 impede a setinha de ser esmagada */}
-                    <span style={{ fontSize: 18, fontWeight: 300, flexShrink: 0, marginRight: 10, }}>›</span>
-                  </button>
-                  {isCoordenador && (
-                    <button
-                      onClick={(e) => handleDeletarTurma(t, e)}
+          {/* --- GRADE DE TURMAS (cor uniforme, sem período visível) --- */}
+          <div className="turmas-grid">
+            {turmasFiltradas.map((t, idx) => (
+              <div key={t.id} style={{ position: "relative" }}>
+                <button
+                  className="turma-card-pill"
+                  style={{
+                    background: "var(--roxo-medio)",
+                    color: "#ffffff",
+                    animationDelay: `${idx * 60}ms`,
+                    maxWidth: "100%",
+                    boxSizing: "border-box",
+                  }}
+                  onClick={() => abrirTurma(t)}
+                  title={t.periodo}
+                >
+                  <div style={{ textAlign: "left", flex: 1, minWidth: 0, paddingRight: 32 }}>
+                    <span
                       style={{
-                        position: "absolute",
-                        top: "53%",
-                        right: 37,
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        opacity: 0.35,
-                        transition: "opacity .15s",
+                        display: "block",
+                        fontWeight: 600,
+                        fontSize: 15,
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.opacity = "0.9")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.opacity = "0.35")
-                      }
-                      title="Remover turma"
                     >
-                      <Trash2 size={14} color={c.cor} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                      {t.nome}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 300, flexShrink: 0, marginRight: 10 }}>›</span>
+                </button>
+
+                {isCoordenador && (
+                  <button
+                    onClick={(e) => handleEditarTurma(t, e)}
+                    style={{
+                      position: "absolute", top: "50%", right: 58, transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", opacity: 0.7, transition: "opacity .15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+                    title="Editar turma"
+                  >
+                    <Pencil size={14} color="#ffffff" />
+                  </button>
+                )}
+                {isCoordenador && (
+                  <button
+                    onClick={(e) => handleDeletarTurma(t, e)}
+                    style={{
+                      position: "absolute", top: "50%", right: 34, transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", opacity: 0.7, transition: "opacity .15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+                    title="Remover turma"
+                  >
+                    <Trash2 size={14} color="#ffffff" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}
 
-      {/* ── Modal de confirmação de delete ── */}
       {confirmarDelete && (
         <ModalConfirmar
           turma={confirmarDelete}
@@ -1178,181 +839,13 @@ buscarProfessores(uid).then((dados) => setProfessores(dados));    }
         />
       )}
 
-      {/* ── Modal Nova Turma com Autocomplete do Professor ── */}
-      {isCoordenador && modalTurma && (
-        <div className="modal-overlay" onClick={() => setModalTurma(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-titulo">Nova turma</h3>
-
-            <div className="perfil-grupo">
-              <label className="perfil-label">Nome da turma</label>
-              <input
-                className="perfil-input"
-                value={formTurma.nome}
-                onChange={(e) =>
-                  setFormTurma({ ...formTurma, nome: e.target.value })
-                }
-                placeholder="Ex: 1º RH, 2º Eletrônica"
-                autoFocus
-              />
-            </div>
-
-            <DropdownComPortal
-              label="Disciplina"
-              opcoes={opcoesDisciplinasTurma}
-              valor={formTurma.disciplina}
-              onChange={selecionarDisciplinaTurma}
-              id="disciplina-turma"
-              dropdownAberto={dropdownAberto}
-              setDropdownAberto={setDropdownAberto}
-            />
-
-            <div className="perfil-grupo" style={{ display: "none" }}>
-              <label className="perfil-label">Disciplina</label>
-              <input
-                className="perfil-input"
-                value={formTurma.disciplina}
-                onChange={(e) =>
-                  setFormTurma({ ...formTurma, disciplina: e.target.value })
-                }
-                placeholder="Ex: Matemática, Física, Química"
-              />
-            </div>
-
-            <DropdownComPortal
-              label="Professor"
-              opcoes={opcoesProfessoresTurma}
-              valor={formTurma.professorId || formTurma.professor}
-              onChange={selecionarProfessorTurma}
-              id="professor-turma"
-              dropdownAberto={dropdownAberto}
-              setDropdownAberto={setDropdownAberto}
-            />
-
-            {/* Campo Autocomplete de Professor */}
-            <div
-              className="perfil-grupo"
-              style={{
-                display: "none",
-                position: "relative",
-                zIndex: mostrarSugestoes ? 99999 : "auto",
-              }}
-            >
-              <label className="perfil-label">Professor</label>
-              <input
-                className="perfil-input"
-                value={formTurma.professor}
-                onChange={(e) => {
-                  setFormTurma({
-                    ...formTurma,
-                    professor: e.target.value,
-                    professorId: "",
-                  });
-                  setMostrarSugestoes(true);
-                }}
-                onFocus={() => setMostrarSugestoes(true)}
-                onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
-                placeholder="Digite o nome do professor..."
-              />
-              {mostrarSugestoes && (
-                <div
-                  className="dropdown-menu"
-                  style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    right: 0,
-                    marginTop: "4px",
-                    maxHeight: "160px",
-                    overflowY: "auto",
-                    zIndex: 1300,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  {professoresFiltrados.length > 0 ? (
-                    professoresFiltrados.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        className="dropdown-item"
-                        onClick={() => {
-                          setFormTurma({
-                            ...formTurma,
-                            professor: p.nome,
-                            professorId: p.id,
-                          });
-                          setMostrarSugestoes(false);
-                        }}
-                        style={{
-                          background: "var(--branco)",
-                          color: "var(--texto)",
-                          textAlign: "left",
-                          width: "100%",
-                          border: "none",
-                          padding: "10px 12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {p.nome}
-                      </button>
-                    ))
-                  ) : (
-                    <div
-                      style={{
-                        padding: "10px 12px",
-                        fontSize: 12,
-                        color: "var(--texto-sec)",
-                        background: "var(--branco)",
-                      }}
-                    >
-                      Nenhum professor encontrado
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <DropdownCustomizado
-              label="Período"
-              opcoes={PERIODOS}
-              valor={formTurma.periodo}
-              onChange={(periodo) => setFormTurma({ ...formTurma, periodo })}
-              id="periodo-turma"
-            />
-
-            <DropdownComPortal
-              label="Período"
-              opcoes={PERIODOS}
-              valor={formTurma.periodo}
-              onChange={(periodo) => setFormTurma({ ...formTurma, periodo })}
-              id="periodo-turma"
-              dropdownAberto={dropdownAberto}
-              setDropdownAberto={setDropdownAberto}
-            />
-
-            {erroTurma && (
-              <p style={{ color: "#c0392b", fontSize: 12, margin: "4px 0" }}>
-                {erroTurma}
-              </p>
-            )}
-
-            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <button
-                className="perfil-salvar"
-                onClick={handleSalvarTurma}
-                disabled={salvando}
-              >
-                {salvando ? "Salvando..." : "Salvar turma"}
-              </button>
-              <button
-                className="btn-cancelar"
-                onClick={() => setModalTurma(false)}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+      {isCoordenador && modalNovaTurmaAberto && (
+        <ModalNovaTurmaUnificada
+          uid={uid}
+          professorLogado={professor}
+          turmaParaEditar={turmaEditando}
+          onClose={fecharModalNovaTurma}
+        />
       )}
     </div>
   );

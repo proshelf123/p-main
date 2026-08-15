@@ -122,7 +122,7 @@
 }
 
 .acessar {
-    font-weight: bold;
+    font-weight: normal;
     font-size: 20px; /* Levemente menor para caber melhor na tela */
     margin-bottom: 12px;
     text-align: center;
