@@ -1,612 +1,639 @@
-:root {
-    --cor-roxa-normal: #6F3B9D;
-    --cor-roxa-escura: #331C48;
-    --cor-roxa-clara: #D7C6E6;
-
-    --cor-laranja-normal: #FF9D00;
-    --cor-cheddar: #F38100;
-    --cor-laranja-clara: #FFCC79;
-}
-
-* {
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
-
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Poppins', sans-serif;
-    height: 100vh;
+/* Importando variáveis se necessário, ou assumindo que estão no :root global */
+.paginaContainer {
+    width: 100%;
     overflow-x: hidden;
+    font-family: 'Poppins', sans-serif;
+
+    /* Adiciona esse espaço para compensar o cabeçalho fixo */
+    padding-top: 90px;
 }
 
-
-/* ── Proteção: garante que font-size do dashboard não vaze aqui ── */
-.cabecalho *,
-.pagina *,
-.menu *,
-.menu1 * {
-    --font-size-base: 1 !important;
-}
-
-/* ── Restaura font-size explícito em cada elemento afetado ── */
-.menu,
-.menu1 {
-    font-size: 100px;
-}
-
-.menu span,
-.menu1 span,
-.menu a,
-.menu1 a {
-    font-size: inherit !important;
-}
-
-
-.logo {
-    width: 220px;
-    height: 70px;
-    margin-left: 30px;
-    user-select: none;
-}
-
-.logo-mobile {
-    display: none;
-    position: absolute;
-    user-select: none;
-}
-
+/* --- CABEÇALHO --- */
 .cabecalho {
     display: flex;
     justify-content: space-between;
-    align-items: center; 
-    padding: 0 20px;
+    align-items: center;
+    padding: 0 40px;
+    height: 90px;
+    background-color: #ffffff;
+    box-shadow: 0px 7px 6px rgba(0, 0, 0, 0.15);
+
+    /* Mudamos para fixed */
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100px;
-    box-shadow: 0px 7px 6px rgba(0, 0, 0, 0.2);
-    z-index: 1;
+    /* Garante que ocupe a tela toda */
+    z-index: 100;
+}
+
+.logo {
+    height: 70px;
+    cursor: pointer;
 }
 
 .ul {
     display: flex;
-    flex-direction: row;
-    align-items: center;
     list-style: none;
     gap: 30px;
-    padding: 0;
     margin: 0;
-    flex-wrap: nowrap; 
+    padding: 0;
 }
 
-.menu, .menu1 {
+.menuItem {
     display: flex;
     align-items: center;
-    justify-content: center;
-    list-style: none;
-    font-size: 25px; 
-    white-space: nowrap; 
+    cursor: pointer;
 }
 
-
-.porta-icone {
+.linkMenu {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 35px;
-    margin-left: 10px;
-    user-select: none;
+    text-decoration: none;
+    color: #000;
+    font-weight: 500;
+    font-size: 20px;
 }
 
-.porta-icone-mobile {
-    display: none;
-    user-select: none;
+.textoMenu {
+    display: flex;
 }
 
-.texto-mobile {
-    display: none;
+.iconeMenu {
+    width: 30px;
+    height: 30ppx;
+    margin-left: 8px;
 }
 
-.texto-desktop {
-    display: block;
+/* --- SEÇÃO 1: HERO --- */
+.heroSection {
+    display: flex;
+    width: 100%;
+    height: 500px;
 }
 
-.pagina {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 100px);
-  overflow: clip;          /* já existe, mantém */
-  overflow-x: hidden;      /* adiciona isso explicitamente */
+.heroImagemDiv {
+    width: 50%;
+    height: 100%;
 }
 
-.container-circulos {
-    position: absolute;
-    left: 0;
-    top: 0;
+.imagemCapa {
     width: 100%;
     height: 100%;
-    pointer-events: none;
-}
-
-.circulo-laranja {
-    width: 520px;
-    height: 520px;
-    background-color: var(--cor-cheddar);
-    border-radius: 50%;
-    position: absolute;
-    left: 550px;
-    top: 100px;
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-}
-
-.circulo-amarelo {
-    width: 610px;
-    height: 610px;
-    background-color: var(--cor-laranja-normal);
-    border-radius: 50%;
-    position: absolute;
-    left: 150px;
-    top: 340px;
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-}
-
-.mariana {
-    position: absolute;
+    object-fit: cover;
     display: block;
-    bottom: -40px;
-    left: 150px;
-    max-height: 100%;
-    width: auto;
-    z-index: 2;
-    user-select: none;
 }
 
-.textos {
-  position: absolute;
-  right: 80px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  z-index: 3;
-  max-width: 40%;          /* adiciona isso */
+.heroTextoDiv {
+    width: 50%;
+    background-color: #8F6FAA;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 10%;
+    color: white;
 }
 
-.texto-direita {
-    margin: 0;
-}
-
-.tamanho-fonte {
-    font-size: 68px;
-    font-weight: 500;
+.tituloPrincipal {
+    font-size: 71px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 20px;
     text-align: center;
-    margin: 0;
-}
-
-.do-professor {
-    font-size: 68px;
-    font-weight: 500;
-    text-align: right;
-    margin-left: 270px;
-    white-space: nowrap;
-}
-
-.botao-entrar {
-    overflow: visible;
-    padding: 22px 80px;
-    border-radius: 999px;
-    border: none;
-    background-color: var(--cor-roxa-normal);
-    color: #fff;
-    cursor: pointer;
-    font-size: 40px;
-    font-weight: bolder;
-    text-decoration: none;
-    margin-right: 30px;
 }
 
 .inteligente {
-    color: var(--cor-roxa-normal);
-    display: inline-block; 
+    display: inline-block;
     position: relative;
+    /* Removemos a cor roxa daqui porque agora o texto principal do Hero já é branco! */
 }
 
-.com-barra {
+.comBarra {
     position: relative;
     display: inline-block;
-    font-size: 68px;
 }
 
-.sem-barra {
+.semBarra {
     position: relative;
     display: inline-block;
-    font-size: 68px;
 }
 
-.barra-animada {
+.barraAnimada {
     position: absolute;
     left: 0;
-    bottom: 12px;
+    bottom: 6px;
+    /* Ajustado proporcionalmente para a nova fonte de 48px */
     width: 100%;
-    height: 6px;
-    background: #FF9D00;
+    height: 4px;
+    background: var(--cor-laranja-normal, #FF9D00);
     transform-origin: left;
     border-radius: 2px;
     display: block;
 }
 
-@media screen and (max-width: 1024px) {
+.destaqueAmarelo {
+    position: relative;
+    display: inline-block;
+}
 
-    * {
-        margin-bottom: 0;
-    } 
+.destaqueAmarelo::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 2px;
+    width: 100%;
+    height: 4px;
+    background-color: var(--cor-laranja-normal, #FFB800);
+    /*[cite: 2] */
+    border-radius: 2px;
+}
 
-    .container-circulos {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-    }
+.paragrafoRoxo {
+    font-size: 30px;
+    line-height: 1.5;
+    font-weight: 300;
+    text-align: justify;
+    /* <-- Adicionado aqui */
+}
 
-    .circulo-laranja {
-        width: 300px;
-        height: 300px;
-        background-color: var(--cor-cheddar);
-        border-radius: 50%;
-        position: absolute;
-        left: 250px;
-        top: 60px;
-        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-    }
+/* --- SEÇÃO 2: IMPACTO --- */
+.impactoSection {
+    position: relative;
+    padding: 80px 10%;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
 
-    .circulo-amarelo {
-        width: 400px;
-        height: 400px;
-        background-color: var(--cor-laranja-normal);
-        border-radius: 50%;
-        position: absolute;
-        left: 50px;
-        top: 160px;
-        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-    }
+.tituloSecundario {
+    font-size: 71px;
+    color: #331C48;
+    margin-bottom: 50px;
+    font-weight: 600;
+}
 
-    .mariana {
-        position: absolute;
-        top: 10px;
-        left: 40px;
-        width: 400px;
-        height: 650px;
-    }
- 
-    .ul {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        list-style: none;
-        gap: 20px;
-        padding: 0;
-        margin: 0;
-        flex-wrap: nowrap; 
-    }
+.palavraAnimada {
+    display: inline-block;
+    position: relative;
+}
 
-    .menu, .menu1 {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        list-style: none;
-        font-size: 20px; 
-        white-space: nowrap; 
-    }
+.separadorHorizontal {
+    width: 100%;
+    height: 25px;
+    /* Você pode aumentar ou diminuir a espessura aqui */
+    background-color: #F4EFF8;
+    /* Cor clarinha exata da imagem */
+}
 
-    .textos {
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        z-index: 3;
-    }
+/* Como você já adicionou .comBarra e .semBarra antes, não precisa repetir elas aqui, elas já vão funcionar! */
 
-    .texto-direita {
-        margin: 0;
-    }
+.barraAnimadaImpacto {
+    position: absolute;
+    left: 0;
+    bottom: 20px;
+    /* O valor negativo ou zero desce a barra para a linha de base */
+    width: calc(100% - 5px);
+    height: 4px;
+    background: var(--cor-laranja-normal, #FF9D00);
+    transform-origin: left;
+    border-radius: 2px;
+    display: block;
+}
 
-    .tamanho-fonte {
-        font-size: 40px;
-        font-weight: 500;
-        text-align: center;
-        margin: 0;
-    }
+.barraAnimadaImpactoDireita {
+    position: absolute;
+    left: -16px;
+    /* Puxa a barra para a esquerda, entrando no espaço vazio */
+    bottom: 20px;
+    width: calc(100% + 15px);
+    /* Compensa o tamanho para a barra não ficar curta no final */
+    height: 4px;
+    background: var(--cor-laranja-normal, #FF9D00);
+    transform-origin: left;
+    border-radius: 2px;
+    display: block;
+}
 
-    .do-professor {
-        font-size: 0px;
-        font-weight: 500;
-        text-align: right;
-        margin: -10px 0 40px 0;
-    }
+.destaqueAmareloLinha {
+    position: relative;
+    display: inline-block;
+}
 
-    .botao-entrar {
-        overflow: visible;
-        padding: 12px 60px;
-        border-radius: 999px;
-        border: none;
-        background-color: var(--cor-roxa-normal);
-        color: #fff;
-        cursor: pointer;
-        font-size: 20px;
-        font-weight: bolder;
-        text-decoration: none;
-    }
+.destaqueAmareloLinha::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 2px;
+    width: 100%;
+    height: 4px;
+    background-color: var(--cor-laranja-normal, #FFB800);
+    /*[cite: 2] */
+}
 
-    .inteligente {
-        color: var(--cor-roxa-normal);
-        display: inline-block; 
-        position: relative;
-    }
+.impactoConteudo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 60px;
+}
 
-    .com-barra {
-        position: relative;
-        display: inline-block;
-    }
+.impactoTexto p {
+    font-size: 30px;
+    color: #331C48;
+    line-height: 1.6;
+    max-width: 1200px;
+    text-align: justify;
+    /* <-- Adicionado aqui */
+}
 
-    .sem-barra {
-        position: relative;
-        display: inline-block;
-    }
+.impactoAcao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    .barra-animada {
-        position: absolute;
-        left: 0;
-        bottom: 9px;
-        width: 100%;
-        height: 3px;
-        background: #FF9D00;
-        transform-origin: left;
-        border-radius: 2px;
-        display: block;
-    }
+/* Nova classe para segurar o título e a barra juntos */
+.containerSubtitulo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* O SEGREDO ESTÁ AQUI: força tudo a nascer grudado na esquerda! */
+    margin-bottom: 20px;
+}
+
+/* Deixamos o título limpo, sem margins extras embaixo */
+.subtituloAcao {
+    font-weight: 600;
+    font-size: 40px;
+    color: #331C48;
+    margin: 0;
+}
+
+/* Uma barra simples que vive debaixo do texto, sem position absolute! */
+.barraAnimadaAcao {
+    width: 100%;
+    /* O tamanho total dela volta a ficar fixo no CSS */
+    height: 4px;
+    background: var(--cor-laranja-normal, #FF9D00);
+    border-radius: 2px;
+    margin-top: 0px;
+    transform-origin: left;
+    /* Garante que o scaleX cresça da esquerda para a direita */
+}
+
+.botaoComecar {
+    background-color: #8F6FAA;
+    /*[cite: 2] */
+    margin-top: 20px;
+    color: white;
+    border: none;
+    padding: 15px 80px;
+    font-size: 40px;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.bordaLateralAmarela {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 100px;
+    background-color: var(--cor-laranja-normal, #FF9D00);
+    /*[cite: 2] */
+}
+
+/* --- SEÇÃO 3: CAOS --- */
+.caosSection {
+    display: flex;
+    width: 100%;
+    height: 450px;
+}
+
+.caosTextoDiv {
+    width: 50%;
+    background-color: var(--cor-laranja-normal, #FF9D00);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Reduzimos o padding direito (que era 8%) para dar mais espaço ao texto */
+    padding: 0 4% 0 8%;
+    color: white;
+    border-right: 60px solid #8E6FAA;
+}
+
+.paragrafoBranco {
+    font-size: 30px;
+    line-height: 1.6;
+    font-weight: 400;
+    text-align: justify;
+
+    /* --- Adicione estas duas linhas --- */
+    max-width: 840px;
+    /* Limita a largura para bater exatamente com a frase do título */
+    margin: 0 auto;
+    /* Empurra o bloco para o centro, alinhando com o título de cima */
+}
+
+.tituloBranco {
+    font-size: 71px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    text-align: center;
+    /* <-- Adicione esta linha para centralizar o título! */
+}
+
+.caosImagemDiv {
+    width: 50%;
+    height: 100%;
 }
 
 @media screen and (max-width: 1440px) {
+    .tituloPrincipal {
+        font-size: 50px;
 
-    * {
-        margin-bottom: 0;
     }
 
-    .container-circulos {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-    }
-
-    .circulo-laranja {
-        width: 400px;
-        height: 400px;
-        background-color: var(--cor-cheddar);
-        border-radius: 50%;
-        position: absolute;
-        left: 250px;
-        top: 60px;
-        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-    }
-
-    .circulo-amarelo {
-        width: 550px;
-        height: 550px;
-        background-color: var(--cor-laranja-normal);
-        border-radius: 50%;
-        position: absolute;
-        left: 50px;
-        top: 230px;
-        box-shadow: 0 -10px 25px rgba(0,0,0,0.3);
-    }
-
-    .mariana {
-        position: absolute;
-        top: 60px;
-        left: 50px;
-        width: 450px;
-        height: 750px;
-    }
- 
-    .ul {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        list-style: none;
-        gap: 20px;
+    .heroTextoDiv {
         padding: 0;
-        margin: 0;
-        flex-wrap: nowrap; 
     }
 
-    .menu, .menu1 {
-        display: flex;
+    .paragrafoRoxo {
+        font-size: 24px;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .tituloSecundario {
+        font-size: 49px;
+        max-width: none;
+    }
+
+    .barraAnimadaImpacto {
+       margin-bottom: -8px;
+    }
+
+    .barraAnimadaImpactoDireita {
+        margin-bottom: -8px;
+    }
+
+    .impactoTexto p {
+        font-size: 24px;
+        max-width: 600px;
+    }
+
+    .subtituloAcao {
+        font-size: 30px;
+    }
+
+    .botaoComecar {
+        padding: 12px 70px;
+        font-size: 30px;
+    }
+
+    .impactoAcao {
+        margin-right: 15px;
+    }
+
+
+    .tituloBranco {
+        font-size: 40px;
+        margin: 0 auto; 
+        max-width: none;
+    }
+
+    .paragrafoBranco {
+        font-size: 24px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}
+
+/* Tablets deitados (Landscape) e telas médias[cite: 2]*/
+@media screen and (max-width: 1024px) {
+
+    .tituloPrincipal {
+        font-size: 38px;
+
+    }
+
+    .heroTextoDiv {
+        padding: 0;
+    }
+
+    .paragrafoRoxo {
+        font-size: 22px;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .tituloSecundario {
+        font-size: 34px;
+        max-width: none;
+    }
+
+    .barraAnimadaImpacto {
+       margin-bottom: -12px;
+               height: 3px;
+
+    }
+
+    .barraAnimadaImpactoDireita {
+        margin-bottom: -12px;
+        height: 3px;
+    }
+
+.impactoTexto p {
+        font-size: 20px;
+        max-width: 400px; /* Mantém o seu limite para achatar o bloco */
+        margin: 0; /* Removemos o margin-right de 450px daqui */
+        text-align: justify; /* Mantém justificado se você preferir */
+    }
+
+    .impactoAcao {
+        margin-top: -130px;
+    }
+
+    .subtituloAcao {
+        font-size: 23px;
+    }
+
+    .botaoComecar {
+        padding: 12px 50px;
+        font-size: 25px;
+    }
+
+    .impactoAcao {
+        margin-right: 15px;
+    }
+
+    .paragrafoBranco {
+        font-size: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .heroSection,
+    .caosSection {
+        height: 400px;
+    }
+
+    .ul {
+        gap: 15px;
+    }
+
+    .linkMenu {
+        font-size: 16px;
+    }
+
+    .heroTextoDiv {
+        padding: 0 5%;
+    }
+
+
+.impactoConteudo {
+        flex-direction: row; /* <-- Volta a colocar lado a lado */
+        justify-content: space-between; /* <-- Empurra o texto para a esquerda e o botão para a direita */
         align-items: center;
-        justify-content: center;
-        list-style: none;
-        font-size: 25px; 
-        white-space: nowrap; 
-    }
-    .textos {
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        z-index: 3;
+        gap: 20px;
     }
 
-    .texto-direita {
-        margin: 0;
+    .bordaLateralAmarela {
+        width: 60px;
     }
 
-    .tamanho-fonte {
-        font-size: 45px;
-        font-weight: 500;
-        text-align: right;
-        margin: 0 0 10px 0;
-    }
-    .botao-entrar {
-        overflow: visible;
-        padding: 10px 50px;
-        border-radius: 999px;
-        border: none;
-        background-color: var(--cor-roxa-normal);
-        color: #fff;
-        cursor: pointer;
-        font-weight: bolder;
-        text-decoration: none;
-        margin-top: 30px;
+    .tituloBranco {
+        font-size: 33px;
+        max-width: none;
+        margin: 0 auto;
+        margin-bottom: 20px;
     }
 
-    .inteligente {
-        color: var(--cor-roxa-normal);
-        display: inline-block; 
-        position: relative;
+    .caosTextoDiv {
+        padding: 0 4% 0 4%;
+        border-right: 30px solid #8E6FAA;
     }
 
-    .com-barra {
-        position: relative;
-        display: inline-block;
-        font-size: 45px;
-    }
-
-    .sem-barra {
-        position: relative;
-        display: inline-block;
-        font-size: 45px;
-    }
-
-    .barra-animada {
-        position: absolute;
-        left: 0;
-        bottom: 9px;
-        width: 100%;
-        height: 5px;
-        background: #FF9D00;
-        transform-origin: left;
-        border-radius: 2px;
-        display: block;
-    }
+    
 }
-/* ══════════════════════════════════════════════════════════════
-   RESPONSIVIDADE inicio.css — desktop-first
-   Breakpoints adicionais: 768px (tablet), 480px (mobile)
-   ══════════════════════════════════════════════════════════════ */
 
-   
-
+/* Tablets em pé (Portrait) e Dispositivos Móveis Grandes[cite: 2]*/
 @media screen and (max-width: 768px) {
-  .cabecalho {
-    height: 70px;
-    padding: 0 16px;
-  }
+    .cabecalho {
+        padding: 0 20px;
+    }
 
-  .logo { display: none; }
-  .logo-mobile {
-    display: block;
-    width: 130px;
-    height: auto;
-    position: static;
-    margin-left: 8px;
-  }
+    /* Esconde o texto do menu para economizar espaço e deixa só os ícones */
+    .textoMenu {
+        display: none;
+    }
 
-  .ul { gap: 12px; }
-  .menu, .menu1 { font-size: 15px; }
+    .heroSection,
+    .caosSection {
+        flex-direction: column;
+        height: auto;
+        /* Permite que o bloco cresça de acordo com o texto */
+    }
 
-  .porta-icone { display: none; }
-  .porta-icone-mobile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    margin-left: 8px;
-  }
+    .heroImagemDiv,
+    .heroTextoDiv,
+    .caosImagemDiv,
+    .caosTextoDiv {
+        width: 100%;
+    }
 
-  .texto-mobile  { display: block; }
-  .texto-desktop { display: none; }
+    .heroImagemDiv {
+        height: 300px;
+    }
 
-  .pagina { height: calc(100vh - 70px); }
+    .caosImagemDiv {
+        height: 300px;
+        order: 2;
+        /* Joga a imagem do caos pra baixo */
+    }
 
-  .circulo-laranja {
-    width: 220px; height: 220px;
-    left: auto; right: -40px;
-    top: 20px;
-  }
-  .circulo-amarelo {
-    width: 280px; height: 280px;
-    left: auto; right: -80px;
-    top: 130px;
-  }
+    .caosTextoDiv {
+        order: 1;
+    }
 
-  .mariana {
-    left: -30px;
-    bottom: -20px;
-    width: auto;
-    max-height: 75%;
-  }
+    .heroTextoDiv {
+        padding: 50px 5%;
+    }
 
-  .textos {
-    right: 16px;
-    top: 40%;
-  }
+    .caosTextoDiv {
+        padding: 50px 5%;
+        border-right: none;
+        /* Remove a borda direita... */
+        border-bottom: 15px solid var(--cor-roxa-normal);
+        /* ...e coloca ela embaixo, separando da foto! */
+    }
 
-  .tamanho-fonte { font-size: 30px; }
-  .do-professor  { font-size: 28px; margin: -8px 0 24px 0; }
+    .tituloPrincipal {
+        font-size: 32px;
+    }
 
-  .botao-entrar {
-    padding: 12px 40px;
-    font-size: 20px;
-  }
+    .tituloSecundario {
+        font-size: 28px;
+    }
 
-  .com-barra, .sem-barra { font-size: 30px; }
-  .barra-animada { bottom: 6px; height: 3px; }
+    .tituloBranco {
+        font-size: 28px;
+    }
+
+    .paragrafoRoxo,
+    .paragrafoBranco,
+    .impactoTexto p {
+        font-size: 16px;
+    }
+
+    .impactoSection {
+        padding: 50px 5%;
+    }
 }
 
+/* Celulares (Smartphones)[cite: 2]*/
 @media screen and (max-width: 480px) {
-  .cabecalho { height: 60px; padding: 0 12px; }
-  .pagina { height: calc(100vh - 60px); }
+    .cabecalho {
+        height: 70px;
+        /* Cabeçalho mais fino no celular */
+        padding: 0 15px;
+    }
 
-  .ul { gap: 8px; }
-  .menu, .menu1 { font-size: 13px; }
+    /* Ajusta o padding da página principal para não esconder conteúdo atrás do cabeçalho reduzido */
+    .paginaContainer {
+        padding-top: 70px;
+    }
 
-  .circulo-laranja {
-    width: 160px; height: 160px;
-    right: -30px; top: 10px;
-  }
-  .circulo-amarelo {
-    width: 210px; height: 210px;
-    right: -60px; top: 110px;
-  }
+    .logo {
+        height: 30px;
+    }
 
-  .mariana {
-    max-height: 65%;
-    left: -20px;
-  }
+    .tituloPrincipal {
+        font-size: 28px;
+    }
 
-  .textos {
-    right: 12px;
-    top: 36%;
-  }
+    .tituloSecundario {
+        font-size: 24px;
+    }
 
-  .tamanho-fonte { font-size: 24px; }
-  .do-professor  { font-size: 22px; margin: -6px 0 18px 0; }
+    .tituloBranco {
+        font-size: 24px;
+    }
 
-  .botao-entrar {
-    padding: 10px 28px;
-    font-size: 16px;
-  }
+    .subtituloAcao {
+        font-size: 18px;
+    }
 
-  .com-barra, .sem-barra { font-size: 24px; }
+    .botaoComecar {
+        padding: 12px 30px;
+        font-size: 18px;
+    }
+
+    .heroImagemDiv,
+    .caosImagemDiv {
+        height: 250px;
+    }
 }

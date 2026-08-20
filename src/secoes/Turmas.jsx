@@ -503,15 +503,17 @@ export default function Turmas({ uid, professor }) {
               onClick={() => setRegistroAberto(null)}
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1100, backdropFilter: "blur(2px)" }}
             />
-            <div
+<div
               className="registro-modal"
               style={{
                 position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-                width: "100%", maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28,
+                width: "calc(100% - 32px)", /* <-- Alterado para desgrudar das bordas */
+                maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28,
                 zIndex: 9999, boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
                 animation: "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
                 display: "flex", flexDirection: "column", gap: 16, maxHeight: "85vh",
                 overflowY: "auto", overflowX: "hidden",
+                boxSizing: "border-box" /* <-- Garante que o padding não estoure a tela */
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -565,14 +567,17 @@ export default function Turmas({ uid, professor }) {
               onClick={() => setPainelRegistro(false)}
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1100, backdropFilter: "blur(2px)" }}
             />
-            <div
+<div
               className="registro-modal"
               style={{
                 position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-                width: "100%", maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28,
+                width: "calc(100% - 32px)", /* <-- Alterado para desgrudar das bordas */
+                maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28,
                 zIndex: 9999, boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
                 animation: "painel-pop 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
                 display: "flex", flexDirection: "column", gap: 16,
+                maxHeight: "85vh", overflowY: "auto", overflowX: "hidden", /* <-- Adicionado limite de altura e rolagem */
+                boxSizing: "border-box" /* <-- Garante que o padding não estoure a tela */
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -679,25 +684,29 @@ export default function Turmas({ uid, professor }) {
   //  TELA: lista de turmas
   // ══════════════════════════════════════
   return (
-    <div style={{ padding: "10px 0" }}>
-      {/* --- HEADER --- */}
-      <div
-        style={{
-          marginBottom: "28px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
-            Turmas
-          </h2>
-          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "4px 0 0" }}>
-            Disciplinas ministradas
-          </p>
+    <div>
+      <div className='crono-topo'>
+        <div 
+          style={{ 
+            width: "100%", 
+            marginBottom: "32px", 
+            paddingBottom: "24px", 
+            borderBottom: "1px solid var(--borda)" 
+          }}
+        >
+          <div 
+            style={{ 
+              paddingLeft: "15px",
+              borderLeft: "3px solid var(--roxo)" 
+            }}
+          >
+            <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+              Turmas
+            </h2>
+            <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+              Disciplinas ministradas
+            </p>
+          </div>
         </div>
       </div>
 

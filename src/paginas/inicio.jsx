@@ -1,202 +1,197 @@
-import styles from './inicio.module.css'; // <-- Importação alterada
-import { motion } from "framer-motion";
-import { Link, useNavigate } from 'react-router-dom'; // Ajustado import do useNavigate
+import React from 'react';
+import styles from './inicio.module.css'; //
+import { motion } from "framer-motion"; //[cite: 1]
+import { Link, useNavigate } from 'react-router-dom'; //[cite: 1]
+import { UserRoundPlus, School } from 'lucide-react';
+
+// IMPORTANTE: Atualize os caminhos abaixo com as imagens reais do seu projeto
 import Logo from '../assets/Group 32 (2).png';
-import LogoMobile from '../assets/Group 44.png';
-import Porta from '../assets/Union.png';
-import Mariana from '../assets/mariana.webp';
-import Background from '../assets/background.webp';
+import ImagemProfessores from '../assets/image 21.png';
+import ImagemAlunos from '../assets/image 20.png';
+import IconeEscola from '../assets/Union.png';
 
-const text = "Quero cadastrar a minha escola";
-const text1 = "Já estamos cadastrados";
-
+// Variáveis de animação mantidas do protótipo original[cite: 1]
 const container = {
   hidden: {},
   visible: {
-    transition: {
-      staggerChildren: 0.04, 
-    },
+    transition: { staggerChildren: 0.04 },
   },
 };
 
 const letter = {
-  hidden: {
-    opacity: 0,
-    y: 10,
-  },
+  hidden: { opacity: 0, y: 10 },
   visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.3,
-      ease: "easeOut",
-    },
+    opacity: 1, y: 0,
+    transition: { duration: 0.3, ease: "easeOut" },
   },
 };
 
 function Inicio() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); //[cite: 1]
+
+  // Função auxiliar para renderizar texto animado
+  const renderAnimatedText = (text) => (
+    text.split("").map((char, index) => (
+      <motion.span key={index} variants={letter}>
+        {char === " " ? "\u00A0" : char}
+      </motion.span>
+    ))
+  );
 
   return (
-    <>
+    <div className={styles.paginaContainer}>
+      {/* CABEÇALHO */}
       <header className={styles.cabecalho}>
-        <div>
+        <div className={styles.logoContainer}>
           <Link to="/">
-            <img 
-              src={Logo} 
-              className={styles.logo} // <-- Era id='logo'
-              alt="Descrição da imagem para acessibilidade" 
-              style={{ cursor: 'pointer' }} 
-            />
+            <img src={Logo} className={styles.logo} alt="ProShelf Logo" />
           </Link>
-
-          <img src={LogoMobile} className={styles['logo-mobile']} alt="Logo Mobile"/> 
         </div>
 
         <nav>
           <ul className={styles.ul}>
-            {/* Botão Cadastrar Escola */}
-            <motion.li 
-              className={styles.menu} // <-- Era id='menu'
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              style={{ cursor: "pointer" }}
-            >
-              <Link to="/cadastrar-escola" style={{textDecoration:"none"}}>
-                <motion.span
-                  variants={container}
-                  initial="hidden"
-                  animate="visible"
-                  style={{
-                    textDecoration: "none",
-                    color: "black",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    userSelect:"none",
-                  }}>
-                  {text.split("").map((char, index) => (
-                    <motion.span key={index} variants={letter}>
-                        {char === " " ? "\u00A0" : char}
-                    </motion.span>
-                  ))}
+            <motion.li whileHover={{ scale: 1.05 }} className={styles.menuItem}>
+              <Link to="/cadastrar-escola" className={styles.linkMenu}>
+                <motion.span variants={container} initial="hidden" animate="visible" className={styles.textoMenu}>
+                  {renderAnimatedText("Cadastrar Nova Escola")}
                 </motion.span>
-              </Link>
-
-              <motion.div
-                  initial={{ opacity: 0, x: -10, scale: 0.8 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{ duration: 1.0, ease: "easeOut" }}>
-                  <Link to="/cadastrar-escola">
-                    <img src={Porta} className={styles['porta-icone']} alt="Ícone porta" />
-                  </Link>
-              </motion.div>
-              <Link to="/cadastrar-escola" style={{ textDecoration: "none", color: "black" }}>
-                <img src={Porta} className={styles['porta-icone-mobile']} alt="Ícone porta mobile" />
+                <img src={IconeEscola} className={styles.iconeMenu} alt="Ícone" />
               </Link>
             </motion.li>
 
-            {/* Botão Já estamos cadastrados */}
-            <motion.li 
-              className={styles.menu1} // <-- Era id='menu1'
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              style={{ cursor: "pointer" }}
-            >
-              <Link to="/login" style={{textDecoration:"none"}}>
-                <motion.span
-                  variants={container}
-                  initial="hidden"
-                  animate="visible"
-                  style={{
-                    textDecoration: "none",
-                    color: "black",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    userSelect:"none",
-                  }}>
-                  {text1.split("").map((char, index) => (
-                    <motion.span key={index} variants={letter}>
-                        {char === " " ? "\u00A0" : char}
-                    </motion.span>
-                  ))}
+            <motion.li whileHover={{ scale: 1.05 }} className={styles.menuItem}>
+              <Link to="/login" className={styles.linkMenu}>
+                <motion.span variants={container} initial="hidden" animate="visible" className={styles.textoMenu}>
+                  {renderAnimatedText("Área da Escola")}
                 </motion.span>
+                <School color="#331C48" size={30} strokeWidth={1.75} alt="Ícone" style={{ marginLeft: '8px' }} />
               </Link>
+            </motion.li>
 
-              <motion.div
-                  initial={{ opacity: 0, x: -10, scale: 0.8 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{ duration: 1.0, ease: "easeOut" }}>
-                  <Link to="/login">
-                    <img src={Porta} className={styles['porta-icone']} alt="Ícone porta" />
-                  </Link>
-              </motion.div>
-              <Link to="/login" style={{ textDecoration: "none", color: "black" }}>
-                <img src={Porta} className={styles['porta-icone-mobile']} alt="Ícone porta mobile" />
+            <motion.li whileHover={{ scale: 1.05 }} className={styles.menuItem}>
+              <Link to="/login" className={styles.linkMenu}>
+                <motion.span variants={container} initial="hidden" animate="visible" className={styles.textoMenu}>
+                  {renderAnimatedText("Área do Professor")}
+                </motion.span>
+                <UserRoundPlus color="#331C48" size={30} strokeWidth={2} alt="Ícone" style={{ marginLeft: '8px' }} />
               </Link>
             </motion.li>
           </ul>
         </nav>
       </header>
 
-      <div className={styles.pagina}> 
-        <div style={{
-            backgroundImage: `url(${Background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            height:"100vh",
-        }}>
-        </div>
-
-        <div className={styles['container-circulos']}>
-          <div className={styles['circulo-laranja']}></div>
-          <div className={styles['circulo-amarelo']}></div>
-          <div><img src={Mariana} className={styles.mariana} alt="Mariana"/></div>
-        </div>
-
-        <section className={styles.textos}> 
-          <div className={styles['texto-direita']}>
-            <h1 className={styles['tamanho-fonte']}>
+      <main>
+        {/* SEÇÃO 1: HERO (Professores + Fundo Roxo) */}
+        <section className={styles.heroSection}>
+          <div className={styles.heroImagemDiv}>
+            <img src={ImagemProfessores} alt="Professores reunidos" className={styles.imagemCapa} />
+          </div>
+          <div className={styles.heroTextoDiv}>
+            <h1 className={styles.tituloPrincipal}>
               A estante{" "}
               <span className={styles.inteligente}>
-                <span className={styles['com-barra']}>inteli
+                <span className={styles.comBarra}>inteli
                   <motion.span
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
-                    className={styles['barra-animada']}/>
+                    className={styles.barraAnimada} />
                 </span>
-                <span className={styles['sem-barra']}>g</span>
-                <span className={styles['com-barra']}>ente
+                <span className={styles.semBarra}>g</span>
+                <span className={styles.comBarra}>ente
                   <motion.span
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.6, ease: "easeOut", delay: 0.8 }}
-                    className={styles['barra-animada']}/>
+                    className={styles.barraAnimada} />
                 </span>
               </span>{" "}
-              <span className={styles['do-professor']}> do professor </span>
+              <br /> do professor
             </h1>
+            <p className={styles.paragrafoRoxo}>
+              Descomplique a gestão pedagógica com uma plataforma feita por quem entende o dia a dia da sala de aula.
+            </p>
           </div>
+        </section>
 
-          <div className={styles.entrar}> 
+        <div className={styles.separadorHorizontal}></div>
+
+
+        {/* SEÇÃO 2: DOCÊNCIA DE IMPACTO (Branca) */}
+        <section className={styles.impactoSection}>
+          <h2 className={styles.tituloSecundario}>
+            Docência de{" "}
+            <span className={styles.palavraAnimada}>
+              <span className={styles.comBarra}>im
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
+                  className={styles.barraAnimadaImpacto}
+                />
+              </span>
+              <span className={styles.semBarra}>p</span>
+              <span className={styles.comBarra}>acto
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.6, ease: "easeOut", delay: 0.8 }}
+                  className={styles.barraAnimadaImpactoDireita} /* <-- NOVA CLASSE AQUI */
+                />
+              </span>
+            </span>{" "}
+            sem o peso do cansaço
+          </h2>
+
+          <div className={styles.impactoConteudo}>
+            <div className={styles.impactoTexto}>
+              <p>
+                Reinvente e descomplique a sua gestão pedagógica com uma tecnologia desenvolvida por quem vive a realidade e entende o ritmo do professor, permitindo que você monte, ajuste e envie materiais e provas em instantes para conquistar total liberdade na sua agenda.
+              </p>
+            </div>
+
+            <div className={styles.impactoAcao}>
+              <div className={styles.containerSubtitulo}>
+                <h3 className={styles.subtituloAcao}>Descomplique sua rotina hoje</h3>
+                <motion.div
+                  initial={{ scaleX: 0 }} /* Trocamos width por scaleX */
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+                  className={styles.barraAnimadaAcao}
+                />
+              </div>          
               <motion.button
                 onClick={() => navigate("/login")}
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 1.3 }} 
-                className={styles['botao-entrar']}> 
-                <Link to="/login" style={{textDecoration:"none", color:"white", userSelect:"none", fontSize:"50px"}}>Entrar</Link> 
+                whileTap={{ scale: 0.95 }}
+                className={styles.botaoComecar}>
+                Começar agora
               </motion.button>
-          </div> 
+            </div>
+          </div>
+          <div className={styles.bordaLateralAmarela}></div>
         </section>
-      </div>
-    </>
-  )
-} 
+
+<div className={styles.separadorHorizontal}></div>
+
+        {/* SEÇÃO 3: MENOS CAOS (Fundo Laranja + Alunos) */}
+        <section className={styles.caosSection}>
+          <div className={styles.caosTextoDiv}>
+            <h2 className={styles.tituloBranco}>
+              Menos caos na rotina, <br /> mais LEVEZA ao ensinar
+            </h2>
+            <p className={styles.paragrafoBranco}>
+              Crie, personalize e compartilhe aulas e avaliações completas em minutos, assumindo o controle total do seu tempo e da sua rotina.
+            </p>
+          </div>
+          <div className={styles.caosImagemDiv}>
+            <img src={ImagemAlunos} alt="Alunos estudando na biblioteca" className={styles.imagemCapa} />
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
 
 export default Inicio;

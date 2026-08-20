@@ -1,14 +1,14 @@
 // src/components/TurmaArquivos.jsx
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen, 
-  Send, CheckCircle, XCircle, Trash2, Upload, AlertTriangle 
+import {
+  ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen,
+  Send, CheckCircle, XCircle, Trash2, Upload, AlertTriangle
 } from "lucide-react";
-import { 
-  criarSolicitacaoArquivo, 
-  escutarSolicitacoes, 
-  escutarArquivosDaTurma, 
+import {
+  criarSolicitacaoArquivo,
+  escutarSolicitacoes,
+  escutarArquivosDaTurma,
   aprovarEAdicionarArquivo,
   recusarSolicitacaoArquivo,
   deletarArquivoAprovado
@@ -27,7 +27,7 @@ function ModalConfirmarArquivo({ arquivo, onConfirmar, onCancelar }) {
         }}>
           <AlertTriangle size={26} color="#ED235C" strokeWidth={2.2} />
         </div>
-        
+
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Remover arquivo?
         </h3>
@@ -95,21 +95,21 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
 
   const [arquivos, setArquivos] = useState([]);
   const [solicitacoes, setSolicitacoes] = useState([]);
-  
+
   const [modalSolicitarAberto, setModalSolicitarAberto] = useState(false);
   const [novaSolicitacao, setNovaSolicitacao] = useState({ nome: "", descricao: "", arquivo: null });
   const [erroSolicitacao, setErroSolicitacao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState("");
-  
+
   // ESTADO PARA O ARQUIVO QUE SERÁ DELETADO
   const [arquivoParaDeletar, setArquivoParaDeletar] = useState(null);
 
   useEffect(() => {
     if (!idTurma) return;
 
-const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivos(dados));
-  const unsubSolicitacoes = escutarSolicitacoes(uid, idTurma, (dados) => setSolicitacoes(dados));
+    const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivos(dados));
+    const unsubSolicitacoes = escutarSolicitacoes(uid, idTurma, (dados) => setSolicitacoes(dados));
 
     return () => {
       unsubArquivos();
@@ -209,7 +209,7 @@ const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivo
 
   return (
     <div className="turma-arquivos-pagina" style={{ fontFamily: "'Poppins', sans-serif", background: "var(--branco)", color: "var(--texto)", border: "1px solid var(--borda)", borderRadius: 14, padding: 24, boxSizing: "border-box", overflow: "hidden", width: "100%", maxWidth: "100%" }}>
-      
+
       {/* 🛡️ BLINDAGEM MÁXIMA CSS: Isola todos os problemas de Grid e regras do secoes.css */}
       <style>{`
         .turma-arquivos-pagina * {
@@ -278,7 +278,7 @@ const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivo
             <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "2px 0 0 0" }}>Documentos e solicitações da turma</p>
           </div>
         </div>
-        
+
         {!isCoordenador && (
           <button
             onClick={() => setModalSolicitarAberto(true)}
@@ -295,7 +295,7 @@ const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivo
 
       {/* Grid Central */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, width: "100%", minWidth: 0 }}>
-        
+
         {/* Bloco de Arquivos Disponíveis */}
         <div className="grid-wrapper">
           <h3 style={{ fontSize: 14, fontWeight: 700, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
@@ -310,7 +310,7 @@ const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivo
             <div style={{ display: "grid", gap: 10, width: "100%" }}>
               {arquivos.map((arq) => (
                 <div key={arq.id} className="card-documento-item" style={{ display: "flex", flexDirection: "column", padding: 16, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--borda)" }}>
-                  
+
                   {/* --- Cabeçalho do arquivo --- */}
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12, width: "100%" }}>
                     <div style={{ flexShrink: 0 }}>
@@ -440,8 +440,7 @@ const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivo
       <AnimatePresence>
         {modalSolicitarAberto && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-            <div className="turma-arquivos-modal" style={{ background: "var(--branco)", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
-              <h4 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "var(--texto)" }}>Nova Solicitação</h4>
+            <div className="turma-arquivos-modal" style={{ background: "var(--branco)", padding: 24, borderRadius: 16, width: "calc(100% - 32px)", maxWidth: 400, maxHeight: "85vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>              <h4 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "var(--texto)" }}>Nova Solicitação</h4>
               <form onSubmit={handleEnviarSolicitacao}>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Nome Exato do Arquivo/Documento</label>
                 <input
@@ -473,7 +472,7 @@ const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivo
                     style={{ display: "none" }}
                   />
                 </label>
-                
+
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Justificação / Observações</label>
                 <textarea
                   placeholder="Explique à coordenação o motivo deste documento..."

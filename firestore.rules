@@ -1,0 +1,185 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══════════════════════════════════════════════════════════
+    //  FUNÇÕES DE AUXÍLIO (HELPERS)
+    // ═══════════════════════════════════════════════════════════
+
+    function logado() {
+      return request.auth != null;
+    }
+
+    function eDono(uid) {
+      return logado() && request.auth.uid == uid;
+    }
+
+    function perfilDoUsuario() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function eCoordenador() {
+      return logado()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && perfilDoUsuario().role == "coordenador";
+    }
+
+    function mantendoRole() {
+      return !("role" in request.resource.data)
+        || request.resource.data.role == resource.data.role;
+    }
+
+    function perfilProfessorValido() {
+      return request.resource.data.role == "professor";
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  REGRAS POR COLEÇÃO
+    // ═══════════════════════════════════════════════════════════
+
+function eAdminGeral() {
+      return logado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ── Administradores do ProShelf ─────────────────────────────
+match /admins/{adminId} {
+      // Apenas admins gerais podem ler. Ninguém pode escrever pelo front-end (apenas via console do Firebase)
+      allow read: if eAdminGeral();
+      allow write: if false; 
+    }
+
+    // ── Cadastro de Escolas (Formulário Público) ────────────────
+    // Permite que qualquer visitante crie um cadastro. 
+    // Protege a leitura/edição/exclusão para usuários logados (Admin).
+match /escolas/{escolaId} {
+      allow create: if true; // Visitantes podem solicitar
+      allow read: if logado(); 
+      // Apenas admins gerais podem aprovar, reprovar ou editar as escolas:
+      allow update, delete: if eAdminGeral(); 
+    }
+
+    // ── Notificações do sino (in-app) & Usuários (users) ────────
+    match /users/{uid} {
+      allow get: if logado() && (eDono(uid) || eCoordenador());
+      // Necessário para query(collection(db, "users"), where("role", "==", role))
+      allow list: if logado();
+      allow create: if (eDono(uid) && perfilProfessorValido())
+        || (eCoordenador() && perfilProfessorValido());
+      allow update: if (eDono(uid) && mantendoRole())
+        || (eCoordenador() && perfilProfessorValido());
+      allow delete: if false;
+    }
+
+    // ── Perfil do Utilizador (users) ────────────────────────────
+    match /users/{uid}/notificacoes/{notifId} {
+      allow read, update, delete: if eDono(uid);
+      allow create: if logado();
+    }
+
+    // ── Turmas de aula (Turmas.jsx) ─────────────────────────────
+    match /turmas/{uid}/{document=**} {
+      allow read: if logado()
+        && (eDono(uid) || eCoordenador() || resource.data.professorId == request.auth.uid);
+      allow write: if logado() && (eDono(uid) || eCoordenador());
+    }
+
+    match /turmas/{uid}/lista/{turmaId}/registros/{registroId} {
+      allow read: if logado()
+        && (
+          eDono(uid)
+          || eCoordenador()
+          || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
+        );
+    }
+
+    // ── Cronograma pessoal ──────────────────────────────────────
+    match /cronogramas/{uid}/{document=**} {
+      allow read: if logado() && (eDono(uid) || eCoordenador());
+      allow write: if logado() && (eDono(uid) || eCoordenador());
+    }
+    
+    // ── Cronograma geral da escola ──────────────────────────────
+    // Todos os professores autenticados leem todos os horários
+    match /cronogramas_escola/{cronogramaId} {
+      allow read: if logado();
+      allow write: if eCoordenador();
+
+      match /aulas/{aulaId} {
+        allow read: if logado();
+        allow write: if eCoordenador();
+      }
+    }
+
+    // ── Vínculo e-mail ↔ nome no PDF ────────────────────────────
+    match /professores_escola/{docId} {
+      allow read: if logado();
+      allow write: if eCoordenador();
+    }
+    
+    // ── Arquivos pessoais do professor ──────────────────────────
+    match /arquivos/{uid}/{document=**} {
+      allow read: if logado() && (eDono(uid) || eCoordenador());
+      allow write: if logado() && eDono(uid);
+    }
+
+    // ── Calendário ──────────────────────────────────────────────
+    match /calendario/{uid}/{document=**} {
+      allow read: if logado() && (eDono(uid) || eCoordenador());
+      allow write: if logado() && (eDono(uid) || eCoordenador());
+    }
+
+    // ── Eventos globais da escola (Calendário compartilhado) ────
+    // Coordenador cria/deleta; todos os autenticados leem
+    match /eventos_escola/{eventoId} {
+      allow read: if logado();
+      allow create, update, delete: if eCoordenador();
+    }
+
+    // ── Turmas de Arquivos (Arquivos.jsx) ──────────────────────
+    // Coleção global: todos leem, só coordenador escreve
+    match /turmas_periodo/{docId} {
+      allow read: if logado();
+      allow create, update, delete: if eCoordenador();
+    }
+    
+    // ── Collection group: professor encontra as turmas ──────────
+    // Necessário para collectionGroup(db, "lista") com where("professorId","==",uid)
+    match /{path=**}/lista/{turmaId} {
+      allow read: if logado()
+        && (
+          eCoordenador()
+          || resource.data.professorId == request.auth.uid
+        );
+    }
+
+    // ── Solicitações de arquivos (TurmaArquivos.jsx) ────────────
+    // Qualquer professor autenticado cria; coordenador lê e atualiza
+    match /solicitacoes_arquivos/{docId} {
+      allow read: if logado();
+      allow create: if logado();
+      allow update, delete: if eCoordenador();
+    }
+
+    // ── Arquivos aprovados pela coordenação ─────────────────────
+    // Todos leem; só coordenador escreve/deleta
+    match /turmas_arquivos_aprovados/{docId} {
+      allow read: if logado();
+      allow create, update, delete: if eCoordenador();
+    }
+
+    // ── Configurações da Escola ─────────────────────────────────
+    match /configuracoes_escola/{docId} {
+      allow read: if logado();
+      allow create, update, delete: if eCoordenador();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  BLOQUEIO GLOBAL DE SEGURANÇA
+    // ═══════════════════════════════════════════════════════════
+
+    // Se a coleção não foi mapeada acima, bloqueia tudo
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
