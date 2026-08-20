@@ -1,11 +1,7 @@
 import { initializeApp } from "firebase/app";
-// IMPORTANTE: Adicione o connectAuthEmulator aqui
 import { getAuth } from "firebase/auth";
-// IMPORTANTE: Adicione o connectFirestoreEmulator aqui
 import { initializeFirestore } from "firebase/firestore";
-// IMPORTANTE: Adicione o connectStorageEmulator aqui
 import { getStorage } from "firebase/storage";
-// IMPORTANTE: Adicione o connectFunctionsEmulator aqui
 import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
@@ -22,15 +18,23 @@ const firebaseConfig = {
 // 1. Inicializa o app primeiro
 const app = initializeApp(firebaseConfig);
 
-// 2. App Check
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-
+// 2. Configura o App Check com suporte a ambiente de desenvolvimento (Vite)
+// Removi a duplicata e deixei apenas a string com o seu token real
 if (import.meta.env.DEV) {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+// LOG INVESTIGATIVO PARA PRODUÇÃO (Pode apagar depois que funcionar)
+console.log("Status da Chave reCAPTCHA:", RECAPTCHA_SITE_KEY ? "Carregada! Começa com " + RECAPTCHA_SITE_KEY.substring(0, 5) : "ERRO: CHAVE VAZIA (Undefined)");
+
+export let appCheck; 
+
 if (RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== "SUA_SITE_KEY_AQUI") {
-  initializeAppCheck(app, {
+  appCheck = initializeAppCheck(app, 
+    {
+    
     provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
     isTokenAutoRefreshEnabled: true,
   });
@@ -41,21 +45,18 @@ if (RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== "SUA_SITE_KEY_AQUI") {
   );
 }
 
+// 3. Inicializa os demais serviços
 export const auth = getAuth(app);
 
 export const db = initializeFirestore(
   app,
-  {
-    experimentalAutoDetectLongPolling: true,
-  },
+  { experimentalAutoDetectLongPolling: true },
   'firestoreproshelf'
 );
 
 export const defaultDb = initializeFirestore(
   app,
-  {
-    experimentalAutoDetectLongPolling: true,
-  }
+  { experimentalAutoDetectLongPolling: true }
 );
 
 export const storage = getStorage(app);

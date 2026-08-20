@@ -12,12 +12,18 @@ const CORS_ORIGINS = [
   /^http:\/\/127\.0\.0\.1(:\d+)?$/,
   /^https:\/\/proshelf-8ecfd\.web\.app$/,
   /^https:\/\/proshelf-8ecfd\.firebaseapp\.com$/,
+  /^https:\/\/proshelf\.web\.app$/,          
+  /^https:\/\/proshelf\.firebaseapp\.com$/,
 ]
 const PUBLIC_CALLABLE_OPTIONS = {
   region: 'us-central1',
   invoker: 'public',
   cors: CORS_ORIGINS,
 }
+
+const { defineSecret } = require("firebase-functions/params");
+
+const identityToolkitApiKey = defineSecret("IDENTITY_TOOLKIT_API_KEY");
 
 function origemCorsPermitida(origin) {
   if (!origin) return false
@@ -625,4 +631,100 @@ exports.aprovarEscola = onCall(
     memory: '256MiB',
   },
   aprovarEscolaHandler
+);
+
+// ═══════════════════════════════════════════════════════════
+//  RATE LIMITING & PROTEÇÃO DE LOGIN (Defesa em Profundidade)
+// ═══════════════════════════════════════════════════════════
+
+const MAX_TENTATIVAS_LOGIN = 20;
+const JANELA_MS_LOGIN = 15 * 60 * 1000; // 15 minutos
+
+async function loginComLimiteHandler(request) {
+const appCheckToken = request.rawRequest.headers["x-firebase-appcheck"] || "";
+  
+  console.log("🔥 LOGIN COM LIMITE FOI CHAMADO")
+  // 1. Extrai o IP (com fallback seguro e compatível com IPv6)
+  const ipRaw = request.rawRequest.headers["x-forwarded-for"]?.split(",")[0]?.trim() || request.rawRequest.ip || "ip-desconhecido";
+  const ipSanitizado = ipRaw.replace(/:/g, "_"); 
+
+  const email = String(request.data?.email || "").trim();
+  const senha = request.data?.senha;
+const apiKey = identityToolkitApiKey.value();
+
+  if (!email || !senha || !apiKey) {
+    throw new HttpsError("invalid-argument", "E-mail e senha são obrigatórios.");
+  }
+
+  const db = getDefaultDb(); // Salvando o log no banco padrão
+  const ref = db.collection("_loginAttempts").doc(ipSanitizado);
+  const agora = Date.now();
+
+  // 2. Conta as tentativas usando transação para evitar condições de corrida
+  const permitido = await db.runTransaction(async (t) => {
+    const doc = await t.get(ref);
+    const tentativasAtuais = doc.exists ? doc.data().tentativas || [] : [];
+    
+    // Filtra apenas as tentativas que ocorreram dentro dos últimos 15 min
+    const tentativasValidas = tentativasAtuais.filter(ts => agora - ts < JANELA_MS_LOGIN);
+
+    if (tentativasValidas.length >= MAX_TENTATIVAS_LOGIN) {
+      return false; // Bloqueia
+    }
+
+    // Adiciona a tentativa atual e salva
+    tentativasValidas.push(agora);
+    t.set(ref, { tentativas: tentativasValidas, atualizadoEm: agora });
+    return true;
+  });
+
+  if (!permitido) {
+    throw new HttpsError("resource-exhausted", "Muitas tentativas de login. Tente novamente em 15 minutos.");
+  }
+
+  // 3. Valida a senha usando a REST API do Firebase Authentication
+  // OBS: Requer Node.js 18+ (padrão nas Cloud Functions v2) para o 'fetch' nativo
+  const resp = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Firebase-AppCheck": appCheckToken // 👈 Repassando o token para o Auth
+      },
+      body: JSON.stringify({ email, password: senha, returnSecureToken: true }),
+    }
+  );
+
+  const dados = await resp.json();
+
+  if (!resp.ok) {
+    // 🔍 LOG DE DIAGNÓSTICO: mostra o motivo REAL que o Google retornou,
+    // sem expor a senha. Veja em Firebase Console → Functions → Logs.
+console.error("[loginComLimite] Falha ao validar credenciais:", {
+  ip: ipSanitizado,
+  email,
+  senhaTamanho: senha.length,
+  statusHTTP: resp.status,
+  motivoGoogle: dados?.error?.message || "desconhecido",
+  respostaGoogle: dados,
+});
+    throw new HttpsError("permission-denied", `Erro do Google: ${dados?.error?.message || "Desconhecido"}`);
+  }
+
+  // 4. Se a senha estiver certa, gera um Token Customizado para o front-end
+  const auth = getAuth();
+  const customToken = await auth.createCustomToken(dados.localId);
+
+  return { customToken };
+}
+
+// Exporta a função ativando a exigência do App Check
+exports.loginComLimite = onCall(
+  {
+    ...PUBLIC_CALLABLE_OPTIONS,
+    enforceAppCheck: false,
+    secrets: [identityToolkitApiKey],
+  },
+  loginComLimiteHandler
 );

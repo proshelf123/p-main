@@ -1191,9 +1191,7 @@ select.perfil-input option:checked {
 }
 
 .crono-editor {
-  border: 1px solid #ece5f5;
   border-radius: 14px;
-  background: #fbf9ff;
   padding: 14px;
   margin: 0 0 24px;
 }

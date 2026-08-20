@@ -7,7 +7,8 @@ import {
   escutarProfessoresDisciplinas, 
   buscarOuCriarTurmaPeriodo, 
   criarTurma,
-  atualizarTurma
+  atualizarTurma,
+  buscarTurmas
 } from "../firebase/estrutura";
 import { criarNotificacao, criarNotificacaoPorRole } from "../notificacoes/notificacoes";
 import DropdownComPortal from "../secoes/DropwdownComPortal";
@@ -17,6 +18,7 @@ import { normalizarDisciplina } from "../secoes/coresDisciplinas";
 
 const ANOS = ["1°", "2°", "3°"];
 const PERIODOS = ["Matutino", "Vespertino", "Noturno"];
+const SALA_SENTINELA = "Selecione a sala";
 
 const FORM_INICIAL = {
   ano: "1°",
@@ -47,6 +49,28 @@ function mapearTurmaParaForm(turma) {
   };
 }
 
+// Agrupa a lista flat de turmas em salas únicas (mesma nome + periodo = mesma pasta em Arquivos)
+function agruparSalasExistentes(turmas) {
+  const mapa = new Map();
+
+  turmas.forEach((t) => {
+    if (!t.nome || !t.periodo) return;
+    const chave = `${t.nome}|||${t.periodo}`;
+    if (!mapa.has(chave)) {
+      mapa.set(chave, { nome: t.nome, periodo: t.periodo, disciplinas: [] });
+    }
+    if (t.disciplina) mapa.get(chave).disciplinas.push(t.disciplina);
+  });
+
+  return [...mapa.values()].sort((a, b) => (
+    a.nome.localeCompare(b.nome, "pt-BR") || a.periodo.localeCompare(b.periodo, "pt-BR")
+  ));
+}
+
+function labelSala(sala) {
+  return `${sala.nome} · ${sala.periodo}`;
+}
+
 export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaParaEditar = null, onClose }) {
   const modoEdicao = Boolean(turmaParaEditar);
 
@@ -58,7 +82,13 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
   const [professores, setProfessores] = useState([]);
   const [professoresDisciplinas, setProfessoresDisciplinas] = useState({});
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
-  
+
+  // --- Novo: alternância entre criar sala nova ou usar uma sala já existente ---
+  const [modoCriacao, setModoCriacao] = useState("novo"); // "novo" | "existente"
+  const [turmasExistentes, setTurmasExistentes] = useState([]);
+  const [carregandoSalas, setCarregandoSalas] = useState(false);
+  const [salaSelecionada, setSalaSelecionada] = useState(null); // { nome, periodo, disciplinas }
+
   const coresDisciplinas = useCoresDisciplinas();
 
   useEffect(() => {
@@ -66,6 +96,21 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
     const unsub = escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => console.error(err));
     return () => unsub();
   }, [uid]);
+
+  useEffect(() => {
+    if (modoEdicao) return;
+
+    setCarregandoSalas(true);
+    buscarTurmas(uid, professorLogado)
+      .then((dados) => setTurmasExistentes(dados))
+      .catch((err) => {
+        console.error("Erro ao carregar salas existentes:", err);
+        setTurmasExistentes([]);
+      })
+      .finally(() => setCarregandoSalas(false));
+  }, [uid, professorLogado, modoEdicao]);
+
+  const salasExistentes = useMemo(() => agruparSalasExistentes(turmasExistentes), [turmasExistentes]);
 
   const disciplinasCadastradas = useMemo(() => listarDisciplinasComCor(coresDisciplinas), [coresDisciplinas]);
 
@@ -81,6 +126,32 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
       ...opcoes.sort((a, b) => a.localeCompare(b, "pt-BR")),
     ];
   }, [disciplinasCadastradas, form.disciplina]);
+
+  const opcoesSalasExistentes = useMemo(() => {
+    if (carregandoSalas) return ["Carregando salas..."];
+    if (salasExistentes.length === 0) return ["Nenhuma sala cadastrada"];
+    return [SALA_SENTINELA, ...salasExistentes.map(labelSala)];
+  }, [carregandoSalas, salasExistentes]);
+
+  function trocarModoCriacao(modo) {
+    if (modo === modoCriacao) return;
+    setModoCriacao(modo);
+    setSalaSelecionada(null);
+    setForm(FORM_INICIAL);
+    setErro("");
+  }
+
+  function selecionarSala(label) {
+    if (label === SALA_SENTINELA) {
+      setSalaSelecionada(null);
+      setErro("");
+      return;
+    }
+    const sala = salasExistentes.find((s) => labelSala(s) === label);
+    setSalaSelecionada(sala || null);
+    setForm((atual) => ({ ...atual, disciplina: "", professor: "", professorId: "" }));
+    setErro("");
+  }
 
   function selecionarDisciplina(disciplina) {
     if (!disciplina) {
@@ -104,8 +175,27 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
     : professores.filter(p => String(p.nome || "").toLowerCase().includes(form.professor.toLowerCase()));
 
   async function handleSalvar() {
-    if (!modoEdicao && !form.curso.trim()) { setErro("Informe o nome do curso."); return; }
+    if (!modoEdicao) {
+      if (modoCriacao === "novo" && !form.curso.trim()) {
+        setErro("Informe o nome do curso.");
+        return;
+      }
+      if (modoCriacao === "existente" && !salaSelecionada) {
+        setErro("Selecione a sala/curso existente.");
+        return;
+      }
+    }
     if (!form.disciplina.trim()) { setErro("Informe a disciplina base da turma."); return; }
+
+    if (!modoEdicao && modoCriacao === "existente" && salaSelecionada) {
+      const jaTem = salaSelecionada.disciplinas.some(
+        (d) => normalizarDisciplina(d) === normalizarDisciplina(form.disciplina)
+      );
+      if (jaTem) {
+        setErro(`A sala "${salaSelecionada.nome}" já tem uma turma de ${form.disciplina}.`);
+        return;
+      }
+    }
 
     setSalvando(true);
     setErro("");
@@ -129,23 +219,30 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
           });
         }
       } else {
-        const nomeTurmaFinal = `${form.ano} ${form.curso.trim()}${form.modular ? ' - Modular' : ''}`;
-        const nomePeriodoFormatado = `Período ${form.periodo}`;
+        const usandoSalaExistente = modoCriacao === "existente" && salaSelecionada;
+
+        const nomeTurmaFinal = usandoSalaExistente
+          ? salaSelecionada.nome
+          : `${form.ano} ${form.curso.trim()}${form.modular ? ' - Modular' : ''}`;
+        const periodoFinal = usandoSalaExistente ? salaSelecionada.periodo : form.periodo;
+        const nomePeriodoFormatado = `Período ${periodoFinal}`;
 
         await buscarOuCriarTurmaPeriodo(nomeTurmaFinal, nomePeriodoFormatado, uid);
 
         await criarTurma(uid, {
           nome: nomeTurmaFinal,
           disciplina: form.disciplina,
-          periodo: form.periodo,
+          periodo: periodoFinal,
           professor: form.professor,
           professorId: form.professorId
         });
 
         await criarNotificacaoPorRole({
           role: "professor",
-          titulo: "Nova turma criada",
-          mensagem: `A turma ${nomeTurmaFinal} (${form.periodo}) foi adicionada com a disciplina ${form.disciplina}.`,
+          titulo: usandoSalaExistente ? "Nova disciplina na turma" : "Nova turma criada",
+          mensagem: usandoSalaExistente
+            ? `A disciplina ${form.disciplina} foi adicionada à turma ${nomeTurmaFinal} (${periodoFinal}).`
+            : `A turma ${nomeTurmaFinal} (${periodoFinal}) foi adicionada com a disciplina ${form.disciplina}.`,
           tipo: "turma",
           link: "/arquivos",
           criadoPorUid: uid,
@@ -155,7 +252,7 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
         if (form.professorId) {
           await criarNotificacao({
             titulo: "Nova Turma Vinculada",
-            mensagem: `Você foi associado à turma "${nomeTurmaFinal}" no período ${form.periodo}.`,
+            mensagem: `Você foi associado à turma "${nomeTurmaFinal}" no período ${periodoFinal}.`,
             tipo: "turma",
             link: "/turmas",
             destinatarioUids: [form.professorId],
@@ -173,7 +270,7 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
     }
   }
 
-  return (
+return (
     <div 
       className="modal-overlay" 
       onClick={onClose} 
@@ -206,6 +303,47 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
         
         <div style={{ flex: 1, overflowY: "auto", padding: "24px", boxSizing: "border-box" }}>
           
+          {/* 👇 INÍCIO DO AVISO PERMANENTE 👇 */}
+          <div 
+            role="alert"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 12px",
+              border: "1px solid rgba(217, 48, 37, 0.25)",
+              borderRadius: "8px",
+              backgroundColor: "#fff3f1",
+              color: "#b42318",
+              fontSize: "13px",
+              fontWeight: 500,
+              lineHeight: 1.35,
+              marginBottom: "20px"
+            }}
+          >
+            <span 
+              aria-hidden="true"
+              style={{
+                width: "20px",
+                height: "20px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                borderRadius: "50%",
+                backgroundColor: "#d93025",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: 700
+              }}
+            >
+              !
+            </span>
+            Para que a criação das turmas em conjunto com os arquivos, será necessário que você já tenha criado as disciplinas e o cadastro dos professores. 
+          </div>
+          {/* 👆 FIM DO AVISO PERMANENTE 👆 */}
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
               <h3 className="modal-titulo" style={{ margin: 0, fontSize: 18 }}>
@@ -222,6 +360,26 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
             </button>
           </div>
 
+          {/* --- Alternância: sala nova x sala existente --- */}
+          {!modoEdicao && (
+            <div className="turma-modo-toggle">
+              <button
+                type="button"
+                className={`turma-modo-btn ${modoCriacao === "novo" ? "ativo" : ""}`}
+                onClick={() => trocarModoCriacao("novo")}
+              >
+                Nova sala/curso
+              </button>
+              <button
+                type="button"
+                className={`turma-modo-btn ${modoCriacao === "existente" ? "ativo" : ""}`}
+                onClick={() => trocarModoCriacao("existente")}
+              >
+                Turma em sala existente
+              </button>
+            </div>
+          )}
+
           {/* --- PASSO 1: DADOS BASE --- */}
           {modoEdicao ? (
             <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
@@ -233,7 +391,7 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
                 Ano, curso e período não podem ser alterados aqui — eles já definem a pasta em Arquivos.
               </p>
             </div>
-          ) : (
+          ) : modoCriacao === "novo" ? (
             <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
               <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>1. Dados Gerais</h4>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -265,70 +423,102 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
                 <span style={{ fontSize: 13, color: "var(--texto)", fontWeight: 500 }}>Turma Modular</span>
               </div>
             </div>
+          ) : (
+            <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
+              <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>1. Escolha a sala</h4>
+
+              {!carregandoSalas && salasExistentes.length === 0 ? (
+                <p style={{ fontSize: 12, color: "var(--texto-sec)", margin: 0 }}>
+                  Nenhuma sala cadastrada ainda. Use a aba "Nova sala/curso" para criar a primeira.
+                </p>
+              ) : (
+                <DropdownComPortal
+                  label="Sala / turma existente"
+                  opcoes={opcoesSalasExistentes}
+                  valor={salaSelecionada ? labelSala(salaSelecionada) : SALA_SENTINELA}
+                  onChange={selecionarSala}
+                  id="uni-sala-existente" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+                />
+              )}
+
+              {salaSelecionada && salaSelecionada.disciplinas.length > 0 && (
+                <p style={{ fontSize: 11, color: "var(--texto-sec)", margin: "8px 0 0" }}>
+                  Já cadastradas nessa sala: {salaSelecionada.disciplinas.join(", ")}
+                </p>
+              )}
+            </div>
           )}
 
           {/* --- PASSO 2: DISCIPLINA --- */}
-          <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8 }}>
-            <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>
-              {modoEdicao ? "Disciplina e Professor" : "2. Vínculo de Disciplina Inicial"}
-            </h4>
-            
-            <DropdownComPortal
-              label="Disciplina"
-              opcoes={opcoesDisciplinasTurma}
-              valor={form.disciplina || "Selecione a disciplina"}
-              onChange={opt => selecionarDisciplina(opt === "Selecione a disciplina" ? "" : opt)}
-              id="uni-disciplina" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
-            />
-
-            <div className="perfil-grupo" style={{ marginTop: 12, marginBottom: 0, position: "relative" }}>
-              <label className="perfil-label">Professor</label>
-              <input
-                className="perfil-input"
-                value={form.professor}
-                onChange={e => { setForm({ ...form, professor: e.target.value, professorId: "" }); setMostrarSugestoes(true); }}
-                onFocus={() => setMostrarSugestoes(true)}
-                onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
-                placeholder="Digite o nome do professor..."
-              />
+          {(modoEdicao || modoCriacao === "novo" || salaSelecionada) && (
+            <div style={{ padding: "12px", background: "var(--bg)", borderRadius: 8 }}>
+              <h4 style={{ fontSize: 11, textTransform: "uppercase", color: "var(--roxo)", marginBottom: 10 }}>
+                {modoEdicao ? "Disciplina e Professor" : "2. Vínculo de Disciplina"}
+              </h4>
               
-              <AnimatePresence>
-                {mostrarSugestoes && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="dropdown-menu" 
-                    style={{ 
-                      position: "absolute", top: "100%", left: 0, right: 0, 
-                      maxHeight: "160px", overflowY: "auto", zIndex: 1300,
-                      background: "var(--branco, #fff)", border: "1px solid var(--borda, #D1D5DB)", 
-                      borderRadius: "8px", marginTop: "4px", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-                    }}
-                  >
-                    {professoresFiltrados.length > 0 ? (
-                      professoresFiltrados.map(p => (
-                        <button 
-                          key={p.id} type="button" className="dropdown-item" 
-                          onMouseDown={() => { setForm({ ...form, professor: p.nome, professorId: p.id }); setMostrarSugestoes(false); }}
-                          style={{ width: "100%", textAlign: "left", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "var(--texto)" }}
-                        >
-                          {p.nome}
-                        </button>
-                      ))
-                    ) : (
-                      <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--texto-sec)" }}>Nenhum encontrado</div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+              <DropdownComPortal
+                label="Disciplina"
+                opcoes={opcoesDisciplinasTurma}
+                valor={form.disciplina || "Selecione a disciplina"}
+                onChange={opt => selecionarDisciplina(opt === "Selecione a disciplina" ? "" : opt)}
+                id="uni-disciplina" dropdownAberto={dropdownAberto} setDropdownAberto={setDropdownAberto}
+              />
 
-          {!modoEdicao && form.curso.trim() && form.disciplina && (
+              <div className="perfil-grupo" style={{ marginTop: 12, marginBottom: 0, position: "relative" }}>
+                <label className="perfil-label">Professor</label>
+                <input
+                  className="perfil-input"
+                  value={form.professor}
+                  onChange={e => { setForm({ ...form, professor: e.target.value, professorId: "" }); setMostrarSugestoes(true); }}
+                  onFocus={() => setMostrarSugestoes(true)}
+                  onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
+                  placeholder="Digite o nome do professor..."
+                />
+                
+                <AnimatePresence>
+                  {mostrarSugestoes && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="dropdown-menu" 
+                      style={{ 
+                        position: "absolute", top: "100%", left: 0, right: 0, 
+                        maxHeight: "160px", overflowY: "auto", zIndex: 1300,
+                        background: "var(--branco, #fff)", border: "1px solid var(--borda, #D1D5DB)", 
+                        borderRadius: "8px", marginTop: "4px", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                      }}
+                    >
+                      {professoresFiltrados.length > 0 ? (
+                        professoresFiltrados.map(p => (
+                          <button 
+                            key={p.id} type="button" className="dropdown-item" 
+                            onMouseDown={() => { setForm({ ...form, professor: p.nome, professorId: p.id }); setMostrarSugestoes(false); }}
+                            style={{ width: "100%", textAlign: "left", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "var(--texto)" }}
+                          >
+                            {p.nome}
+                          </button>
+                        ))
+                      ) : (
+                        <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--texto-sec)" }}>Nenhum encontrado</div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {!modoEdicao && modoCriacao === "novo" && form.curso.trim() && form.disciplina && (
             <div style={{ background: "var(--roxo-claro)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--roxo)", fontWeight: 600, marginTop: 16 }}>
               Ação: Criando Arquivos e Turma ({form.disciplina}) para "{form.ano} {form.curso.trim()}{form.modular ? ' - Modular' : ''}"
+            </div>
+          )}
+
+          {!modoEdicao && modoCriacao === "existente" && salaSelecionada && form.disciplina && (
+            <div style={{ background: "var(--roxo-claro)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--roxo)", fontWeight: 600, marginTop: 16 }}>
+              Ação: Adicionando a disciplina {form.disciplina} na sala "{salaSelecionada.nome}" ({salaSelecionada.periodo})
             </div>
           )}
 

@@ -1,4 +1,3 @@
-// src/components/Turmas.jsx
 import { useState, useEffect, useMemo } from "react";
 import {
   buscarTurmas,
@@ -9,7 +8,7 @@ import {
   deletarRegistro,
 } from "../firebase/estrutura";
 import "./secoes.css";
-import { Trash2, AlertTriangle, X, Pencil, Plus } from "lucide-react";
+import { Trash2, AlertTriangle, X, Pencil } from "lucide-react";
 import CustomDatePicker from "./dropdown-calendario";
 import {
   criarNotificacao,
@@ -250,12 +249,6 @@ export default function Turmas({ uid, professor }) {
       setRegistros([]);
       setErroRegistro("Nao foi possivel carregar os registros desta turma.");
     }
-  }
-
-  function handleAbrirCriarTurma() {
-    setTurmaEditando(null);
-    setErroTurma("");
-    setModalNovaTurmaAberto(true);
   }
 
   function handleEditarTurma(turma, e) {
@@ -706,15 +699,6 @@ export default function Turmas({ uid, professor }) {
             Disciplinas ministradas
           </p>
         </div>
-        {isCoordenador && (
-          <button
-            className="perfil-salvar"
-            style={{ width: "auto", padding: "10px 18px", display: "flex", alignItems: "center", gap: 6 }}
-            onClick={handleAbrirCriarTurma}
-          >
-            <Plus size={16} /> Nova turma
-          </button>
-        )}
       </div>
 
       {erroTurma && (
@@ -726,16 +710,7 @@ export default function Turmas({ uid, professor }) {
       {loading ? (
         <p className="secao-vazia">Carregando...</p>
       ) : turmas.length === 0 ? (
-        <>
-          <p className="secao-vazia">Nenhuma turma cadastrada.</p>
-          {isCoordenador && (
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-              <button className="btn-upload" onClick={handleAbrirCriarTurma}>
-                <Plus size={14} style={{ marginRight: 4 }} /> Criar primeira turma
-              </button>
-            </div>
-          )}
-        </>
+        <p className="secao-vazia">Nenhuma turma cadastrada.</p>
       ) : (
         <>
           {/* --- ABAS DE DISCIPLINA --- */}
@@ -772,7 +747,7 @@ export default function Turmas({ uid, professor }) {
                 <button
                   className="turma-card-pill"
                   style={{
-                    background: "var(--roxo-medio)",
+                    background: "#B199C7",
                     color: "#ffffff",
                     animationDelay: `${idx * 60}ms`,
                     maxWidth: "100%",

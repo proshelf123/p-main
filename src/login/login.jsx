@@ -1,11 +1,14 @@
-import styles from "./login.module.css"; // <-- Importação alterada
+import styles from "./login.module.css";
 import React, { useState } from "react";
 import LogoMetade from "../assets/Group 28.png";
 import LogoIcone from "../assets/Group 32 (2).png";
-import { auth } from "../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { Link, useNavigate } from "react-router-dom"; // Ajustado para react-router-dom
-import { ArrowLeft } from "lucide-react"
+
+// 👇 IMPORTAÇÕES ALTERADAS 👇
+import { auth, functions } from "../firebase"; // Importe o 'functions' do seu arquivo firebase.js
+import { signInWithCustomToken } from "firebase/auth";
+import { httpsCallable } from "firebase/functions"; 
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 function Login() {
   const navigate = useNavigate();
@@ -22,17 +25,44 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
+    // Validação rápida no front para evitar gastar requisições à toa
+    if (!email || !senha) {
+      mostrarErro("Por favor, preencha o e-mail e a senha.");
+      return;
+    }
+
     try {
       setErroLogin("");
-      await signInWithEmailAndPassword(auth, email, senha);
-      navigate("/dashboard");
-    } catch (error) {
-      const errorCode = error.code;
-      console.error("Erro ao logar:", errorCode);
+      
+      // 1. Prepara a conexão com a nossa Função Blindada
+      const loginSeguro = httpsCallable(functions, "loginComLimite");
+      
+      // 2. Envia os dados para a função avaliar (IP, email, senha)
+      const result = await loginSeguro({ 
+        email: email, 
+        senha: senha,
+      });
 
-      if (errorCode === "auth/invalid-credential") {
+      // 3. Se a função aprovar, ela devolve um Token Customizado. Usamos ele para entrar.
+      await signInWithCustomToken(auth, result.data.customToken);
+      
+      navigate("/dashboard");
+
+    } catch (error) {
+      console.error("Erro ao logar:", error);
+
+      if (error.code === "functions/resource-exhausted") {
+        mostrarErro("Muitas tentativas. Tente novamente em 15 minutos.");
+      } 
+      // 👇 AGORA ELE LÊ O ERRO CERTO DE SENHA
+      else if (error.code === "functions/permission-denied") {
         mostrarErro("E-mail ou senha incorretos.");
-      } else {
+      } 
+      // 👇 SE FOR ERRO DE APP CHECK, ELE AVISA
+      else if (error.code === "functions/unauthenticated") {
+        mostrarErro("O seu navegador bloqueou a verificação de segurança (reCAPTCHA). Tente por outro navegador.");
+      }
+      else {
         mostrarErro("Ocorreu um erro ao tentar entrar. Tente novamente.");
       }
     }
@@ -79,16 +109,14 @@ function Login() {
           ))}
         </div>
 
-<div className={styles["lado-branco"]}>
-          {/* 👇 NOVO: Botão de voltar adicionado aqui 👇 */}
+        <div className={styles["lado-branco"]}>
           <Link to="/" className={styles["btn-voltar"]}>
             <ArrowLeft size={20}/> Voltar
           </Link>
           
           <img src={LogoIcone} className={styles["logo-login"]} alt="Logo" />
-          {/* Transformamos o ID acessar em className */}
           <h2 id={styles.acessar}>Acessar a plataforma</h2>
-          {/* 👇 NOVA DIV ENVOLVENDO TUDO 👇 */}
+          
           <div className={styles["form-wrapper"]}>
             <div className={styles.campo}>
               <label>E-mail</label>
@@ -139,8 +167,8 @@ function Login() {
               Entrar
               <span className={styles.arrow}>›</span>
             </button>
-          </div>{" "}
-          {/* 👆 FIM DA NOVA DIV 👆 */}
+          </div>
+          
           <p>
             Se esse for o seu primeiro acesso, clique{" "}
             <Link to="/primeiro-acesso" className={styles.aqui}>

@@ -112,6 +112,11 @@ body > *:not(.dash-wrapper) {
   z-index: 9999;
 }
 
+.logo-mini-btn {
+  height: 28px; /* Ajuste essa altura conforme ficar melhor no seu layout */
+  object-fit: contain;
+}
+
 /* Altura dinâmica baseada no tamanho da fonte */
 :root.font-size-grande .cabecalho-dashboard {
   min-height: 80px;
@@ -506,6 +511,43 @@ body > *:not(.dash-wrapper) {
     font-size: 12px;
     padding: 0 12px;
   }
+
+body:has(.dash-wrapper) {
+    overflow: auto !important;
+    height: auto !important;
+  }
+
+  /* 1. Mudamos de grid para flex e usamos space-between para afastar os itens */
+  .cabecalho-dashboard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    min-height: 64px;
+  }
+
+  /* 2. Removemos qualquer comportamento residual do grid que possa travar o alinhamento */
+  .cabecalho-acoes {
+    justify-self: auto;
+  }
+
+  /* ESCONDE O LOGO ESCRITO NO MOBILE (da alteração anterior) */
+  .cabecalho-logo {
+    display: none;
+  }
+
+  /* Esconde a nav central */
+  .cabecalho-dashboard > nav {
+    display: none;
+  }
+
+  /* Hambúrguer visível */
+  .nav-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* justify-self não é mais necessário aqui com flexbox */
+  }
 }
 
 /* ── Divisor no nav entre professor e coordenador ── */
@@ -588,6 +630,37 @@ body > *:not(.dash-wrapper) {
 }
 .nav-mobile-drawer.aberto {
   transform: translateX(0);
+}
+
+.btn-fechar-drawer {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  background: none;
+  border: none;
+  color: var(--texto-sec);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-fechar-drawer:hover {
+  background: var(--roxo-claro);
+  color: var(--roxo);
+}
+
+/* Suporte ao modo escuro para o botão */
+:root.dark-mode .btn-fechar-drawer {
+  color: var(--texto);
+}
+
+:root.dark-mode .btn-fechar-drawer:hover {
+  background: var(--roxo-claro);
+  color: #dfc5f5;
 }
 
 /* Tema escuro: superfícies e estados com contraste consistente */

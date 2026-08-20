@@ -505,6 +505,8 @@ body {
    Breakpoints adicionais: 768px (tablet), 480px (mobile)
    ══════════════════════════════════════════════════════════════ */
 
+   
+
 @media screen and (max-width: 768px) {
   .cabecalho {
     height: 70px;

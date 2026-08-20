@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
+const ALTURA_ITEM = 44 // aprox. altura de cada .dropdown-item (padding 12px + fonte 13px)
+const ALTURA_BORDA = 2
+
 export default function DropdownComPortal({ label, opcoes, valor, onChange, id, dropdownAberto, setDropdownAberto }) {
   const buttonRef = useRef(null)
   const [posicao, setPosicao] = useState(null)
@@ -19,11 +22,18 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
     if (dropdownAberto === id && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
       const margem = 12
+
+      // Altura que o menu realmente vai ocupar (não um valor fixo arbitrário)
+      const alturaNecessaria = opcoesNormalizadas.length * ALTURA_ITEM + ALTURA_BORDA
+
       const espacoAbaixo = window.innerHeight - rect.bottom - margem
       const espacoAcima = rect.top - margem
-      const abrirAcima = espacoAbaixo < 220 && espacoAcima > espacoAbaixo
+
+      // Só abre para cima se realmente não couber embaixo (comparando com a
+      // altura real do menu, não com um número fixo tipo 220)
+      const abrirAcima = espacoAbaixo < alturaNecessaria && espacoAcima > espacoAbaixo
       const espacoDisponivel = abrirAcima ? espacoAcima : espacoAbaixo
-      const maxHeight = Math.max(140, Math.min(300, espacoDisponivel - 8))
+      const maxHeight = Math.max(140, Math.min(alturaNecessaria, espacoDisponivel))
 
       setPosicao({
         top: abrirAcima
@@ -111,6 +121,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
             position: 'fixed',
             top: posicao.top,
             left: posicao.left,
+            right: 'auto',
             width: posicao.width,
             background: 'var(--branco)',
             border: '1px solid var(--roxo)',

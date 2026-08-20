@@ -24,6 +24,7 @@ import {
   salvarTemaLocal,
 } from '../tema'
 import Logo from '../assets/Group 32 (2).png'
+import LogoMini from '../assets/Group 34.png'
 import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck, ChevronDown } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
@@ -197,6 +198,16 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
         onClick={() => setMenuMobileAberto(false)}
       />
       <div className={`nav-mobile-drawer ${menuMobileAberto ? 'aberto' : ''}`}>
+        
+        {/* NOVO: Botão de fechar (X) no topo da gaveta */}
+        <button 
+          className="btn-fechar-drawer" 
+          onClick={() => setMenuMobileAberto(false)}
+          aria-label="Fechar menu"
+        >
+          <X size={24} />
+        </button>
+
         <span className='nav-mobile-secao-label'>Menu - Mobile</span>
         <button
           className={`nav-link ${secaoAtiva === 'Início' ? 'ativo' : ''}`}
@@ -241,20 +252,26 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
         )}
       </div>
 
-      {/* ── Header ── */}
+{/* ── Header ── */}
       <header className='cabecalho-dashboard'>
 
+        {/* O cabecalho-logo continuará aqui, mas o esconderemos no CSS no mobile */}
         <div className='cabecalho-logo'>
           <img src={Logo} alt='ProShelf' className='logo-claro' />
           <img src={LogoDarkMode} alt='ProShelf' className='logo-escuro' />
         </div>
 
+        {/* Substituímos o ícone <Menu /> pela imagem LogoMini */}
         <button
           className='nav-hamburger'
           onClick={() => setMenuMobileAberto(v => !v)}
           aria-label='Abrir menu'
         >
-          {menuMobileAberto ? <X size={22} /> : <Menu size={22} />}
+          {menuMobileAberto ? (
+            <X size={28} /> /* Mantemos o X para fechar o menu */
+          ) : (
+            <img src={LogoMini} alt='Menu' className='logo-mini-btn' />
+          )}
         </button>
 
         <nav>
