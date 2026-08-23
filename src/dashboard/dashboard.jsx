@@ -13,7 +13,7 @@ import {
   buscarEventos,
   atualizarConfigUser,
   criarPerfil,
-  buscarProximaAulaDoProfessor,
+  buscarProximasAulasDoProfessor,
 } from '../firebase/estrutura'
 import {
   aplicarTemaEscuro,
@@ -25,7 +25,7 @@ import {
 } from '../tema'
 import Logo from '../assets/Group 32 (2).png'
 import LogoMini from '../assets/Group 34.png'
-import { CircleUserRound, UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck, ChevronDown } from 'lucide-react'
+import { UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck, ChevronDown, ChevronRight, FileTextIcon, Plus } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
@@ -41,29 +41,32 @@ import useNotificacoes from "../notificacoes/useNotificacoes"
 import CadastroProfessores from '../coordenador/CadastroProfessores'
 import CoresDisciplinas from '../coordenador/CoresDisciplinas'
 import ProfessoresDisciplinas from '../coordenador/ProfessoresDisciplinas'
-import { Plus } from 'lucide-react'
 import ModalNovaTurmaUnificada from '../coordenador/ModalNovaTurmaUnificada'
+import Presenca from '../professor/Presenca'
+import AlunosTurmas from '../coordenador/TurmaAlunos'
+import ConfiguracoesEscola from '../coordenador/ConfiguracoesEscola'
+import Boletins from '../coordenador/Boletins'
 
 const MotionDiv = motion.div
 
 const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
-const SECOES_COORDENADOR = ['Professores', 'Cores', 'Disciplinas']
 
 function Dashboard() {
   const navigate = useNavigate()
-  const [uid, setUid]               = useState(null)
-  const [professor, setProfessor]   = useState(null)
+  const [uid, setUid] = useState(null)
+  const [professor, setProfessor] = useState(null)
   const [secaoAtiva, setSecaoAtiva] = useState('Início')
   const [cronogramas, setCronogramas] = useState([])
   const [cronogramasCarregados, setCronogramasCarregados] = useState(false)
-  const [eventos, setEventos]       = useState([])
+  const [eventos, setEventos] = useState([])
   const [dropdownAberto, setDropdownAberto] = useState(false)
-  const [perfilAberto, setPerfilAberto]     = useState(false)
+  const [perfilAberto, setPerfilAberto] = useState(false)
   const [menuMobileAberto, setMenuMobileAberto] = useState(false)
   const [coordAberto, setCoordAberto] = useState(false)
   const dropdownRef = useRef(null)
-const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
+  const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
   const eCoordenador = professor?.role === 'coordenador'
+  const SECOES_COORDENADOR = ['Professores', 'Alunos', 'Cores', 'Disciplinas', 'Configurações da Escola', 'Boletins']
 
   // ── Listener único: alimenta o sino e dispara os toasts em tempo real ──
   const { notificacoes } = useNotificacoes(uid)
@@ -148,9 +151,9 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
     setCronogramasCarregados(true)
   }
 
-  const proximaAulaProfessor = buscarProximaAulaDoProfessor(cronogramas, professor)
+  const proximasAulasProfessor = buscarProximasAulasDoProfessor(cronogramas, professor)
   const cronogramasDashboard = professor?.role === 'professor'
-    ? (proximaAulaProfessor ? [proximaAulaProfessor] : [])
+    ? proximasAulasProfessor // Agora já é uma array com várias aulas!
     : cronogramas
 
   function renderSecao() {
@@ -176,14 +179,17 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
             onCronogramasAtualizados={handleCronogramasAtualizados}
           />
         )
-      case 'Turmas':         return <Turmas uid={uid} professor={professor} />
-      case 'Arquivos':       return <Arquivos uid={uid} professor={professor} />
-      case 'Calendário':     return <Calendario uid={uid} professor={professor} />
-      case 'Configurações':  return <Configuracoes uid={uid} professor={professor} />
-      case 'Professores':    return <CadastroProfessores />
-      case 'Cores':          return <CoresDisciplinas uid={uid} professor={professor} cronogramas={cronogramas} />
-      case 'Disciplinas':    return <ProfessoresDisciplinas uid={uid} />
-      default:               return null
+      case 'Turmas': return <Turmas uid={uid} professor={professor} />
+      case 'Alunos': return <AlunosTurmas uid={uid} professor={professor} />
+      case 'Arquivos': return <Arquivos uid={uid} professor={professor} />
+      case 'Calendário': return <Calendario uid={uid} professor={professor} />
+      case 'Configurações': return <Configuracoes uid={uid} professor={professor} />
+      case 'Professores': return <CadastroProfessores />
+      case 'Cores': return <CoresDisciplinas uid={uid} professor={professor} cronogramas={cronogramas} />
+      case 'Disciplinas': return <ProfessoresDisciplinas uid={uid} />
+      case 'Configurações da Escola': return <ConfiguracoesEscola uid={uid} />
+      case 'Boletins': return <Boletins uid={uid} />
+      default: return null
     }
   }
 
@@ -198,10 +204,10 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
         onClick={() => setMenuMobileAberto(false)}
       />
       <div className={`nav-mobile-drawer ${menuMobileAberto ? 'aberto' : ''}`}>
-        
+
         {/* NOVO: Botão de fechar (X) no topo da gaveta */}
-        <button 
-          className="btn-fechar-drawer" 
+        <button
+          className="btn-fechar-drawer"
           onClick={() => setMenuMobileAberto(false)}
           aria-label="Fechar menu"
         >
@@ -227,24 +233,27 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
         {eCoordenador && (
           <>
             <div className='nav-divisor' />
-<span className='nav-mobile-secao-label'>Coordenador</span>
-{/* NOVO BOTÃO NO MOBILE */}
-<button
-  className="nav-link nav-link-coord"
-  onClick={() => { setModalNovaTurmaAberto(true); setMenuMobileAberto(false); }}
->
-  <Plus size={14} /> Nova Turma
-</button>
+            <span className='nav-mobile-secao-label'>Coordenador</span>
+            {/* NOVO BOTÃO NO MOBILE */}
+            <button
+              className="nav-link nav-link-coord"
+              onClick={() => { setModalNovaTurmaAberto(true); setMenuMobileAberto(false); }}
+            >
+              <Plus size={14} /> Nova Turma
+            </button>
 
-{SECOES_COORDENADOR.map(s => (
+            {SECOES_COORDENADOR.map(s => (
               <button
                 key={s}
                 className={`nav-link nav-link-coord ${secaoAtiva === s ? 'ativo' : ''}`}
                 onClick={() => { setSecaoAtiva(s); setMenuMobileAberto(false) }}
               >
-                {s === 'Professores'    && <Users size={14} />}
-                {s === 'Cores'          && <Palette size={14} />}
-                {s === 'Disciplinas'    && <BookOpenCheck size={14} />}
+                {s === 'Professores' && <Users size={14} />}
+                {s === 'Alunos' && <UserRound size={14} />}
+                {s === 'Cores' && <Palette size={14} />}
+                {s === 'Disciplinas' && <BookOpenCheck size={14} />}
+                {s === 'Configurações da Escola' && <Settings size={14} />}
+                {s === 'Boletins' && <FileTextIcon size={14} />}
                 {s}
               </button>
             ))}
@@ -252,7 +261,7 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
         )}
       </div>
 
-{/* ── Header ── */}
+      {/* ── Header ── */}
       <header className='cabecalho-dashboard'>
 
         {/* O cabecalho-logo continuará aqui, mas o esconderemos no CSS no mobile */}
@@ -296,64 +305,97 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
               </li>
             ))}
 
-{eCoordenador && (
-  <>
-    <li className='nav-divisor' />
-    <li
-      className='nav-coord-wrapper'
-      onMouseEnter={() => setCoordAberto(true)}
-      onMouseLeave={() => setCoordAberto(false)}
-    >
-      <button
-        className={`nav-link nav-link-coord ${SECOES_COORDENADOR.includes(secaoAtiva) ? 'ativo' : ''}`}
-      >
-        <Users size={13} /> Coordenador
-        <ChevronDown size={13} className='nav-coord-chevron' />
-      </button>
-
-      <AnimatePresence>
-        {coordAberto && (
-          <MotionDiv
-            className='nav-coord-dropdown'
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
-          >
-<div className='nav-coord-dropdown-card'>
-  {/* NOVO BOTÃO DE CRIAR TURMA */}
-  <button
-    className="nav-coord-item"
-    onClick={() => { setModalNovaTurmaAberto(true); setCoordAberto(false); }}
-  >
-    <Plus size={15} /> Nova Turma
-  </button>
-  <div className="dropdown-divisor" style={{ margin: '4px 0', background: 'var(--borda)' }} />
-  
-  {SECOES_COORDENADOR.map(s => (
-                <button
-                  key={s}
-                  className={`nav-coord-item ${secaoAtiva === s ? 'ativo' : ''}`}
-                  onClick={() => { setSecaoAtiva(s); setCoordAberto(false) }}
+            {eCoordenador && (
+              <>
+                <li className='nav-divisor' />
+                <li
+                  className='nav-coord-wrapper'
+                  onMouseEnter={() => setCoordAberto(true)}
+                  onMouseLeave={() => setCoordAberto(false)}
                 >
-                  {s === 'Professores' && <Users size={15} />}
-                  {s === 'Cores'       && <Palette size={15} />}
-                  {s === 'Disciplinas' && <BookOpenCheck size={15} />}
-                  {s}
-                </button>
-              ))}
-            </div>
-          </MotionDiv>
-        )}
-      </AnimatePresence>
-    </li>
-  </>
-)}
+                  <button
+                    className={`nav-link nav-link-coord ${SECOES_COORDENADOR.includes(secaoAtiva) ? 'ativo' : ''}`}
+                  >
+                    <Users size={13} /> Coordenador
+                    <ChevronDown size={13} className='nav-coord-chevron' />
+                  </button>
+
+                  <AnimatePresence>
+                    {coordAberto && (
+                      <MotionDiv
+                        className='nav-coord-dropdown'
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <div className='nav-coord-dropdown-card'>
+
+                          {/* NOVA TURMA */}
+                          <button
+                            className="nav-coord-item"
+                            onClick={() => { setModalNovaTurmaAberto(true); setCoordAberto(false); }}
+                          >
+                            <Plus size={15} /> Nova Turma
+                          </button>
+                          <div className="dropdown-divisor" style={{ margin: '4px 0', background: 'var(--borda)' }} />
+
+                          {/* --- SUBMENU: CADASTRO --- */}
+                          <div className="nav-coord-sub-wrapper">
+                            <button className={`nav-coord-item ${['Professores', 'Alunos'].includes(secaoAtiva) ? 'ativo' : ''}`}>
+                              <Users size={15} /> Cadastro <ChevronRight size={14} className="nav-coord-sub-seta" />
+                            </button>
+
+                            {/* O menu flutuante que abre ao lado */}
+                            <div className="nav-coord-sub-menu">
+                              <button className={`nav-coord-item ${secaoAtiva === 'Professores' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Professores'); setCoordAberto(false) }}>
+                                <Users size={15} /> Professores
+                              </button>
+                              <button className={`nav-coord-item ${secaoAtiva === 'Alunos' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Alunos'); setCoordAberto(false) }}>
+                                <UserRound size={15} /> Alunos
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* --- SUBMENU: MATÉRIAS --- */}
+                          <div className="nav-coord-sub-wrapper">
+                            <button className={`nav-coord-item ${['Cores', 'Disciplinas'].includes(secaoAtiva) ? 'ativo' : ''}`}>
+                              <BookOpenCheck size={15} /> Matérias <ChevronRight size={14} className="nav-coord-sub-seta" />
+                            </button>
+
+                            {/* O menu flutuante que abre ao lado */}
+                            <div className="nav-coord-sub-menu">
+                              <button className={`nav-coord-item ${secaoAtiva === 'Cores' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Cores'); setCoordAberto(false) }}>
+                                <Palette size={15} /> Cores
+                              </button>
+                              <button className={`nav-coord-item ${secaoAtiva === 'Disciplinas' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Disciplinas'); setCoordAberto(false) }}>
+                                <BookOpenCheck size={15} /> Disciplinas
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="dropdown-divisor" style={{ margin: '4px 0', background: 'var(--borda)' }} />
+
+                          {/* OUTRAS OPÇÕES */}
+                          <button className={`nav-coord-item ${secaoAtiva === 'Configurações da Escola' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Configurações da Escola'); setCoordAberto(false) }}>
+                            <Settings size={15} /> Config. da Escola
+                          </button>
+                          <button className={`nav-coord-item ${secaoAtiva === 'Boletins' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Boletins'); setCoordAberto(false) }}>
+                            <FileTextIcon size={15} /> Boletins
+                          </button>
+
+                        </div>
+                      </MotionDiv>
+                    )}
+                  </AnimatePresence>
+                </li>
+              </>
+            )}
           </ul>
         </nav>
 
         <div className='cabecalho-acoes'>
-<NotificationBell uid={uid} notificacoes={notificacoes} />
+          <NotificationBell uid={uid} notificacoes={notificacoes} />
           <div className='perfil-wrapper' ref={dropdownRef}>
             <button
               className='perfil-btn'
@@ -432,11 +474,11 @@ const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
       {/* ── Toasts de notificação em tempo real ── */}
       <NotificationToast />
 
-{modalNovaTurmaAberto && uid && (
-        <ModalNovaTurmaUnificada 
-          uid={uid} 
-          professorLogado={professor} 
-          onClose={() => setModalNovaTurmaAberto(false)} 
+      {modalNovaTurmaAberto && uid && (
+        <ModalNovaTurmaUnificada
+          uid={uid}
+          professorLogado={professor}
+          onClose={() => setModalNovaTurmaAberto(false)}
         />
       )}
 

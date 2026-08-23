@@ -204,7 +204,7 @@ export default function Arquivos({ uid, professor }) {
               Arquivos
             </h2>
             <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
-              Selecione uma turma para acessar ou solicitar arquivos
+              Selecione uma turma para acessar arquivos
             </p>
           </div>
         </div>

@@ -16,6 +16,7 @@ import { criarNotificacaoPorRole } from "../notificacoes/notificacoes";
 const _escolaIdCache = {};
 
 export async function getEscolaId(uidParam) {
+  if (typeof uidParam !== 'string') uidParam = null; // <- Adicione esta linha
   const uid = uidParam || auth?.currentUser?.uid;
   if (!uid) throw new Error("UID obrigatório para identificar a escola.");
   
@@ -342,6 +343,39 @@ export function buscarProximaAulaDoProfessor(aulas = [], perfil = null, agora = 
     ?.aula || null;
 }
 
+export function buscarProximasAulasDoProfessor(aulas = [], perfil = null, agora = new Date()) {
+  const aulasProfessor = filtrarCronogramaDoProfessor(aulas, perfil);
+  if (aulasProfessor.length === 0) return [];
+
+  const hoje = agora.getDay();
+  const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+
+  const mapeadas = aulasProfessor
+    .map((aula) => {
+      const dia = ORDEM_DIA_CRONOGRAMA[normalizarChaveCronograma(aula.dia)];
+      const inicio = minutosInicioAula(aula);
+      let distanciaDias = typeof dia === "number" ? (dia - hoje + 7) % 7 : 7;
+      
+      // Se a aula for hoje, mas já tiver passado do horário, joga para a próxima semana
+      if (distanciaDias === 0 && inicio < minutosAgora) {
+        distanciaDias = 7;
+      }
+      return { aula, distanciaDias, inicio };
+    })
+    // Ordena pelo dia mais próximo, e depois pelo horário da aula
+    .sort((a, b) => a.distanciaDias - b.distanciaDias || a.inicio - b.inicio || (a.aula.ordem || 0) - (b.aula.ordem || 0));
+
+  if (mapeadas.length === 0) return [];
+
+  // Descobre qual é a distância do primeiro dia de aula (ex: 0 = hoje, 1 = amanhã)
+  const diaMaisProximo = mapeadas[0].distanciaDias;
+  
+  // Retorna TODAS as aulas que caem nesse mesmo dia
+  return mapeadas
+    .filter((item) => item.distanciaDias === diaMaisProximo)
+    .map((item) => item.aula);
+}
+
 export async function salvarCronogramaTurmaManual({ uid, curso, ano, nomeTurma, periodo = "Matutino", aulas = [] }) {
   const escolaId = await getEscolaId(uid);
   const turmaBase = nomeDocumentoCronograma(nomeTurma || `${ano} ${curso}`);
@@ -570,72 +604,107 @@ export async function removerTurmaPeriodo(turmaDocId) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  ARQUIVOS & SOLICITAÇÕES (FLUXO COMPLETO)
+//  ENVIO DIRETO DE ARQUIVOS NAS TURMAS (novo fluxo)
+//  Professor e coordenador adicionam arquivos direto, sem aprovação.
 // ═══════════════════════════════════════════════════════════
 
-export async function criarSolicitacaoArquivo(turmaId, dadosSolicitacao, usuarioAtual) {
-  const escolaId = await getEscolaId(usuarioAtual.uid);
-  const arquivo = dadosSolicitacao.arquivo || null;
-  let arquivoDados = {};
+export const TAMANHO_MAXIMO_ARQUIVO_TURMA = 10 * 1024 * 1024; // 10MB
 
-  if (arquivo) {
+const EXTENSOES_ARQUIVO_TURMA_PERMITIDAS = [
+  "ppt", "pptx", "doc", "docx", "xls", "xlsx", "zip", "rar",
+  "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "heic", "heif",
+];
+
+const MIME_ARQUIVO_TURMA_PERMITIDOS = [
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/vnd.rar",
+  "application/x-rar-compressed",
+];
+
+// Validação client-side: tipo e tamanho do arquivo antes do upload
+export function validarArquivoTurma(arquivo) {
+  if (!arquivo) return { ok: false, motivo: "Selecione um arquivo." };
+  if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_TURMA) {
+    return { ok: false, motivo: "O arquivo ultrapassa o limite de 10MB." };
+  }
+  const extensao = arquivo.name.split(".").pop()?.toLowerCase() || "";
+  const ehImagem = (arquivo.type || "").startsWith("image/");
+  const mimeOk = MIME_ARQUIVO_TURMA_PERMITIDOS.includes(arquivo.type);
+  const extensaoOk = EXTENSOES_ARQUIVO_TURMA_PERMITIDAS.includes(extensao);
+  if (!ehImagem && !mimeOk && !extensaoOk) {
+    return { ok: false, motivo: "Tipo de arquivo não permitido. Aceitamos PowerPoint, Word, Excel, imagens, ZIP e RAR." };
+  }
+  return { ok: true };
+}
+
+function formatarTamanhoArquivoTurma(bytes) {
+  if (!bytes) return "--- KB";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// dados: { nome, arquivo (File|null), linkGoogle (string|null) }
+// usuarioAtual: { uid, nome, role }
+export async function enviarArquivoTurma(turmaId, dados, usuarioAtual) {
+  const escolaId = await getEscolaId(usuarioAtual.uid);
+  const origem = usuarioAtual.role === "coordenador" ? "coordenador" : "professor";
+
+  let camposArquivo;
+
+  if (dados.linkGoogle) {
+    const link = String(dados.linkGoogle).trim();
+    if (!/^https?:\/\//i.test(link)) {
+      throw new Error("Cole um link válido (começando com http:// ou https://).");
+    }
+    camposArquivo = {
+      tipo: "link",
+      tamanho: "Link do Google Drive",
+      url: link,
+      arquivoNome: dados.nome || link,
+      arquivoStoragePath: "",
+    };
+  } else {
+    const validacao = validarArquivoTurma(dados.arquivo);
+    if (!validacao.ok) throw new Error(validacao.motivo);
+
+    const arquivo = dados.arquivo;
     const nomeSeguro = arquivo.name.replace(/[^\w.-]+/g, "_");
-    const caminho = `solicitacoes_arquivos/${escolaId}/${Date.now()}-${nomeSeguro}`;
+    const caminho = `turmas_arquivos/${escolaId}/${Date.now()}-${nomeSeguro}`;
     const arquivoRef = storageRef(storage, caminho);
-    
+
     await uploadBytes(arquivoRef, arquivo, {
       contentType: arquivo.type || undefined,
-      customMetadata: { escolaId, professorId: usuarioAtual.uid || "" },
+      customMetadata: { escolaId, enviadoPorUid: usuarioAtual.uid || "" },
     });
 
-    arquivoDados = {
+    camposArquivo = {
+      tipo: arquivo.name.split(".").pop()?.toLowerCase() || "arquivo",
+      tamanho: formatarTamanhoArquivoTurma(arquivo.size),
+      url: await getDownloadURL(arquivoRef),
       arquivoNome: arquivo.name,
-      arquivoUrl: await getDownloadURL(arquivoRef),
-      arquivoTipo: arquivo.name.split(".").pop()?.toLowerCase() || "arquivo",
-      arquivoMime: arquivo.type || "",
-      arquivoTamanho: arquivo.size || 0,
       arquivoStoragePath: caminho,
     };
   }
 
-  const novaSolicitacao = {
-    turmaId: turmaId,
-    professorId: usuarioAtual.uid,
-    professorNome: usuarioAtual.nome,
-    nome: dadosSolicitacao.nome || arquivo?.name || "",
-    descricao: dadosSolicitacao.descricao || "",
-    escolaId: escolaId,
-    ...arquivoDados,
-    status: "pendente",
-    criadoEm: serverTimestamp()
-  };
-
-  const docRef = await addDoc(collection(db, "solicitacoes_arquivos"), novaSolicitacao);
-  return docRef.id;
-}
-
-export function escutarSolicitacoes(uid, turmaId, callback, opcoes = {}) {
-  let unsubscribe = () => {};
-  let isUnsubscribed = false;
-
-  getEscolaId(uid).then(escolaId => {
-    if (isUnsubscribed) return;
-    const q = query(
-      collection(db, "solicitacoes_arquivos"),
-      where("turmaId", "==", turmaId),
-      where("escolaId", "==", escolaId),
-      orderBy("criadoEm", "desc")
-    );
-    unsubscribe = onSnapshot(q, (snapshot) => {
-      const incluirResolvidas = opcoes.incluirResolvidas === true;
-      const lista = snapshot.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter((sol) => incluirResolvidas || (sol.status || "pendente") === "pendente");
-      callback(lista);
-    });
+  const docRef = await addDoc(collection(db, "turmas_arquivos_aprovados"), {
+    turmaId,
+    nome: dados.nome || camposArquivo.arquivoNome || "",
+    ...camposArquivo,
+    enviadoPor: usuarioAtual.nome || "Usuário",
+    enviadoPorUid: usuarioAtual.uid,
+    origem, // "coordenador" | "professor"
+    escolaId,
+    criadoEm: serverTimestamp(),
   });
 
-  return () => { isUnsubscribed = true; unsubscribe(); };
+  return docRef.id;
 }
 
 export function escutarArquivosDaTurma(uid, turmaId, callback) {
@@ -659,41 +728,6 @@ export function escutarArquivosDaTurma(uid, turmaId, callback) {
   return () => { isUnsubscribed = true; unsubscribe(); };
 }
 
-export async function aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuarioAtual) {
-  const escolaId = await getEscolaId(usuarioAtual.uid);
-  const arquivosRef = collection(db, "turmas_arquivos_aprovados");
-  const arquivoRef = await addDoc(arquivosRef, {
-    turmaId: solicitacao.turmaId,
-    nome: solicitacao.nome,
-    tipo: metaArquivo.tipo || "pdf",
-    tamanho: metaArquivo.tamanho || "--- KB",
-    url: metaArquivo.url || solicitacao.arquivoUrl || "",
-    arquivoNome: metaArquivo.arquivoNome || solicitacao.arquivoNome || solicitacao.nome,
-    arquivoStoragePath: metaArquivo.storagePath || solicitacao.arquivoStoragePath || "",
-    enviadoPor: usuarioAtual.nome,
-    escolaId: escolaId,
-    criadoEm: serverTimestamp()
-  });
-
-  await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), {
-    status: "aprovado",
-    arquivoAprovadoId: arquivoRef.id,
-    resolvidoEm: serverTimestamp(),
-  });
-  return arquivoRef.id;
-}
-
-export async function recusarSolicitacaoArquivo(solicitacao, usuarioAtual, motivo = "") {
-  if (solicitacao.arquivoStoragePath) {
-    try { await deleteObject(storageRef(storage, solicitacao.arquivoStoragePath)); } catch (e) {}
-  }
-  await updateDoc(doc(db, "solicitacoes_arquivos", solicitacao.id), {
-    status: "recusado",
-    motivoRecusa: motivo,
-    resolvidoEm: serverTimestamp(),
-  });
-}
-
 export async function deletarArquivoAprovado(arquivoId) {
   const arquivoRef = doc(db, "turmas_arquivos_aprovados", arquivoId);
   const snap = await getDoc(arquivoRef);
@@ -701,4 +735,143 @@ export async function deletarArquivoAprovado(arquivoId) {
     try { await deleteObject(storageRef(storage, snap.data().arquivoStoragePath)); } catch (e) {}
   }
   await deleteDoc(arquivoRef);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ALUNOS (Lista global por Sala/Pasta)
+// ═══════════════════════════════════════════════════════════
+
+export async function criarAluno(uid, nomeSala, dados) {
+  const escolaId = await getEscolaId(uid);
+  // Adicionado o segmento "lista"
+  const ref = collection(db, "salas", escolaId, "lista", nomeSala, "alunos");
+  return await addDoc(ref, {
+    nome: dados.nome || "",
+    numero: dados.numero || "",
+    matricula: dados.matricula || "",
+    escolaId: escolaId,
+    criadoEm: serverTimestamp(),
+  });
+}
+
+export async function atualizarAluno(uid, nomeSala, alunoId, dados) {
+  const escolaId = await getEscolaId(uid);
+  // Adicionado o segmento "lista"
+  await updateDoc(doc(db, "salas", escolaId, "lista", nomeSala, "alunos", alunoId), dados);
+}
+
+export async function deletarAluno(uid, nomeSala, alunoId) {
+  const escolaId = await getEscolaId(uid);
+  // Adicionado o segmento "lista"
+  await deleteDoc(doc(db, "salas", escolaId, "lista", nomeSala, "alunos", alunoId));
+}
+
+export async function buscarAlunos(uid, nomeSala) {
+  const escolaId = await getEscolaId(uid);
+  // Adicionado o segmento "lista"
+  const ref = collection(db, "salas", escolaId, "lista", nomeSala, "alunos");
+  const snap = await getDocs(query(ref, orderBy("nome", "asc")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PRESENÇA
+// ═══════════════════════════════════════════════════════════
+
+// registros: { [alunoId]: "presente" | "falta" | "atraso" }
+export async function salvarPresenca(ownerUid, turmaId, data, registros, atualizadoPorUid) {
+  const ref = doc(db, "turmas", ownerUid, "lista", turmaId, "presencas", data);
+  await setDoc(ref, {
+    data,
+    registros,
+    atualizadoPorUid: atualizadoPorUid || "",
+    atualizadoEm: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function buscarPresenca(ownerUid, turmaId, data) {
+  const snap = await getDoc(doc(db, "turmas", ownerUid, "lista", turmaId, "presencas", data));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function buscarTodasPresencas(ownerUid, turmaId) {
+  const ref = collection(db, "turmas", ownerUid, "lista", turmaId, "presencas");
+  const snap = await getDocs(query(ref, orderBy("data", "desc")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NOTAS
+// ═══════════════════════════════════════════════════════════
+
+// notas: { bimestre1, bimestre2, bimestre3, bimestre4 }
+export async function salvarNotaAluno(ownerUid, turmaId, alunoId, notas, atualizadoPorUid) {
+  const ref = doc(db, "turmas", ownerUid, "lista", turmaId, "notas", alunoId);
+  await setDoc(ref, {
+    alunoId,
+    notas,
+    atualizadoPorUid: atualizadoPorUid || "",
+    atualizadoEm: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function buscarNotasDaTurma(ownerUid, turmaId) {
+  const ref = collection(db, "turmas", ownerUid, "lista", turmaId, "notas");
+  const snap = await getDocs(ref);
+  const mapa = {};
+  snap.docs.forEach((d) => { mapa[d.id] = d.data(); });
+  return mapa;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PARÂMETROS GERAIS DA ESCOLA (Sistema de Avaliação, Datas, Média)
+// ═══════════════════════════════════════════════════════════
+
+export async function buscarConfiguracoesEscola(uid) {
+  const escolaId = await getEscolaId(uid);
+  const snap = await getDoc(doc(db, "configuracoes_escola", `${escolaId}_parametros`));
+  
+  // Retorna dados padrão caso a escola ainda não tenha configurado
+  if (!snap.exists()) {
+    return {
+      sistemaAvaliacao: "bimestral",
+      mediaAprovacao: 6.0,
+      anoLetivo: new Date().getFullYear().toString(),
+      datasPeriodos: {} 
+      // Ex: { periodo_1: { inicio: "2026-02-01", fim: "2026-04-30" } }
+    };
+  }
+  return snap.data();
+}
+
+export async function salvarConfiguracoesEscola(uid, dados) {
+  const escolaId = await getEscolaId(uid);
+  await setDoc(doc(db, "configuracoes_escola", `${escolaId}_parametros`), {
+    ...dados,
+    escolaId,
+    atualizadoPorUid: uid,
+    atualizadoEm: serverTimestamp()
+  }, { merge: true });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOLETINS E FECHAMENTO (Cruzamento de Dados)
+// ═══════════════════════════════════════════════════════════
+
+export async function buscarTurmasDaSala(uid, nomeSala) {
+  const escolaId = await getEscolaId(uid);
+  
+  // Busca em todas as coleções "lista" (disciplinas) aquelas que têm o nome da Sala solicitada
+  const q = query(
+    collectionGroup(db, "lista"),
+    where("escolaId", "==", escolaId),
+    where("nome", "==", nomeSala)
+  );
+  
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({
+    id: d.id,
+    ownerUid: d.ref.parent.parent.id, // UID do professor dono da turma
+    ...d.data()
+  }));
 }

@@ -3,16 +3,22 @@ import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen,
-  Send, CheckCircle, XCircle, Trash2, Upload, AlertTriangle
+  Trash2, Upload, AlertTriangle, Plus, Link2
 } from "lucide-react";
 import {
-  criarSolicitacaoArquivo,
-  escutarSolicitacoes,
   escutarArquivosDaTurma,
-  aprovarEAdicionarArquivo,
-  recusarSolicitacaoArquivo,
+  enviarArquivoTurma,
+  validarArquivoTurma,
   deletarArquivoAprovado
 } from "../firebase/estrutura";
+
+// --- ÍCONE POR TIPO DE ARQUIVO ---
+function getIconeArquivo(tipo) {
+  if (tipo === "link") return <Link2 size={24} color="#4F46E5" />;
+  if (tipo === "pdf") return <FileText size={24} color="#EF4444" />;
+  if (["xlsx", "xls", "csv"].includes(tipo)) return <FileSpreadsheet size={24} color="#10B981" />;
+  return <File size={24} color="#6B7280" />;
+}
 
 // --- MODAL DE CONFIRMAÇÃO DE DELEÇÃO DE ARQUIVO ---
 function ModalConfirmarArquivo({ arquivo, onConfirmar, onCancelar }) {
@@ -83,6 +89,91 @@ function ModalConfirmarArquivo({ arquivo, onConfirmar, onCancelar }) {
   );
 }
 
+// --- BLOCO DE LISTAGEM DE ARQUIVOS (reutilizado para os dois grupos) ---
+function BlocoArquivos({ titulo, corTitulo, arquivos, podeDeletarArquivo, onDeletar, vazioTexto, destaque }) {
+  return (
+    <div
+      className={destaque ? "grid-wrapper bloco-arquivos-destaque" : "grid-wrapper"}
+    >
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: corTitulo, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+        {titulo} ({arquivos.length})
+      </h3>
+      {arquivos.length === 0 ? (
+        <div style={{ border: "2px dashed var(--borda)", borderRadius: 12, padding: "32px 16px", textAlign: "center", color: "var(--texto-sec)" }}>
+          <FolderOpen size={32} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
+          <p style={{ fontSize: 13, margin: 0 }}>{vazioTexto}</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 10, width: "100%" }}>
+          {arquivos.map((arq) => (
+            <div key={arq.id} className="card-documento-item" style={{ display: "flex", flexDirection: "column", padding: 16, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--borda)" }}>
+
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12, width: "100%" }}>
+                <div style={{ flexShrink: 0 }}>
+                  {getIconeArquivo(arq.tipo)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="nome-arquivo" style={{ fontSize: 14, fontWeight: 600, color: "var(--texto)" }}>{arq.nome}</div>
+                  <div style={{ fontSize: 12, color: "var(--texto-sec)", marginTop: 4 }}>Tamanho: {arq.tamanho} • Por: {arq.enviadoPor}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, width: '100%' }}>
+                {arq.url ? (
+                  <a
+                    href={arq.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-ver-arquivo"
+                    style={{
+                      flex: 1,
+                      padding: '10px 0',
+                      background: '#6F3B9D',
+                      color: '#fff',
+                      textAlign: 'center',
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      textDecoration: 'none',
+                      display: 'inline-block'
+                    }}
+                  >
+                    {arq.tipo === "link" ? "Abrir link" : "Ver arquivo"}
+                  </a>
+                ) : (
+                  <div className="btn-ver-arquivo" style={{ flex: 1, padding: '10px 0', background: '#e5e7eb', color: '#9ca3af', textAlign: 'center', borderRadius: 8, fontWeight: 600, fontSize: 13 }}>
+                    Arquivo indisponível
+                  </div>
+                )}
+
+                {podeDeletarArquivo(arq) && (
+                  <button
+                    onClick={() => onDeletar(arq)}
+                    className="btn-lixeira"
+                    style={{
+                      background: '#FFF0F3',
+                      border: '1px solid #ffccc7',
+                      color: '#EF4444',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title="Deletar arquivo"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const NOVO_ARQUIVO_INICIAL = { nome: "", modo: "arquivo", arquivo: null, link: "" };
+
 export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp, perfil, uid, onClose, onVoltar, turma, periodo }) {
   const idTurma = turmaIdProp || [periodo?.nome, turma].filter(Boolean).join(" - ");
   const tituloTurma = tituloProp || turma || "Arquivos da turma";
@@ -90,38 +181,25 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   const isCoordenador = perfil?.role === "coordenador";
   const usuarioFormatado = {
     uid: perfil?.uid || perfil?.id || uid || "user_id_temp",
-    nome: perfil?.nome || perfil?.displayName || "Usuário Conectado"
+    nome: perfil?.nome || perfil?.displayName || "Usuário Conectado",
+    role: perfil?.role || (isCoordenador ? "coordenador" : "professor"),
   };
 
   const [arquivos, setArquivos] = useState([]);
-  const [solicitacoes, setSolicitacoes] = useState([]);
 
-  const [modalSolicitarAberto, setModalSolicitarAberto] = useState(false);
-  const [novaSolicitacao, setNovaSolicitacao] = useState({ nome: "", descricao: "", arquivo: null });
-  const [erroSolicitacao, setErroSolicitacao] = useState("");
+  const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
+  const [novoArquivo, setNovoArquivo] = useState(NOVO_ARQUIVO_INICIAL);
+  const [erroAdicionar, setErroAdicionar] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState("");
 
   // ESTADO PARA O ARQUIVO QUE SERÁ DELETADO
   const [arquivoParaDeletar, setArquivoParaDeletar] = useState(null);
 
   useEffect(() => {
     if (!idTurma) return;
-
     const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivos(dados));
-    const unsubSolicitacoes = escutarSolicitacoes(uid, idTurma, (dados) => setSolicitacoes(dados));
-
-    return () => {
-      unsubArquivos();
-      unsubSolicitacoes();
-    };
+    return () => unsubArquivos();
   }, [idTurma]);
-
-  function formatarTamanho(bytes) {
-    if (!bytes) return "--- KB";
-    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
 
   function getMensagemErroEnvio(err) {
     if (err?.code === "storage/unauthorized") return "O Firebase Storage bloqueou o envio. Publique as regras de Storage.";
@@ -130,63 +208,57 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
     return err?.message || "Não foi possível enviar o arquivo. Tente novamente.";
   }
 
-  async function handleEnviarSolicitacao(e) {
+  async function handleEnviarArquivo(e) {
     e.preventDefault();
-    const nome = novaSolicitacao.nome.trim() || novaSolicitacao.arquivo?.name || "";
-    if (!nome || !novaSolicitacao.arquivo) {
-      setErroSolicitacao("Selecione um arquivo para enviar à coordenação.");
-      return;
+    setErroAdicionar("");
+
+    if (novoArquivo.modo === "link") {
+      if (!novoArquivo.link.trim()) {
+        setErroAdicionar("Cole o link do Google Drive.");
+        return;
+      }
+    } else {
+      if (!novoArquivo.arquivo) {
+        setErroAdicionar("Selecione um arquivo para enviar.");
+        return;
+      }
+      const validacao = validarArquivoTurma(novoArquivo.arquivo);
+      if (!validacao.ok) {
+        setErroAdicionar(validacao.motivo);
+        return;
+      }
     }
 
     setEnviando(true);
-    setErroSolicitacao("");
     try {
-      await criarSolicitacaoArquivo(idTurma, { ...novaSolicitacao, nome }, usuarioFormatado);
-      setNovaSolicitacao({ nome: "", descricao: "", arquivo: null });
-      setModalSolicitarAberto(false);
+      await enviarArquivoTurma(idTurma, {
+        nome: novoArquivo.nome.trim(),
+        arquivo: novoArquivo.modo === "arquivo" ? novoArquivo.arquivo : null,
+        linkGoogle: novoArquivo.modo === "link" ? novoArquivo.link.trim() : null,
+      }, usuarioFormatado);
+      setNovoArquivo(NOVO_ARQUIVO_INICIAL);
+      setModalAdicionarAberto(false);
     } catch (err) {
-      console.error("Erro ao submeter pedido:", err);
-      setErroSolicitacao(getMensagemErroEnvio(err));
+      console.error("Erro ao adicionar arquivo:", err);
+      setErroAdicionar(getMensagemErroEnvio(err));
     } finally {
       setEnviando(false);
     }
   }
 
-  async function handleAprovar(solicitacao) {
-    if (!isCoordenador || processandoSolicitacaoId) return;
-    const nomeArquivo = solicitacao.nome || solicitacao.arquivoNome || "arquivo";
-    const metaArquivo = {
-      tipo: solicitacao.arquivoTipo || nomeArquivo.split(".").pop()?.toLowerCase() || "arquivo",
-      tamanho: formatarTamanho(solicitacao.arquivoTamanho),
-      url: solicitacao.arquivoUrl || "",
-      arquivoNome: solicitacao.arquivoNome || nomeArquivo,
-      storagePath: solicitacao.arquivoStoragePath || ""
-    };
-
-    try {
-      setProcessandoSolicitacaoId(solicitacao.id);
-      await aprovarEAdicionarArquivo(solicitacao, metaArquivo, usuarioFormatado);
-    } catch (err) {
-      console.error("Erro ao validar aprovação:", err);
-    } finally {
-      setProcessandoSolicitacaoId("");
+  function handleSelecionarArquivo(e) {
+    const arquivo = e.target.files?.[0] || null;
+    if (arquivo) {
+      const validacao = validarArquivoTurma(arquivo);
+      if (!validacao.ok) {
+        setErroAdicionar(validacao.motivo);
+        setNovoArquivo((prev) => ({ ...prev, arquivo: null }));
+        e.target.value = "";
+        return;
+      }
     }
-  }
-
-  async function handleRecusar(solicitacao) {
-    if (!isCoordenador || processandoSolicitacaoId) return;
-
-    const motivo = window.prompt("Motivo da recusa (opcional):", "");
-    if (motivo === null) return;
-
-    try {
-      setProcessandoSolicitacaoId(solicitacao.id);
-      await recusarSolicitacaoArquivo(solicitacao, usuarioFormatado, motivo);
-    } catch (err) {
-      console.error("Erro ao recusar solicitacao:", err);
-    } finally {
-      setProcessandoSolicitacaoId("");
-    }
+    setErroAdicionar("");
+    setNovoArquivo((prev) => ({ ...prev, arquivo, nome: prev.nome || arquivo?.name || "" }));
   }
 
   // FUNÇÃO QUE EXECUTA A DELEÇÃO APÓS A CONFIRMAÇÃO
@@ -201,11 +273,15 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
     }
   }
 
-  function getIconeArquivo(tipo) {
-    if (tipo === "pdf") return <FileText size={24} color="#EF4444" />;
-    if (["xlsx", "xls", "csv"].includes(tipo)) return <FileSpreadsheet size={24} color="#10B981" />;
-    return <File size={24} color="#6B7280" />;
+  function podeDeletarArquivo(arq) {
+    return isCoordenador || arq.enviadoPorUid === usuarioFormatado.uid;
   }
+
+  // Arquivos antigos (aprovados antes desta mudança) não têm "origem" salva —
+  // como só a coordenação podia gravar nessa coleção antes, tratamos como dela.
+  const origemDe = (arq) => arq.origem || "coordenador";
+  const arquivosCoordenacao = arquivos.filter((a) => origemDe(a) === "coordenador");
+  const arquivosProfessores = arquivos.filter((a) => origemDe(a) !== "coordenador");
 
   return (
     <div className="turma-arquivos-pagina" style={{ fontFamily: "'Poppins', sans-serif", background: "var(--branco)", color: "var(--texto)", border: "1px solid var(--borda)", borderRadius: 14, padding: 24, boxSizing: "border-box", overflow: "hidden", width: "100%", maxWidth: "100%" }}>
@@ -275,218 +351,133 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
           )}
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--texto)", margin: 0 }}>{tituloTurma}</h2>
-            <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "2px 0 0 0" }}>Documentos e solicitações da turma</p>
+            <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "2px 0 0 0" }}>Documentos da turma</p>
           </div>
         </div>
 
-        {!isCoordenador && (
-          <button
-            onClick={() => setModalSolicitarAberto(true)}
-            style={{
-              background: "#6F3B9D", color: "#fff", border: "none", borderRadius: 8,
-              padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(111,59,157,0.2)"
-            }}
-          >
-            <Send size={14} /> Solicitar Arquivo
-          </button>
-        )}
+        <button
+          onClick={() => setModalAdicionarAberto(true)}
+          style={{
+            background: "#6F3B9D", color: "#fff", border: "none", borderRadius: 8,
+            padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(111,59,157,0.2)"
+          }}
+        >
+          <Plus size={14} /> Adicionar Arquivo
+        </button>
       </div>
 
       {/* Grid Central */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, width: "100%", minWidth: 0 }}>
 
-        {/* Bloco de Arquivos Disponíveis */}
-        <div className="grid-wrapper">
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-            Arquivos da Turma ({arquivos.length})
-          </h3>
-          {arquivos.length === 0 ? (
-            <div style={{ border: "2px dashed var(--borda)", borderRadius: 12, padding: "32px 16px", textAlign: "center", color: "var(--texto-sec)" }}>
-              <FolderOpen size={32} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
-              <p style={{ fontSize: 13, margin: 0 }}>Nenhum documento disponível nesta pasta.</p>
-            </div>
-          ) : (
-            <div style={{ display: "grid", gap: 10, width: "100%" }}>
-              {arquivos.map((arq) => (
-                <div key={arq.id} className="card-documento-item" style={{ display: "flex", flexDirection: "column", padding: 16, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--borda)" }}>
+        <BlocoArquivos
+          titulo="Arquivos da Coordenação"
+          corTitulo="#6F3B9D"
+          arquivos={arquivosCoordenacao}
+          podeDeletarArquivo={podeDeletarArquivo}
+          onDeletar={setArquivoParaDeletar}
+          vazioTexto="A coordenação ainda não adicionou nenhum documento nesta turma."
+          destaque
+        />
 
-                  {/* --- Cabeçalho do arquivo --- */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, width: "100%" }}>
-                    <div style={{ flexShrink: 0 }}>
-                      {getIconeArquivo(arq.tipo)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="nome-arquivo" style={{ fontSize: 14, fontWeight: 600, color: "var(--texto)" }}>{arq.nome}</div>
-                      <div style={{ fontSize: 12, color: "var(--texto-sec)", marginTop: 4 }}>Tamanho: {arq.tamanho} • Por: {arq.enviadoPor}</div>
-                    </div>
-                  </div>
-
-                  {/* --- Área de Ações do Arquivo --- */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, width: '100%' }}>
-                    {arq.url ? (
-                      <a
-                        href={arq.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-ver-arquivo"
-                        style={{
-                          flex: 1,
-                          padding: '10px 0',
-                          background: '#6F3B9D',
-                          color: '#fff',
-                          textAlign: 'center',
-                          borderRadius: 8,
-                          fontWeight: 600,
-                          fontSize: 13,
-                          textDecoration: 'none',
-                          display: 'inline-block'
-                        }}
-                      >
-                        Ver arquivo
-                      </a>
-                    ) : (
-                      <div className="btn-ver-arquivo" style={{ flex: 1, padding: '10px 0', background: '#e5e7eb', color: '#9ca3af', textAlign: 'center', borderRadius: 8, fontWeight: 600, fontSize: 13 }}>
-                        Arquivo indisponível
-                      </div>
-                    )}
-
-                    {isCoordenador && (
-                      <button
-                        onClick={() => setArquivoParaDeletar(arq)} // ABRE O NOVO MODAL
-                        className="btn-lixeira"
-                        style={{
-                          background: '#FFF0F3',
-                          border: '1px solid #ffccc7',
-                          color: '#EF4444',
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        title="Deletar arquivo"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Bloco de Fluxo de Solicitações */}
-        <div className="grid-wrapper">
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-            Fila de Pedidos à Coordenação
-          </h3>
-          {solicitacoes.length === 0 ? (
-            <p style={{ fontSize: 12, color: "var(--texto-sec)", fontStyle: "italic" }}>Nenhum pedido efetuado até ao momento.</p>
-          ) : (
-            <div style={{ display: "grid", gap: 8, width: "100%" }}>
-              {solicitacoes.map((sol) => (
-                <div key={sol.id} className="solicitacao-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "var(--branco)", borderRadius: 8, border: "1px solid var(--borda)" }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, marginRight: 8, background: (sol.status || "pendente") === "pendente" ? "#fef3c7" : "#d1fae5", color: (sol.status || "pendente") === "pendente" ? "#d97706" : "#065f46" }}>
-                      {(sol.status || "pendente").toUpperCase()}
-                    </span>
-                    <strong style={{ fontSize: 13, color: "var(--texto)" }}>{sol.nome}</strong>
-                    <div style={{ fontSize: 11, color: "var(--texto-sec)", marginTop: 2 }}>Pedido por: {sol.professorNome}</div>
-                    {sol.descricao && (
-                      <div style={{ fontSize: 11, color: "var(--texto-sec)", marginTop: 2, maxWidth: "100%" }}>{sol.descricao}</div>
-                    )}
-                    {sol.arquivoUrl && (
-                      <a href={sol.arquivoUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#6F3B9D", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, textDecoration: "none", fontWeight: 600 }}>
-                        Ver arquivo enviado <ExternalLink size={11} />
-                      </a>
-                    )}
-                  </div>
-
-                  {isCoordenador && (sol.status || "pendente") === "pendente" && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", flexShrink: 0 }}>
-                      <button
-                        onClick={() => handleAprovar(sol)}
-                        disabled={Boolean(processandoSolicitacaoId)}
-                        style={{
-                          background: "#10B981", color: "#fff", border: "none", borderRadius: 6,
-                          padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: processandoSolicitacaoId ? "wait" : "pointer",
-                          display: "flex", alignItems: "center", gap: 4, opacity: processandoSolicitacaoId === sol.id ? 0.7 : 1
-                        }}
-                      >
-                        <CheckCircle size={14} /> Aprovar
-                      </button>
-                      <button
-                        onClick={() => handleRecusar(sol)}
-                        disabled={Boolean(processandoSolicitacaoId)}
-                        style={{
-                          background: "#ef4444", color: "#fff", border: "none", borderRadius: 6,
-                          padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: processandoSolicitacaoId ? "wait" : "pointer",
-                          display: "flex", alignItems: "center", gap: 4, opacity: processandoSolicitacaoId === sol.id ? 0.7 : 1
-                        }}
-                      >
-                        <XCircle size={14} /> Recusar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <BlocoArquivos
+          titulo="Arquivos da Turma"
+          corTitulo="#4f46e5"
+          arquivos={arquivosProfessores}
+          podeDeletarArquivo={podeDeletarArquivo}
+          onDeletar={setArquivoParaDeletar}
+          vazioTexto="Nenhum documento enviado pelos professores ainda."
+        />
 
       </div>
 
-      {/* Modal Lateral / Flutuante: Solicitar Novo Arquivo */}
+      {/* Modal: Adicionar Arquivo */}
       <AnimatePresence>
-        {modalSolicitarAberto && (
+        {modalAdicionarAberto && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-            <div className="turma-arquivos-modal" style={{ background: "var(--branco)", padding: 24, borderRadius: 16, width: "calc(100% - 32px)", maxWidth: 400, maxHeight: "85vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>              <h4 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "var(--texto)" }}>Nova Solicitação</h4>
-              <form onSubmit={handleEnviarSolicitacao}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Nome Exato do Arquivo/Documento</label>
+            <div className="turma-arquivos-modal" style={{ background: "var(--branco)", padding: 24, borderRadius: 16, width: "calc(100% - 32px)", maxWidth: 400, maxHeight: "85vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+              <h4 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "var(--texto)" }}>Adicionar arquivo</h4>
+
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => { setNovoArquivo((prev) => ({ ...prev, modo: "arquivo" })); setErroAdicionar(""); }}
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 8,
+                    border: novoArquivo.modo === "arquivo" ? "1.5px solid #6F3B9D" : "1.5px solid #e5e7eb",
+                    background: novoArquivo.modo === "arquivo" ? "var(--roxo-claro)" : "transparent",
+                    color: novoArquivo.modo === "arquivo" ? "#6F3B9D" : "var(--texto-sec)",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer"
+                  }}
+                >
+                  Enviar arquivo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setNovoArquivo((prev) => ({ ...prev, modo: "link" })); setErroAdicionar(""); }}
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 8,
+                    border: novoArquivo.modo === "link" ? "1.5px solid #6F3B9D" : "1.5px solid #e5e7eb",
+                    background: novoArquivo.modo === "link" ? "var(--roxo-claro)" : "transparent",
+                    color: novoArquivo.modo === "link" ? "#6F3B9D" : "var(--texto-sec)",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer"
+                  }}
+                >
+                  Link do Google Drive
+                </button>
+              </div>
+
+              <form onSubmit={handleEnviarArquivo}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Nome do documento (opcional)</label>
                 <input
                   type="text"
-                  placeholder="Ex: Ata_Reuniao_Abril.pdf"
-                  value={novaSolicitacao.nome}
-                  onChange={e => setNovaSolicitacao({ ...novaSolicitacao, nome: e.target.value })}
+                  placeholder="Ex: Lista de exercícios - Cap. 3"
+                  value={novoArquivo.nome}
+                  onChange={e => setNovoArquivo({ ...novoArquivo, nome: e.target.value })}
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 13, marginBottom: 16, outline: "none" }}
                 />
 
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Arquivo para análise</label>
-                <label style={{ width: "100%", padding: "12px", borderRadius: 8, border: "1.5px dashed #6F3B9D", fontSize: 13, marginBottom: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#6F3B9D", background: "var(--roxo-claro)" }}>
-                  <Upload size={16} flexShrink={0} />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {novaSolicitacao.arquivo ? novaSolicitacao.arquivo.name : "Selecionar arquivo"}
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,image/*"
-                    onChange={e => {
-                      const arquivo = e.target.files?.[0] || null;
-                      setNovaSolicitacao(prev => ({
-                        ...prev,
-                        arquivo,
-                        nome: prev.nome || arquivo?.name || ""
-                      }));
-                      setErroSolicitacao("");
-                    }}
-                    style={{ display: "none" }}
-                  />
-                </label>
+                {novoArquivo.modo === "arquivo" ? (
+                  <>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Arquivo</label>
+                    <label style={{ width: "100%", padding: "12px", borderRadius: 8, border: "1.5px dashed #6F3B9D", fontSize: 13, marginBottom: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#6F3B9D", background: "var(--roxo-claro)" }}>
+                      <Upload size={16} flexShrink={0} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {novoArquivo.arquivo ? novoArquivo.arquivo.name : "Selecionar arquivo"}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".ppt,.pptx,.doc,.docx,.xls,.xlsx,.zip,.rar,image/*"
+                        onChange={handleSelecionarArquivo}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                    <p style={{ fontSize: 11, color: "var(--texto-sec)", margin: "0 0 16px" }}>
+                      PowerPoint, Word, Excel, imagens, ZIP ou RAR — até 10MB.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Link do Google Drive</label>
+                    <input
+                      type="url"
+                      placeholder="https://docs.google.com/..."
+                      value={novoArquivo.link}
+                      onChange={e => setNovoArquivo({ ...novoArquivo, link: e.target.value })}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 13, marginBottom: 16, outline: "none" }}
+                    />
+                    <p style={{ fontSize: 11, color: "var(--texto-sec)", margin: "-10px 0 16px" }}>
+                      Use para Google Docs, Google Apresentações e outros arquivos do Drive.
+                    </p>
+                  </>
+                )}
 
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--texto-sec)", marginBottom: 6 }}>Justificação / Observações</label>
-                <textarea
-                  placeholder="Explique à coordenação o motivo deste documento..."
-                  value={novaSolicitacao.descricao}
-                  onChange={e => setNovaSolicitacao({ ...novaSolicitacao, descricao: e.target.value })}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 13, minHeight: 70, marginBottom: 20, outline: "none", resize: "none" }}
-                />
-
-                {erroSolicitacao && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 12px" }}>{erroSolicitacao}</p>}
+                {erroAdicionar && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 12px" }}>{erroAdicionar}</p>}
 
                 <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                  <button type="button" onClick={() => setModalSolicitarAberto(false)} style={{ padding: "8px 16px", background: "var(--roxo-claro)", border: "1px solid var(--borda)", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--texto)", cursor: "pointer" }}>Cancelar</button>
+                  <button type="button" onClick={() => setModalAdicionarAberto(false)} style={{ padding: "8px 16px", background: "var(--roxo-claro)", border: "1px solid var(--borda)", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--texto)", cursor: "pointer" }}>Cancelar</button>
                   <button type="submit" disabled={enviando} style={{ padding: "8px 16px", background: "#6F3B9D", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
-                    {enviando ? "A enviar..." : "Enviar Pedido"}
+                    {enviando ? "Enviando..." : "Adicionar"}
                   </button>
                 </div>
               </form>

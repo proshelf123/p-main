@@ -90,6 +90,44 @@ match /escolas/{escolaId} {
           || eCoordenador()
           || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
         );
+      // Faltava isso: sem ela, o professor vinculado não conseguia salvar registro de aula.
+      allow write: if logado()
+        && (
+          eDono(uid)
+          || eCoordenador()
+          || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
+        );
+    }
+
+    // ── Alunos da turma (roster) — só coordenação gerencia ──────
+    match /turmas/{uid}/lista/{turmaId}/alunos/{alunoId} {
+      allow read: if logado()
+        && (
+          eDono(uid)
+          || eCoordenador()
+          || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
+        );
+      allow write: if logado() && (eDono(uid) || eCoordenador());
+    }
+
+    // ── Presença ──────────────────────────────────────────────
+    match /turmas/{uid}/lista/{turmaId}/presencas/{presencaId} {
+      allow read, write: if logado()
+        && (
+          eDono(uid)
+          || eCoordenador()
+          || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
+        );
+    }
+
+    // ── Notas — professor escreve, coordenação lê/edita ────────
+    match /turmas/{uid}/lista/{turmaId}/notas/{notaId} {
+      allow read, write: if logado()
+        && (
+          eDono(uid)
+          || eCoordenador()
+          || get(/databases/$(database)/documents/turmas/$(uid)/lista/$(turmaId)).data.professorId == request.auth.uid
+        );
     }
 
     // ── Cronograma pessoal ──────────────────────────────────────
@@ -152,7 +190,7 @@ match /escolas/{escolaId} {
         );
     }
 
-    // ── Solicitações de arquivos (TurmaArquivos.jsx) ────────────
+    // ── Solicitações de arquivos (fluxo antigo, mantido por compatibilidade) ────
     // Qualquer professor autenticado cria; coordenador lê e atualiza
     match /solicitacoes_arquivos/{docId} {
       allow read: if logado();
@@ -160,11 +198,22 @@ match /escolas/{escolaId} {
       allow update, delete: if eCoordenador();
     }
 
-    // ── Arquivos aprovados pela coordenação ─────────────────────
-    // Todos leem; só coordenador escreve/deleta
+    // ── Arquivos das turmas (TurmaArquivos.jsx) ──────────────────
+    // Todos os logados leem. Qualquer professor ou coordenador pode
+    // ADICIONAR arquivo direto, desde que grave o próprio uid e a
+    // própria role em "origem" (impede professor se passar por coordenador).
+    // Só a coordenação edita. Deletar: coordenação ou o próprio dono do arquivo.
     match /turmas_arquivos_aprovados/{docId} {
       allow read: if logado();
-      allow create, update, delete: if eCoordenador();
+      allow create: if logado()
+        && request.resource.data.enviadoPorUid == request.auth.uid
+        && (
+             (eCoordenador() && request.resource.data.origem == "coordenador")
+             || (!eCoordenador() && request.resource.data.origem == "professor")
+           );
+      allow update: if eCoordenador();
+      allow delete: if eCoordenador()
+        || (logado() && resource.data.enviadoPorUid == request.auth.uid);
     }
 
     // ── Configurações da Escola ─────────────────────────────────
@@ -180,6 +229,11 @@ match /escolas/{escolaId} {
     // Se a coleção não foi mapeada acima, bloqueia tudo
     match /{document=**} {
       allow read, write: if false;
+    }
+      // ── Alunos globais por Sala (nova arquitetura) ─────────────
+    match /salas/{escolaId}/{nomeSala}/alunos/{alunoId} {
+      allow read: if logado();
+      allow write: if eCoordenador();
     }
   }
 }

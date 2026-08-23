@@ -97,15 +97,6 @@ export default function Perfil({ uid, onFechar }) {
                 placeholder='Ex: Maria da Silva'
               />
             </div>
-            <div className='perfil-grupo'>
-              <label className='perfil-label'>Nome de usuário</label>
-              <input
-                className='perfil-input'
-                value={form.nomeUsuario}
-                onChange={e => setForm({ ...form, nomeUsuario: e.target.value })}
-                placeholder='Ex: maria.silva'
-              />
-            </div>
           </div>
 
           <div className='perfil-linha-2'>

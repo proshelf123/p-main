@@ -35,6 +35,13 @@ const CURSOS_CRONOGRAMA = {
   INFONET: 'Informática para Internet',
 }
 
+// NOVO: Mapeamento de cores dos períodos idêntico à tela de Arquivos
+const PERIODOS_BASE = [
+  { nome: 'Matutino', cor: '#F59E0B' },
+  { nome: 'Vespertino', cor: '#8B5CF6' },
+  { nome: 'Noturno', cor: '#1E40AF' },
+]
+
 const TRANSICAO_CRONOGRAMA = {
   duration: 0.22,
   ease: 'easeOut',
@@ -436,6 +443,7 @@ function montarAulasEditorDoCurso(aulas = []) {
   return todas.length > 0 ? todas : aulasEditorIniciais()
 }
 
+// ── ALTERAÇÃO: Agrupar curso salvando o período no objeto ──
 function agruparPorCurso(aulas) {
   const mapa = new Map()
 
@@ -447,6 +455,7 @@ function agruparPorCurso(aulas) {
         aulas: [],
         professores: new Set(),
         dias: new Set(),
+        periodo: aula.periodo || 'Matutino', // <- Salva o período para usarmos na grid
       })
     }
 
@@ -522,6 +531,8 @@ export default function Cronogramas({
   const [diaAtivo, setDiaAtivo] = useState(() => DIAS[new Date().getDay()])
   const [cronograma, setCronograma] = useState(() => cronogramasIniciais)
   const [cursoSelecionado, setCursoSelecionado] = useState(null)
+  const [draftCursoId, setDraftCursoId] = useState(null)
+  
   const [loading, setLoading] = useState(() => !cronogramasCarregados)
   const [status, setStatus] = useState(() =>
     cronogramasCarregados && cronogramasIniciais.length === 0 ? MENSAGEM_SEM_HORARIO : ''
@@ -534,11 +545,8 @@ export default function Cronogramas({
   const [professoresDisciplinas, setProfessoresDisciplinas] = useState({})
   const [salvandoEditor, setSalvandoEditor] = useState(false)
   
-  // Estado para exclusão do CURSO (já existente)
   const [deletandoCursoId, setDeletandoCursoId] = useState('')
   const [confirmarDeleteCurso, setConfirmarDeleteCurso] = useState(null)
-
-  // NOVO: Estado para exclusão de uma AULA da grade
   const [confirmarDeleteAulaIndex, setConfirmarDeleteAulaIndex] = useState(null)
 
   const [erroEditor, setErroEditor] = useState('')
@@ -605,9 +613,23 @@ export default function Cronogramas({
     if (rascunho?.abaEditor === 'grade' && rascunho?.formCurso?.curso) {
       setAbaEditor('grade')
     }
+    if (rascunho?.cursoSelecionadoId) {
+      setDraftCursoId(rascunho.cursoSelecionadoId)
+    }
 
     setRascunhoEditorCarregado(true)
   }, [uid, isCoordenador])
+
+  useEffect(() => {
+    if (cronogramasCarregados && draftCursoId && !cursoSelecionado) {
+      const listaCursos = agruparPorCurso(cronograma)
+      const cursoRestaurado = listaCursos.find(c => c.id === draftCursoId)
+      if (cursoRestaurado) {
+        setCursoSelecionado(cursoRestaurado)
+      }
+      setDraftCursoId(null)
+    }
+  }, [cronogramasCarregados, draftCursoId, cursoSelecionado, cronograma])
 
   const editorTemRascunhoAtual = Boolean(
     formCurso.curso.trim()
@@ -618,7 +640,6 @@ export default function Cronogramas({
           aula[grupo].disciplina || aula[grupo].professor || aula[grupo].sala
         )) || aula.horario
       }
-
       return aula.disciplina || aula.professor || aula.sala || aula.horario
     })
   )
@@ -635,9 +656,10 @@ export default function Cronogramas({
       abaEditor,
       formCurso,
       aulasEditor,
+      cursoSelecionadoId: cursoSelecionado?.id || null,
       atualizadoEm: new Date().toISOString(),
     })
-  }, [uid, isCoordenador, rascunhoEditorCarregado, editorTemRascunhoAtual, abaEditor, formCurso, aulasEditor])
+  }, [uid, isCoordenador, rascunhoEditorCarregado, editorTemRascunhoAtual, abaEditor, formCurso, aulasEditor, cursoSelecionado])
 
   async function carregarCronograma() {
     setLoading(true)
@@ -682,7 +704,6 @@ export default function Cronogramas({
     ? DIA_LABEL[diaAtivo]
     : 'Segunda'
   
-  // Mapeamos armazenando o INDEX real da aula em "aulasEditor", para usarmos ao deletar
   const aulasEditorDoDia = aulasEditor
     .map((aula, index) => ({ aula, index }))
     .filter(({ aula }) => aula.dia === diaEditorAtivo)
@@ -798,7 +819,6 @@ export default function Cronogramas({
         aula[grupo].disciplina || aula[grupo].professor || aula[grupo].sala
       )) || aula.horario
     }
-
     return aula.disciplina || aula.professor || aula.sala || aula.horario
   }
 
@@ -849,7 +869,6 @@ export default function Cronogramas({
     if (valorAtual && !opcoes.some((opcao) => opcao.valor === valorAtual || opcao.label === valorAtual)) {
       return [...opcoes, { valor: valorAtual, label: valorAtual }]
     }
-
     return opcoes
   }
 
@@ -914,7 +933,7 @@ export default function Cronogramas({
             dia: aula.dia,
             ordem,
             horario: aula.horario,
-            periodo: aula.periodo,
+            periodo: formCurso.periodo, // <--- TRAVADO NO PERÍODO DO CURSO
             disciplina: dadosGrupo.disciplina.trim(),
             professor: dadosGrupo.professor.trim(),
             sala: dadosGrupo.sala.trim(),
@@ -933,7 +952,7 @@ export default function Cronogramas({
         dia: aula.dia,
         ordem,
         horario: aula.horario,
-        periodo: aula.periodo,
+        periodo: formCurso.periodo, // <--- TRAVADO NO PERÍODO DO CURSO
         disciplina: aula.disciplina.trim(),
         professor: aula.professor.trim(),
         sala: aula.sala.trim(),
@@ -997,7 +1016,7 @@ export default function Cronogramas({
       setErroEditor('')
       setSucessoEditor('')
 
-await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
+      await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
 
       if (normalizarTextoCronograma(nomeTurmaEditor()) === curso.id) {
         limparRascunhoCronograma(uid)
@@ -1039,7 +1058,7 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
               Cronogramas
             </h2>
             <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
-              Crie, edite e veja seus cronogramas
+              Acesse seus cronogramas e gerencie seu horário de forma eficiente.
             </p>
           </div>
         </div>
@@ -1097,15 +1116,28 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
                 </div>
 
                 <div className='crono-editor-dropdown'>
-                  <DropdownComPortal
-                    label='Período'
-                    opcoes={PERIODOS_EDITOR}
-                    valor={formCurso.periodo}
-                    onChange={(valor) => atualizarFormCurso('periodo', valor)}
-                    id='crono-periodo'
-                    dropdownAberto={dropdownEditorAberto}
-                    setDropdownAberto={setDropdownEditorAberto}
-                  />
+                  {/* TRAVA O PERÍODO SE O CURSO JÁ ESTIVER SALVO */}
+                  {cursoSelecionado ? (
+                    <div className="perfil-grupo">
+                      <label className="perfil-label">Período</label>
+                      <input 
+                        className="perfil-input" 
+                        value={formCurso.periodo} 
+                        disabled 
+                        style={{ background: "var(--bg)", cursor: "not-allowed", color: "var(--texto-sec)", opacity: 0.8 }} 
+                      />
+                    </div>
+                  ) : (
+                    <DropdownComPortal
+                      label='Período'
+                      opcoes={PERIODOS_EDITOR}
+                      valor={formCurso.periodo}
+                      onChange={(valor) => atualizarFormCurso('periodo', valor)}
+                      id='crono-periodo'
+                      dropdownAberto={dropdownEditorAberto}
+                      setDropdownAberto={setDropdownEditorAberto}
+                    />
+                  )}
                 </div>
 
                 <button className='crono-editor-acao' onClick={avancarParaGrade}>
@@ -1165,7 +1197,6 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
                   <div className='crono-editor-head'>
                     <span>Aula</span>
                     <span>Horário</span>
-                    <span>Período</span>
                     <span>A/B</span>
                     <span>Disciplina</span>
                     <span>Professor</span>
@@ -1194,19 +1225,6 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
                           value={aula.horario}
                           onChange={(e) => atualizarAulaEditor(index, 'horario', e.target.value)}
                         />
-                      </div>
-
-                      <div className="crono-celula" data-label="Período">
-                        <div className='crono-editor-grade-dropdown'>
-                          <DropdownComPortal
-                            opcoes={PERIODOS_EDITOR}
-                            valor={aula.periodo}
-                            onChange={(valor) => atualizarAulaEditor(index, 'periodo', valor)}
-                            id={`crono-periodo-${aula.id}`}
-                            dropdownAberto={dropdownEditorAberto}
-                            setDropdownAberto={setDropdownEditorAberto}
-                          />
-                        </div>
                       </div>
 
                       <div className="crono-celula" data-label="Turma Dividida (A/B)">
@@ -1343,50 +1361,99 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
       ) : (
         <AnimatePresence mode='wait'>
           {!cursoSelecionado ? (
-            <MotionDiv
-              key='cursos'
-              className='crono-cursos-grid'
-              {...ANIMACAO_PAINEL}
-            >
-              {cursos.map((curso, index) => (
-                <MotionDiv
-                  key={curso.id}
-                  className={`crono-curso-card ${deletandoCursoId === curso.id ? 'deletando' : ''}`}
-                  onClick={() => abrirCurso(curso)}
-                  onKeyDown={(event) => abrirCursoPeloTeclado(event, curso)}
-                  role='button'
-                  tabIndex={0}
-                  {...ANIMACAO_CARD_CURSO}
-                  transition={{
-                    ...TRANSICAO_CRONOGRAMA,
-                    delay: Math.min(index * 0.035, 0.18),
-                  }}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {isCoordenador && (
-                    <button
-                      type='button'
-                      className='crono-curso-deletar'
-                      onClick={(event) => solicitarDeleteCurso(curso, event)}
-                      disabled={Boolean(deletandoCursoId)}
-                      aria-label={`Deletar curso ${curso.titulo}`}
-                      title='Deletar curso'
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                  <span className='crono-curso-ano'>{curso.ano ? `${curso.ano}º ano` : 'Curso'}</span>
-                  <strong>{curso.cursoNome}</strong>
-                  <span className='crono-curso-sigla'>{curso.id}</span>
-                  <span className='crono-curso-meta'>
-                    {curso.aulas.length} aula{curso.aulas.length !== 1 ? 's' : ''} • {curso.dias.size} dia{curso.dias.size !== 1 ? 's' : ''}
-                  </span>
-                  <span className='crono-curso-meta'>
-                    {curso.professores.size} professor{curso.professores.size !== 1 ? 'es' : ''}
-                  </span>
-                </MotionDiv>
-              ))}
+            <MotionDiv key='cursos' {...ANIMACAO_PAINEL} style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+              
+              {/* --- AGRUPAMENTO DA LISTA DE CURSOS (NOVO LAYOUT) --- */}
+              {(() => {
+                const cursosAgrupados = PERIODOS_BASE.map(p => ({
+                  ...p,
+                  cursos: cursos.filter(c => (c.periodo || 'Matutino').toLowerCase().includes(p.nome.toLowerCase()))
+                })).filter(p => p.cursos.length > 0);
+
+                return cursosAgrupados.map((periodo, pi) => {
+                  const turmasPorAno = {};
+                  periodo.cursos.forEach(curso => {
+                    const ano = curso.ano ? `${curso.ano}º` : 'Outros';
+                    if (!turmasPorAno[ano]) turmasPorAno[ano] = [];
+                    turmasPorAno[ano].push(curso);
+                  });
+
+                  const anosOrdenados = Object.keys(turmasPorAno).sort((a,b) => {
+                    if (a === 'Outros') return 1;
+                    if (b === 'Outros') return -1;
+                    return a.localeCompare(b);
+                  });
+
+                  return (
+                    <MotionDiv key={periodo.nome} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: pi * 0.1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 10, borderBottom: `2px solid ${periodo.cor}22` }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: periodo.cor }}>
+                          PERÍODO {periodo.nome}
+                        </span>
+                        <span style={{ fontSize: 12, background: periodo.cor + '18', color: periodo.cor, borderRadius: 99, padding: '2px 10px', fontWeight: 600 }}>
+                          {periodo.cursos.length} curso{periodo.cursos.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                        {anosOrdenados.map(ano => (
+                          <div key={ano}>
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', fontWeight: 700, color: 'var(--texto)', margin: '0 0 16px 0' }}>
+                              {ano === 'Outros' ? <span>Outros cursos:</span> : (
+                                <>
+                                  <span style={{ fontSize: '22px', fontWeight: 800, color: periodo.cor, lineHeight: 1 }}>{ano}</span>
+                                  <span style={{ fontSize: '18px', fontWeight: 600, color: 'var(--texto)' }}>anos:</span>
+                                </>
+                              )}
+                            </h3>
+
+                            <div className='crono-cursos-grid'>
+                              {turmasPorAno[ano].map((curso, index) => (
+                                <MotionDiv
+                                  key={curso.id}
+                                  className={`crono-curso-card ${deletandoCursoId === curso.id ? 'deletando' : ''}`}
+                                  onClick={() => abrirCurso(curso)}
+                                  onKeyDown={(event) => abrirCursoPeloTeclado(event, curso)}
+                                  role='button'
+                                  tabIndex={0}
+                                  {...ANIMACAO_CARD_CURSO}
+                                  transition={{ ...TRANSICAO_CRONOGRAMA, delay: Math.min(index * 0.035, 0.18) }}
+                                  whileHover={{ y: -2 }}
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  {isCoordenador && (
+                                    <button
+                                      type='button'
+                                      className='crono-curso-deletar'
+                                      onClick={(event) => solicitarDeleteCurso(curso, event)}
+                                      disabled={Boolean(deletandoCursoId)}
+                                      title='Deletar curso'
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+                                  <span className='crono-curso-ano' style={{ color: periodo.cor }}>
+                                    {curso.ano ? `${curso.ano}º ano` : 'Curso'}
+                                  </span>
+                                  <strong>{curso.cursoNome}</strong>
+                                  <span className='crono-curso-sigla'>{curso.id}</span>
+                                  <span className='crono-curso-meta'>
+                                    {curso.aulas.length} aula{curso.aulas.length !== 1 ? 's' : ''} • {curso.dias.size} dia{curso.dias.size !== 1 ? 's' : ''}
+                                  </span>
+                                  <span className='crono-curso-meta'>
+                                    {curso.professores.size} professor{curso.professores.size !== 1 ? 'es' : ''}
+                                  </span>
+                                </MotionDiv>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </MotionDiv>
+                  );
+                });
+              })()}
+
             </MotionDiv>
           ) : (
             <MotionDiv
@@ -1410,71 +1477,75 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
 
               <p className='crono-data'>{formatarData(diaAtivo)}</p>
 
-              {Object.entries(periodos).map(([nomePeriodo, aulasGrupo]) => (
-                <div key={nomePeriodo} className='crono-periodo-bloco'>
-                  <h3 className='crono-periodo-titulo'>
-                    Período {nomePeriodo}
-                    {aulasGrupo.length > 0
-                      ? ` – ${aulasGrupo.length} aula${aulasGrupo.length > 1 ? 's' : ''}`
-                      : ' – Sem aulas'}
-                  </h3>
+              {/* --- TELA DE AULAS COM PERÍODOS VAZIOS OCULTADOS --- */}
+              {aulasDoDia.length === 0 ? (
+                <p className='crono-vazia'>Nenhuma aula programada para este dia.</p>
+              ) : (
+                Object.entries(periodos).map(([nomePeriodo, aulasGrupo]) => {
+                  if (aulasGrupo.length === 0) return null; // AQUI REMOVE OS VAZIOS
 
-                  {aulasGrupo.length > 0 && (
-                    <div className='crono-lista'>
-                      {aulasGrupo.map((aula, i) => {
-                        const disc = nomeDisciplina(aula.disciplina)
-                        const semGrade = !aula.disciplina || aula.disciplina.trim() === ''
-                        const { bg, cor } = corDisciplina(disc, coresDisciplinas)
-                        const primeiraLinha = i === 0
-                        const ocultarOrdem = divisaoDaAula(aula) === 'B'
+                  return (
+                    <div key={nomePeriodo} className='crono-periodo-bloco'>
+                      <h3 className='crono-periodo-titulo'>
+                        Período {nomePeriodo} – {aulasGrupo.length} aula{aulasGrupo.length > 1 ? 's' : ''}
+                      </h3>
 
-                        return (
-                          <div key={i} className='crono-pill-row'>
-                            <span className={`crono-pill-ordem ${ocultarOrdem ? 'vazia' : ''}`}>
-                              {ocultarOrdem ? '' : rotuloAulaComHorario(aula)}
-                            </span>
+                      <div className='crono-lista'>
+                        {aulasGrupo.map((aula, i) => {
+                          const disc = nomeDisciplina(aula.disciplina)
+                          const semGrade = !aula.disciplina || aula.disciplina.trim() === ''
+                          const { bg, cor } = corDisciplina(disc, coresDisciplinas)
+                          const primeiraLinha = i === 0
+                          const ocultarOrdem = divisaoDaAula(aula) === 'B'
 
-                            <div className='crono-pill-col'>
-                              {primeiraLinha && <span className='crono-pill-label'>Disciplina ministrada</span>}
-                              {semGrade ? (
-                                <span className='crono-pill-sem-grade'>Sem grade</span>
-                              ) : (
-                                <span
-                                  className='crono-pill-disc'
-                                  style={{ background: bg, color: cor }}
-                                >
-                                  {disc}
+                          return (
+                            <div key={i} className='crono-pill-row'>
+                              <span className={`crono-pill-ordem ${ocultarOrdem ? 'vazia' : ''}`}>
+                                {ocultarOrdem ? '' : rotuloAulaComHorario(aula)}
+                              </span>
+
+                              <div className='crono-pill-col'>
+                                {primeiraLinha && <span className='crono-pill-label'>Disciplina ministrada</span>}
+                                {semGrade ? (
+                                  <span className='crono-pill-sem-grade'>Sem grade</span>
+                                ) : (
+                                  <span
+                                    className='crono-pill-disc'
+                                    style={{ background: bg, color: cor }}
+                                  >
+                                    {disc}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className='crono-pill-col'>
+                                {primeiraLinha && <span className='crono-pill-label'>Turma</span>}
+                                <span className='crono-pill-turma'>
+                                  {aula.turma || '—'}
                                 </span>
-                              )}
-                            </div>
+                              </div>
 
-                            <div className='crono-pill-col'>
-                              {primeiraLinha && <span className='crono-pill-label'>Turma</span>}
-                              <span className='crono-pill-turma'>
-                                {aula.turma || '—'}
-                              </span>
-                            </div>
+                              <div className='crono-pill-col'>
+                                {primeiraLinha && <span className='crono-pill-label'>Professor</span>}
+                                <span className='crono-pill-professor'>
+                                  {aula.professor || 'Sem professor'}
+                                </span>
+                              </div>
 
-                            <div className='crono-pill-col'>
-                              {primeiraLinha && <span className='crono-pill-label'>Professor</span>}
-                              <span className='crono-pill-professor'>
-                                {aula.professor || 'Sem professor'}
-                              </span>
+                              <div className='crono-pill-col'>
+                                {primeiraLinha && <span className='crono-pill-label'>Sala</span>}
+                                <span className='crono-pill-sala'>
+                                  {aula.sala || '—'}
+                                </span>
+                              </div>
                             </div>
-
-                            <div className='crono-pill-col'>
-                              {primeiraLinha && <span className='crono-pill-label'>Sala</span>}
-                              <span className='crono-pill-sala'>
-                                {aula.sala || '—'}
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })}
+                          )
+                        })}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                  )
+                })
+              )}
             </MotionDiv>
           )}
         </AnimatePresence>
@@ -1490,7 +1561,7 @@ await deletarCronogramaCursoManual({ uid, nomeTurma: curso.id })
         />
       )}
 
-      {/* NOVO Modal Deletar AULA (Grade Editor) */}
+      {/* Modal Deletar AULA (Grade Editor) */}
       {confirmarDeleteAulaIndex !== null && (
         <ModalConfirmarAula
           aula={aulasEditor[confirmarDeleteAulaIndex]}

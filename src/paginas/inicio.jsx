@@ -55,7 +55,7 @@ function Inicio() {
                 <motion.span variants={container} initial="hidden" animate="visible" className={styles.textoMenu}>
                   {renderAnimatedText("Cadastrar Nova Escola")}
                 </motion.span>
-                <img src={IconeEscola} className={styles.iconeMenu} alt="Ícone" />
+                      <School color="#331C48" size={30} strokeWidth={1.75} alt="Ícone" style={{ marginLeft: '8px' }} />
               </Link>
             </motion.li>
 
@@ -64,7 +64,7 @@ function Inicio() {
                 <motion.span variants={container} initial="hidden" animate="visible" className={styles.textoMenu}>
                   {renderAnimatedText("Área da Escola")}
                 </motion.span>
-                <School color="#331C48" size={30} strokeWidth={1.75} alt="Ícone" style={{ marginLeft: '8px' }} />
+                <img src={IconeEscola} className={styles.iconeMenu} alt="Ícone" />
               </Link>
             </motion.li>
 

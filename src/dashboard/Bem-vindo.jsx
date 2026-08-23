@@ -118,9 +118,8 @@ function MiniCalendario({ eventos = [] }) {
           return (
             <span
               key={dia}
-              className={`bv-cal-dia ${isHoje ? "hoje" : ""} ${
-                temEvento ? "tem-evento" : ""
-              }`}
+              className={`bv-cal-dia ${isHoje ? "hoje" : ""} ${temEvento ? "tem-evento" : ""
+                }`}
             >
               {dia}
               {temEvento && <span className="bv-cal-dot" />}
@@ -251,10 +250,10 @@ export default function Bemvindo({
 }) {
   const eCoordenador = professor?.role === "coordenador";
   const nome = professor?.nome ?? "";
-  const tituloCronogramas = eCoordenador ? "Cronogramas" : "Próxima aula";
+  const tituloCronogramas = eCoordenador ? "Cronogramas" : "Próximas aulas";
   const textoVazioCronogramas = eCoordenador
     ? "Nenhum cronograma encontrado."
-    : "Nenhuma próxima aula encontrada.";
+    : "Nenhuma aula agendada para hoje.";
 
   return (
     <div className="bv-wrapper">
@@ -286,12 +285,11 @@ export default function Bemvindo({
             <Layers size={14} />
             <span>
               {eCoordenador
-                ? `${cronogramas.length} cronograma${
-                    cronogramas.length !== 1 ? "s" : ""
-                  }`
+                ? `${cronogramas.length} cronograma${cronogramas.length !== 1 ? "s" : ""
+                }`
                 : cronogramas.length > 0
-                ? "1 próxima aula"
-                : "Sem próxima aula"}
+                  ? `${cronogramas.length} próxima${cronogramas.length > 1 ? "s" : ""} aula${cronogramas.length > 1 ? "s" : ""}`
+                  : "Sem próximas aulas"}
             </span>
           </div>
           <div className="bv-chip">
@@ -300,12 +298,12 @@ export default function Bemvindo({
               {eventos.filter((e) => converterData(e.data) >= hoje()).length}{" "}
               evento
               {eventos.filter((e) => converterData(e.data) >= hoje()).length !==
-              1
+                1
                 ? "s"
                 : ""}{" "}
               próximo
               {eventos.filter((e) => converterData(e.data) >= hoje()).length !==
-              1
+                1
                 ? "s"
                 : ""}
             </span>

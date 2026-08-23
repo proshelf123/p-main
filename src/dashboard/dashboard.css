@@ -871,3 +871,54 @@ body:has(.dash-wrapper) {
     font-size: calc(15px * var(--font-size-base));
   }
 }
+
+
+/* ── Submenus do Coordenador (Hover Lateral) ── */
+.nav-coord-sub-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.nav-coord-sub-menu {
+  position: absolute;
+  top: -9px; /* Alinha perfeitamente com o topo do botão pai */
+  left: 100%;
+  margin-left: 6px;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  
+  /* Estado inicial oculto com animação de slide horizontal */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 210;
+}
+
+/* Quando passar o mouse no botão pai, exibe o submenu */
+.nav-coord-sub-wrapper:hover .nav-coord-sub-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.nav-coord-sub-seta {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.nav-coord-sub-wrapper:hover .nav-coord-sub-seta {
+  transform: translateX(3px); /* Setinha "empurra" pra direita no hover */
+}
+
+/* Suporte ao Modo Escuro */
+:root.dark-mode .nav-coord-sub-menu {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}

@@ -1,51 +1,22 @@
-// CustomDatePicker.jsx
-import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect } from 'react'
 import { Calendar } from 'lucide-react';
-
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const DIAS_SEMANA = ['D','S','T','Q','Q','S','S']
 
-const ID = 'custom-date-picker'
-
-export default function CustomDatePicker({ value, onChange, eventos = [], dropdownAberto, setDropdownAberto }) {
+// 1. Recebemos o 'id' e o 'label' como props. 
+// O fallback 'custom-date-picker' garante que as outras telas do sistema não quebrem.
+export default function CustomDatePicker({ label, id = 'custom-date-picker', value, onChange, eventos = [], dropdownAberto, setDropdownAberto }) {
   const hoje = new Date()
   const [mes, setMes] = useState(hoje.getMonth())
   const [ano, setAno] = useState(hoje.getFullYear())
   const [view, setView] = useState('dias')
-  const [popupPos, setPopupPos] = useState({ top: 0, left: 0 })
 
-  const triggerRef = useRef(null)
-  const popupRef = useRef(null)
+  // 2. Agora o 'open' valida usando o ID dinâmico
+  const open = dropdownAberto === id
 
-  const open = dropdownAberto === ID
-
-  // Recalcula posição quando abre
-  useEffect(() => {
-    if (!open) return
-
-    function calcPos() {
-      if (!triggerRef.current) return
-      const rect = triggerRef.current.getBoundingClientRect()
-      setPopupPos({
-        top: rect.bottom + window.scrollY + 6,
-        left: rect.left + window.scrollX,
-      })
-    }
-
-    calcPos()
-    window.addEventListener('scroll', calcPos, true)
-    window.addEventListener('resize', calcPos)
-    return () => {
-      window.removeEventListener('scroll', calcPos, true)
-      window.removeEventListener('resize', calcPos)
-    }
-  }, [open])
-
-  // Sincroniza mês/ano quando value muda externamente
   useEffect(() => {
     if (value) {
       const [a, m] = value.split('-').map(Number)
@@ -73,17 +44,18 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
   }
 
   function handleOpen() {
-    setDropdownAberto(open ? null : ID)
+    // 3. Ao clicar, ele seta o ID deste calendário específico
+    setDropdownAberto(open ? null : id)
     setView('dias')
   }
 
   const displayValue = value ? value.split('-').reverse().join('/') : null
 
   const primeiroDia = new Date(ano, mes, 1).getDay()
-  const totalDias   = new Date(ano, mes + 1, 0).getDate()
-  const diaAtual    = value ? parseInt(value.split('-')[2]) : null
-  const mesAtual    = value ? parseInt(value.split('-')[1]) - 1 : null
-  const anoAtual    = value ? parseInt(value.split('-')[0]) : null
+  const totalDias = new Date(ano, mes + 1, 0).getDate()
+  const diaAtual = value ? parseInt(value.split('-')[2]) : null
+  const mesAtual = value ? parseInt(value.split('-')[1]) - 1 : null
+  const anoAtual = value ? parseInt(value.split('-')[0]) : null
 
   const celulas = [
     ...Array(primeiroDia).fill(null),
@@ -93,14 +65,13 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
   const baseAno = Math.floor(ano / 12) * 12
   const anos = Array.from({ length: 12 }, (_, i) => baseAno + i)
 
-  const popup = open && createPortal(
+  const popup = open && (
     <div
-      ref={popupRef}
       className="date-picker-popup"
       style={{
         position: 'absolute',
-        top: popupPos.top,
-        left: popupPos.left,
+        top: 'calc(100% + 8px)', /* ⬅️ A mágica: empurra exatamente 8px abaixo do input */
+        left: 0,
         zIndex: 99999,
         background: 'var(--branco)',
         border: '1px solid #AFA9EC',
@@ -111,7 +82,7 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <button className="cal-nav" onClick={() => {
+        <button type="button" className="cal-nav" onClick={() => {
           if (view === 'anos') { setAno(a => a - 12) }
           else if (view === 'meses') { setAno(a => a - 1) }
           else { if (mes === 0) { setMes(11); setAno(a => a - 1) } else setMes(m => m - 1) }
@@ -126,7 +97,7 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
           {view === 'anos' && `${baseAno} – ${baseAno + 11}`}
         </span>
 
-        <button className="cal-nav" onClick={() => {
+        <button type="button" className="cal-nav" onClick={() => {
           if (view === 'anos') { setAno(a => a + 12) }
           else if (view === 'meses') { setAno(a => a + 1) }
           else { if (mes === 11) { setMes(0); setAno(a => a + 1) } else setMes(m => m + 1) }
@@ -141,8 +112,8 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
           {celulas.map((dia, i) => {
             if (!dia) return <div key={i} />
             const isHoje = dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()
-            const isSel  = dia === diaAtual && mes === mesAtual && ano === anoAtual
-            const ev     = temEvento(dia)
+            const isSel = dia === diaAtual && mes === mesAtual && ano === anoAtual
+            const ev = temEvento(dia)
             return (
               <div
                 key={i}
@@ -157,19 +128,21 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid #eee' }}>
-          <button className="cal-nav" style={{ fontSize: 12, color: 'var(--texto-sec)' }} onClick={() => { onChange(''); setDropdownAberto(null) }}>Limpar</button>
-          <button className="cal-nav" style={{ fontSize: 12 }} onClick={selecionarHoje}>Hoje</button>
+          <button type="button" className="cal-nav" style={{ fontSize: 12, color: 'var(--texto-sec)' }} onClick={() => { onChange(''); setDropdownAberto(null) }}>Limpar</button>
+          <button type="button" className="cal-nav" style={{ fontSize: 12 }} onClick={selecionarHoje}>Hoje</button>
         </div>
       </>}
 
       {view === 'meses' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
           {MESES_ABREV.map((m, i) => (
-            <button key={i} onClick={() => { setMes(i); setView('dias') }}
+            <button type="button" key={i} onClick={() => { setMes(i); setView('dias') }}
               className="cal-nav"
-              style={{ padding: '8px 4px', fontSize: 12, borderRadius: 6,
-                       background: i === mes ? 'var(--roxo)' : 'none',
-                       color: i === mes ? 'white' : 'var(--texto)' }}>
+              style={{
+                padding: '8px 4px', fontSize: 12, borderRadius: 6,
+                background: i === mes ? 'var(--roxo)' : 'none',
+                color: i === mes ? 'white' : 'var(--texto)'
+              }}>
               {m}
             </button>
           ))}
@@ -179,36 +152,38 @@ export default function CustomDatePicker({ value, onChange, eventos = [], dropdo
       {view === 'anos' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
           {anos.map(a => (
-            <button key={a} onClick={() => { setAno(a); setView('meses') }}
+            <button type="button" key={a} onClick={() => { setAno(a); setView('meses') }}
               className="cal-nav"
-              style={{ padding: '6px 2px', fontSize: 11, borderRadius: 6,
-                       background: a === ano ? 'var(--roxo)' : 'none',
-                       color: a === ano ? 'white' : 'var(--texto)' }}>
+              style={{
+                padding: '6px 2px', fontSize: 11, borderRadius: 6,
+                background: a === ano ? 'var(--roxo)' : 'none',
+                color: a === ano ? 'white' : 'var(--texto)'
+              }}>
               {a}
             </button>
           ))}
         </div>
       )}
-    </div>,
-    document.body
+    </div>
   )
 
   return (
-    <div className="perfil-grupo" style={{ position: 'relative' }}>
-      <label className="perfil-label">Data</label>
+    <div className="perfil-grupo" style={{ position: 'relative', zIndex: open ? 99999 : 100 }}>
+      <label className="perfil-label">{label || "Data"}</label>
 
       <button
-        ref={triggerRef}
         type="button"
         className="perfil-input"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                 cursor: 'pointer', textAlign: 'left', background: 'var(--branco)' }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', textAlign: 'left', background: 'var(--branco)'
+        }}
         onClick={handleOpen}
       >
         <span style={{ color: displayValue ? 'var(--texto)' : 'var(--texto-sec)' }}>
           {displayValue ?? 'dd/mm/aaaa'}
         </span>
-        <span style={{ color: 'var(--roxo)', fontSize: 16 }}><Calendar size={20}/></span>
+        <span style={{ color: 'var(--roxo)', fontSize: 16 }}><Calendar size={20} /></span>
       </button>
 
       {popup}

@@ -1,4 +1,3 @@
-
 /* ── Dia seletor (Cronogramas) ── */
 .dia-seletor {
   display: flex;
@@ -1095,6 +1094,7 @@ select.perfil-input option:checked {
   padding-bottom: 10px;
   padding-right: 4px;
 }
+
 .crono-pill-ordem.vazia {
   visibility: hidden;
 }
@@ -1129,15 +1129,16 @@ select.perfil-input option:checked {
   width: 100%;
   min-height: 42px;
   /* Reduzimos um pouco o padding horizontal para títulos longos caberem */
-  padding: 9px 12px; 
+  padding: 9px 12px;
   border-radius: 999px;
   /* Reduzimos minimamente a fonte para preservar as palavras em telas de 1024px */
-  font-size: 0.78rem; 
+  font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
-  text-overflow: ellipsis; /* Se o texto for gigante, ele aplica os "..." automaticamente */
+  text-overflow: ellipsis;
+  /* Se o texto for gigante, ele aplica os "..." automaticamente */
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -1371,9 +1372,10 @@ select.perfil-input option:checked {
 .crono-editor-head,
 .crono-editor-row {
   display: grid;
-  grid-template-columns: 70px 110px 130px 80px minmax(170px, 1.2fr) minmax(190px, 1.3fr) 110px 44px;
+  /* Alterado: Removemos os 130px do período */
+  grid-template-columns: 70px 110px 80px minmax(170px, 1.2fr) minmax(190px, 1.3fr) 110px 44px;
   gap: 1px;
-  min-width: 950px;
+  min-width: 820px; /* Reduzimos um pouco a largura mínima */
   background: #e8def3;
 }
 
@@ -1392,16 +1394,16 @@ select.perfil-input option:checked {
   border-top: 1px solid #e8def3;
 }
 
-.crono-editor-row > .crono-celula,
-.crono-editor-row > .crono-editor-remover {
+.crono-editor-row>.crono-celula,
+.crono-editor-row>.crono-editor-remover {
   background-color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.crono-editor-row > .crono-celula > input,
-.crono-editor-row > .crono-celula > label,
+.crono-editor-row>.crono-celula>input,
+.crono-editor-row>.crono-celula>label,
 .crono-editor-grade-dropdown,
 .crono-editor-stack {
   border-radius: 0;
@@ -1411,7 +1413,7 @@ select.perfil-input option:checked {
   height: 100%;
 }
 
-.crono-editor-row > .crono-celula > input {
+.crono-editor-row>.crono-celula>input {
   min-height: 44px;
   padding: 0 10px;
 }
@@ -1419,7 +1421,7 @@ select.perfil-input option:checked {
 /* Deixa as labels ocultas no PC (porque já existe o cabeçalho) */
 .crono-celula::before {
   content: attr(data-label);
-  display: none; 
+  display: none;
 }
 
 .crono-editor-grade-dropdown {
@@ -1488,8 +1490,10 @@ select.perfil-input option:checked {
   justify-content: center;
   color: #b42318;
   cursor: pointer;
-  border: none; /* <-- Adicione esta linha para remover a borda 3D */
-  outline: none; /* <-- Remove a borda preta que aparece quando você clica */
+  border: none;
+  /* <-- Adicione esta linha para remover a borda 3D */
+  outline: none;
+  /* <-- Remove a borda preta que aparece quando você clica */
 }
 
 .crono-editor-remover:hover {
@@ -1920,11 +1924,12 @@ select.perfil-input option:checked {
     text-align: left;
   }
 
-.turma-tabs {
+  .turma-tabs {
     flex-wrap: wrap;
     overflow-x: visible;
     padding-bottom: 4px;
-    gap: 10px; /* Isso devolve o espaçamento bonito entre os botões */
+    gap: 10px;
+    /* Isso devolve o espaçamento bonito entre os botões */
   }
 
   .turma-tab-pill {
@@ -2059,8 +2064,8 @@ select.perfil-input option:checked {
   color: #d9c4ff;
 }
 
-:root.dark-mode .crono-editor-row > .crono-celula,
-:root.dark-mode .crono-editor-row > .crono-editor-remover {
+:root.dark-mode .crono-editor-row>.crono-celula,
+:root.dark-mode .crono-editor-row>.crono-editor-remover {
   background-color: #1f1a2b;
 }
 
@@ -2145,6 +2150,7 @@ select.perfil-input option:checked {
    CRONOGRAMAS - LAYOUT EM CARDS PARA MOBILE
    ======================================================= */
 @media (max-width: 768px) {
+
   /* Transforma a linha horizontal em um Card com Grid 2x2 */
   .crono-pill-row {
     display: grid !important;
@@ -2185,10 +2191,21 @@ select.perfil-input option:checked {
   }
 
   /* Posiciona os itens no Grid */
-  .crono-pill-col:nth-child(2) { grid-area: disc; }
-  .crono-pill-col:nth-child(3) { grid-area: turma; }
-  .crono-pill-col:nth-child(4) { grid-area: prof; }
-  .crono-pill-col:nth-child(5) { grid-area: sala; }
+  .crono-pill-col:nth-child(2) {
+    grid-area: disc;
+  }
+
+  .crono-pill-col:nth-child(3) {
+    grid-area: turma;
+  }
+
+  .crono-pill-col:nth-child(4) {
+    grid-area: prof;
+  }
+
+  .crono-pill-col:nth-child(5) {
+    grid-area: sala;
+  }
 
   /* Traz a Sala de volta (estava com display: none no seu CSS antigo) */
   .crono-pill-col:last-child {
@@ -2232,7 +2249,7 @@ select.perfil-input option:checked {
 
 /* --- TELA TABLET (até 900px) --- */
 @media (max-width: 900px) {
-  .turma-arquivos-pagina > div:nth-child(2) {
+  .turma-arquivos-pagina>div:nth-child(2) {
     grid-template-columns: 1fr !important;
     gap: 32px !important;
   }
@@ -2240,72 +2257,93 @@ select.perfil-input option:checked {
 
 /* --- TELA CELULAR / MOBILE (até 768px) --- */
 @media (max-width: 768px) {
+
   .arquivos-container,
   .turma-arquivos-pagina {
     padding: 24px 16px !important;
   }
-  
-  .arquivos-container h1 { font-size: 22px !important; }
-  .arquivos-container p { font-size: 13px !important; }
-  
+
+  .arquivos-container h1 {
+    font-size: 22px !important;
+  }
+
+  .arquivos-container p {
+    font-size: 13px !important;
+  }
+
   .arquivos-container .btn-upload {
     width: auto !important;
     padding: 8px 14px !important;
     font-size: 12px !important;
   }
 
-  .arquivos-container > div > div[style*="display: grid"] {
+  .arquivos-container>div>div[style*="display: grid"] {
     grid-template-columns: 1fr 1fr !important;
     gap: 12px !important;
   }
 
-  .turma-arquivos-pagina > div:first-child {
+  .turma-arquivos-pagina>div:first-child {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 16px !important;
   }
+
   .turma-arquivos-pagina button:last-child {
     width: 100% !important;
     justify-content: center !important;
   }
-  .turma-arquivos-pagina h2 { font-size: 18px !important; }
+
+  .turma-arquivos-pagina h2 {
+    font-size: 18px !important;
+  }
 
   .solicitacao-item {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
   }
-  
-  .solicitacao-item > div:last-child {
+
+  .solicitacao-item>div:last-child {
     width: 100% !important;
     justify-content: flex-start !important;
   }
-  .solicitacao-item > div:last-child button {
+
+  .solicitacao-item>div:last-child button {
     flex: 1 !important;
     justify-content: center !important;
   }
 
-  .turma-arquivos-modal { padding: 20px 16px !important; }
-  .turma-arquivos-modal h4 { font-size: 15px !important; }
-  
-  .modal > div[style*="grid-template-columns: 1fr 1fr"] {
+  .turma-arquivos-modal {
+    padding: 20px 16px !important;
+  }
+
+  .turma-arquivos-modal h4 {
+    font-size: 15px !important;
+  }
+
+  .modal>div[style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
 }
 
 /* --- TELA CELULAR PEQUENO (até 480px) --- */
 @media (max-width: 480px) {
-  .arquivos-container > div > div[style*="display: grid"] {
+  .arquivos-container>div>div[style*="display: grid"] {
     grid-template-columns: 1fr !important;
   }
-  
-  .arquivos-container > div > div[style*="display: grid"] > div {
+
+  .arquivos-container>div>div[style*="display: grid"]>div {
     padding: 14px 14px 12px !important;
     gap: 14px !important;
   }
-  
-  .arquivos-container > div > div[style*="display: grid"] > div p { font-size: 15px !important; }
-  .arquivos-container > div > div[style*="display: grid"] > div span { font-size: 16px !important; }
+
+  .arquivos-container>div>div[style*="display: grid"]>div p {
+    font-size: 15px !important;
+  }
+
+  .arquivos-container>div>div[style*="display: grid"]>div span {
+    font-size: 16px !important;
+  }
 
   .arquivos-container,
   .turma-arquivos-pagina {
@@ -2325,7 +2363,7 @@ select.perfil-input option:checked {
 }
 
 @media (max-width: 768px) {
-  .turma-arquivos-pagina > div:first-child > div:first-child {
+  .turma-arquivos-pagina>div:first-child>div:first-child {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 8px !important;
@@ -2337,6 +2375,7 @@ select.perfil-input option:checked {
    Cole isso na última linha do arquivo secoes.css
    ======================================================= */
 @media (max-width: 900px) {
+
   /* 1. Remove o scroll horizontal e o fundo padrão de tabela */
   .crono-editor-planilha {
     border: none;
@@ -2352,9 +2391,11 @@ select.perfil-input option:checked {
   /* 3. Transforma a linha da tabela (row) num lindo Card */
   .crono-editor-row {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas no topo */
+    grid-template-columns: 1fr 1fr;
+    /* Duas colunas no topo */
     gap: 12px;
-    min-width: 0 !important; /* Isso mata o bug do scroll horizontal! */
+    min-width: 0 !important;
+    /* Isso mata o bug do scroll horizontal! */
     background: #fff;
     padding: 24px 16px 16px;
     border-radius: 12px;
@@ -2371,19 +2412,25 @@ select.perfil-input option:checked {
   }
 
   /* 4. Reposicionamento dos Inputs dentro do Card */
-  .crono-editor-row > input[type='number'] { grid-column: 1; }
-  .crono-editor-row > input[type='time'] { grid-column: 2; }
+  .crono-editor-row>input[type='number'] {
+    grid-column: 1;
+  }
+
+  .crono-editor-row>input[type='time'] {
+    grid-column: 2;
+  }
 
   /* Elementos que ocupam a largura total do card */
-  .crono-editor-row > .crono-editor-grade-dropdown,
-  .crono-editor-row > .crono-editor-toggle,
-  .crono-editor-row > input[type='text'], /* Input de Sala */
+  .crono-editor-row>.crono-editor-grade-dropdown,
+  .crono-editor-row>.crono-editor-toggle,
+  .crono-editor-row>input[type='text'],
+  /* Input de Sala */
   .crono-editor-stack {
     grid-column: 1 / -1;
   }
 
   /* Dá um destaque na chave "Sim/Não" (Turma A/B) */
-  .crono-editor-row > .crono-editor-toggle {
+  .crono-editor-row>.crono-editor-toggle {
     justify-content: flex-start;
     padding: 6px 0;
     border-bottom: 1px dashed #e0d6ef;
@@ -2391,9 +2438,9 @@ select.perfil-input option:checked {
   }
 
   /* Devolve as bordas aos inputs que haviam ficado transparentes na tabela */
-  .crono-editor-row > input,
+  .crono-editor-row>input,
   .crono-editor-stack input,
-  .crono-editor-row > .crono-editor-grade-dropdown .dropdown-trigger,
+  .crono-editor-row>.crono-editor-grade-dropdown .dropdown-trigger,
   .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
     border: 1px solid #e0d6ef !important;
     border-radius: 8px !important;
@@ -2407,7 +2454,7 @@ select.perfil-input option:checked {
   }
 
   /* 5. Posiciona o botão de deletar (Lixeira) como um botão flutuante no card */
-  .crono-editor-row > .crono-editor-remover {
+  .crono-editor-row>.crono-editor-remover {
     position: absolute;
     top: -10px;
     right: -10px;
@@ -2424,21 +2471,25 @@ select.perfil-input option:checked {
     background: #1f1a2b;
     border-color: #30273d;
   }
+
   :root.dark-mode .crono-editor-row.dividida {
     background: #251e33;
     border-color: #3b2f4a;
   }
-  :root.dark-mode .crono-editor-row > .crono-editor-toggle {
+
+  :root.dark-mode .crono-editor-row>.crono-editor-toggle {
     border-bottom-color: #3b2f4a;
   }
-  :root.dark-mode .crono-editor-row > input,
+
+  :root.dark-mode .crono-editor-row>input,
   :root.dark-mode .crono-editor-stack input,
-  :root.dark-mode .crono-editor-row > .crono-editor-grade-dropdown .dropdown-trigger,
+  :root.dark-mode .crono-editor-row>.crono-editor-grade-dropdown .dropdown-trigger,
   :root.dark-mode .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
     border-color: #382d47 !important;
     background: #171321 !important;
   }
-  :root.dark-mode .crono-editor-row > .crono-editor-remover {
+
+  :root.dark-mode .crono-editor-row>.crono-editor-remover {
     background: #3b1d24;
     border-color: #5c222b;
   }
@@ -2448,18 +2499,19 @@ select.perfil-input option:checked {
    DESIGN DE CARDS COM LABELS (MOBILE)
    ======================================================= */
 @media (max-width: 900px) {
+
   /* Remove a rolagem horizontal */
   .crono-editor-planilha {
     border: none;
     background: transparent;
     overflow-x: visible;
   }
-  
+
   /* Esconde o cabeçalho de tabela do PC */
   .crono-editor-head {
     display: none;
   }
-  
+
   /* Transforma a linha num Card com Grid 2x2 */
   .crono-editor-row {
     display: grid;
@@ -2474,7 +2526,7 @@ select.perfil-input option:checked {
     position: relative;
     box-shadow: 0 4px 12px rgba(111, 59, 157, 0.05);
   }
-  
+
   .crono-editor-row.dividida {
     background: #faf7ff;
     border: 1px solid #d9cbed;
@@ -2492,22 +2544,30 @@ select.perfil-input option:checked {
   }
 
   /* Ajusta as células para o card */
-  .crono-editor-row > .crono-celula {
+  .crono-editor-row>.crono-celula {
     background-color: transparent;
     justify-content: flex-start;
   }
 
   /* Posicionamento inteligente no Card */
-  .crono-editor-row > .crono-celula:nth-child(1) { grid-column: 1; } /* Aula (Esquerda Topo) */
-  .crono-editor-row > .crono-celula:nth-child(2) { grid-column: 2; } /* Horário (Direita Topo) */
-  
+  .crono-editor-row>.crono-celula:nth-child(1) {
+    grid-column: 1;
+  }
+
+  /* Aula (Esquerda Topo) */
+  .crono-editor-row>.crono-celula:nth-child(2) {
+    grid-column: 2;
+  }
+
+  /* Horário (Direita Topo) */
+
   /* Os demais ocupam a largura total do celular */
-  .crono-editor-row > .crono-celula:nth-child(n+3) {
+  .crono-editor-row>.crono-celula:nth-child(n+3) {
     grid-column: 1 / -1;
   }
 
   /* Estilizando os inputs para voltarem a ter borda arredondada */
-  .crono-editor-row > .crono-celula > input,
+  .crono-editor-row>.crono-celula>input,
   .crono-editor-stack input,
   .crono-editor-row .crono-editor-grade-dropdown .dropdown-trigger,
   .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
@@ -2525,7 +2585,7 @@ select.perfil-input option:checked {
   }
 
   /* Lixeira vira um botão flutuante para fora do card! */
-  .crono-editor-row > .crono-editor-remover {
+  .crono-editor-row>.crono-editor-remover {
     position: absolute;
     top: -10px;
     right: -10px;
@@ -2545,24 +2605,29 @@ select.perfil-input option:checked {
     background: #1f1a2b;
     border-color: #30273d;
   }
+
   :root.dark-mode .crono-editor-row.dividida {
     background: #251e33;
     border-color: #3b2f4a;
   }
+
   :root.dark-mode .crono-celula::before {
     color: #a395b3;
   }
-  :root.dark-mode .crono-editor-row > .crono-celula > input,
+
+  :root.dark-mode .crono-editor-row>.crono-celula>input,
   :root.dark-mode .crono-editor-stack input,
   :root.dark-mode .crono-editor-row .crono-editor-grade-dropdown .dropdown-trigger,
   :root.dark-mode .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
     border-color: #382d47 !important;
     background: #171321 !important;
   }
+
   :root.dark-mode .crono-editor-row .crono-editor-toggle {
     border-bottom-color: #3b2f4a;
   }
-  :root.dark-mode .crono-editor-row > .crono-editor-remover {
+
+  :root.dark-mode .crono-editor-row>.crono-editor-remover {
     background: #3b1d24;
     border-color: #5c222b;
   }
@@ -2584,7 +2649,7 @@ select.perfil-input option:checked {
 }
 
 /* O container do texto precisa conseguir encolher (min-width: 0) */
-.turma-card-pill > div {
+.turma-card-pill>div {
   min-width: 0;
   flex: 1;
   padding-right: 12px;
@@ -2602,5 +2667,102 @@ select.perfil-input option:checked {
 @media (max-width: 768px) {
   .turmas-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Pílula Expansível de Turmas ── */
+.turma-expand-card {
+  border-radius: 40px;
+  background: #B199C7;
+  transition: border-radius 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.2s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.turma-expand-card.aberto {
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(111, 59, 157, 0.18);
+}
+
+.turma-expand-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  text-align: left;
+}
+
+.turma-expand-seta {
+  font-size: 18px;
+  font-weight: 400;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.turma-expand-seta.girada {
+  transform: rotate(90deg);
+}
+
+/* Container retrátil dos 3 botões */
+.turma-expand-corpo {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease, padding 0.3s ease;
+}
+
+.turma-expand-corpo.visivel {
+  grid-template-rows: 1fr;
+  padding: 0 14px 14px;
+}
+
+.turma-expand-inner {
+  overflow: hidden;
+}
+
+.turma-acoes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.turma-btn-acao {
+  background: rgba(255, 255, 255, 0.95);
+  color: #6F3B9D;
+  border: none;
+  border-radius: 30px;
+  padding: 9px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turma-btn-acao:hover {
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.turma-btn-acao:active {
+  transform: scale(0.96);
+}
+
+/* Responsivo para celulares menores */
+@media (max-width: 480px) {
+  .turma-acoes-grid {
+    grid-template-columns: 1fr;
   }
 }
