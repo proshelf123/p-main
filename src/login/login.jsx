@@ -4,15 +4,15 @@ import LogoMetade from "../assets/Group 28.png";
 import LogoIcone from "../assets/Group 32 (2).png";
 
 // 👇 IMPORTAÇÕES ATUALIZADAS 👇
-import { auth, functions } from "../firebase"; 
-import { 
-  signInWithCustomToken, 
-  setPersistence, 
-  browserLocalPersistence, 
+import { auth, functions } from "../firebase";
+import {
+  signInWithCustomToken,
+  setPersistence,
+  browserLocalPersistence,
   browserSessionPersistence,
   onAuthStateChanged
 } from "firebase/auth"; // Importamos as regras de persistência
-import { httpsCallable } from "firebase/functions"; 
+import { httpsCallable } from "firebase/functions";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
@@ -22,22 +22,22 @@ function Login() {
   const [senha, setSenha] = useState("");
   const [erroLogin, setErroLogin] = useState("");
   const [animacaoErro, setAnimacaoErro] = useState(0);
-  
+
   // 👇 NOVO ESTADO: Começa marcado como "true" (Lembrar de mim ativado por padrão)
   const [lembrar, setLembrar] = useState(true);
 
   useEffect(() => {
-  // Fica escutando se existe uma sessão ativa salva no navegador
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // Se já estiver logado, joga direto pro dashboard sem precisar digitar senha
-      navigate("/dashboard");
-    }
-  });
+    // Fica escutando se existe uma sessão ativa salva no navegador
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Se já estiver logado, joga direto pro dashboard sem precisar digitar senha
+        navigate("/dashboard");
+      }
+    });
 
-  // Limpa o observador quando o componente for desmontado
-  return () => unsubscribe();
-}, [navigate]);
+    // Limpa o observador quando o componente for desmontado
+    return () => unsubscribe();
+  }, [navigate]);
 
   const mostrarErro = (mensagem) => {
     setErroLogin(mensagem);
@@ -54,23 +54,23 @@ function Login() {
 
     try {
       setErroLogin("");
-      
+
       // 👇 PASSO 1: Define como o Firebase vai salvar a sessão ANTES de logar
       const tipoPersistencia = lembrar ? browserLocalPersistence : browserSessionPersistence;
       await setPersistence(auth, tipoPersistencia);
-      
+
       // 2. Prepara a conexão com a nossa Função Blindada
       const loginSeguro = httpsCallable(functions, "loginComLimite");
-      
+
       // 3. Envia os dados para a função avaliar
-      const result = await loginSeguro({ 
-        email: email, 
+      const result = await loginSeguro({
+        email: email,
         senha: senha,
       });
 
       // 4. Se a função aprovar, ela devolve um Token Customizado. Usamos ele para entrar.
       await signInWithCustomToken(auth, result.data.customToken);
-      
+
       navigate("/dashboard");
 
     } catch (error) {
@@ -78,10 +78,10 @@ function Login() {
 
       if (error.code === "functions/resource-exhausted") {
         mostrarErro("Muitas tentativas. Tente novamente em 15 minutos.");
-      } 
+      }
       else if (error.code === "functions/permission-denied") {
         mostrarErro("E-mail ou senha incorretos.");
-      } 
+      }
       else if (error.code === "functions/unauthenticated") {
         mostrarErro("O seu navegador bloqueou a verificação de segurança (reCAPTCHA). Tente por outro navegador.");
       }
@@ -135,12 +135,12 @@ function Login() {
 
         <div className={styles["lado-branco"]}>
           <Link to="/" className={styles["btn-voltar"]}>
-            <ArrowLeft size={20}/> Voltar
+            <ArrowLeft size={20} /> Voltar
           </Link>
-          
+
           <img src={LogoIcone} className={styles["logo-login"]} alt="Logo" />
           <h2 id={styles.acessar}>Acessar a plataforma</h2>
-          
+
           <div className={styles["form-wrapper"]}>
             <div className={styles.campo}>
               <label>E-mail</label>
@@ -182,18 +182,22 @@ function Login() {
                   {erroLogin}
                 </div>
               )}
-              
+
               {/* 👇 ADICIONADO: Opções abaixo da senha (Checkbox e Esqueci Senha) */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
-                  <input 
-                    type="checkbox" 
+                <label className={styles["toggle-lembrar"]}>
+                  <input
+                    type="checkbox"
+                    className={styles["toggle-input"]}
                     checked={lembrar}
                     onChange={(e) => setLembrar(e.target.checked)}
                   />
+                  <span className={styles["toggle-track"]}>
+                    <span className={styles["toggle-thumb"]}></span>
+                  </span>
                   Lembrar de mim
                 </label>
-                
+
                 <Link to="/esqueci-senha" className={styles.esqueci} style={{ marginTop: '0' }}>
                   Esqueci minha senha
                 </Link>
@@ -205,7 +209,7 @@ function Login() {
               <span className={styles.arrow}>›</span>
             </button>
           </div>
-          
+
           <p>
             Se esse for o seu primeiro acesso, clique{" "}
             <Link to="/primeiro-acesso" className={styles.aqui}>

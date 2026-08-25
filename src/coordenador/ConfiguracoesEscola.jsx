@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Settings, Calendar, Save, CheckCircle } from "lucide-react";
 import { buscarConfiguracoesEscola, salvarConfiguracoesEscola } from "../firebase/estrutura";
 
-// Importe seus componentes customizados (ajuste o caminho se necessário)
+// Importe seus componentes customizados 
 import DropdownComPortal from "../secoes/DropwdownComPortal";
 import CustomDatePicker from "../secoes/dropdown-calendario";
 

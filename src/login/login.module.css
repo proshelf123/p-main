@@ -330,6 +330,83 @@
     text-decoration: underline;
 }
 
+/* ── Toggle "Lembrar de mim" ──────────────────────────────────────────────── */
+.toggle-lembrar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+
+.toggle-track {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: #E1D6EE;
+    flex-shrink: 0;
+    transition: background 0.3s ease;
+}
+
+.toggle-track::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.28s cubic-bezier(.4, 1.6, .4, 1);
+}
+
+.toggle-input:checked ~ .toggle-track {
+    background: #6F3B9D;
+}
+
+.toggle-input:checked ~ .toggle-track .toggle-thumb {
+    transform: translateX(18px);
+}
+
+/* Pulso de brilho ao ativar — mesmo motivo das partículas do lado roxo */
+.toggle-input:checked ~ .toggle-track::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    animation: togglePulso 0.5s ease-out;
+    pointer-events: none;
+}
+
+@keyframes togglePulso {
+    0%   { opacity: 0.9; transform: scale(0.8); }
+    100% { opacity: 0; transform: scale(1.5); }
+}
+
+.toggle-input:focus-visible ~ .toggle-track {
+    box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.25);
+}
+
 /* ── Responsivo ────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .lado-branco { --form-width: 300px; }

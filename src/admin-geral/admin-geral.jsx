@@ -13,7 +13,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Configuração do Firebase necessária para o app secundário de criação de contas
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  apiKey: "AIzaSyAR2XaaeAroANrRj71OHw3DKngvRJhiyPw",
   authDomain: "proshelf-8ecfd.firebaseapp.com",
   databaseURL: "https://proshelf-8ecfd-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "proshelf-8ecfd",

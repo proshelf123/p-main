@@ -6,7 +6,7 @@ import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  apiKey: "AIzaSyAR2XaaeAroANrRj71OHw3DKngvRJhiyPw",
   authDomain: "proshelf-8ecfd.firebaseapp.com",
   databaseURL: "https://proshelf-8ecfd-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "proshelf-8ecfd",
