@@ -1,12 +1,12 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD4EN941sdYO3uyTEhhj37mViV8t2Sgf8s",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "proshelf-8ecfd.firebaseapp.com",
   databaseURL: "https://proshelf-8ecfd-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "proshelf-8ecfd",
@@ -31,33 +31,16 @@ console.log("Status da Chave reCAPTCHA:", RECAPTCHA_SITE_KEY ? "Carregada! Come�
 
 export let appCheck; 
 
-if (RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== "SUA_SITE_KEY_AQUI") {
-  appCheck = initializeAppCheck(app, 
-    {
-    
-    provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
-    isTokenAutoRefreshEnabled: true,
-  });
-} else if (import.meta.env.DEV) {
-  console.warn(
-    "[App Check] VITE_RECAPTCHA_SITE_KEY ausente — App Check desativado. " +
-    "Defina a chave reCAPTCHA v3 no arquivo .env para ativar."
-  );
-}
-
 // 3. Inicializa os demais serviços
 export const auth = getAuth(app);
 
-export const db = initializeFirestore(
-  app,
-  { experimentalAutoDetectLongPolling: true },
-  'firestoreproshelf'
-);
+// Inicializa o banco usando apenas a Memória RAM
+export const db = initializeFirestore(app, {
+  localCache: memoryLocalCache(),
+  experimentalAutoDetectLongPolling: true
+}, 'firestoreproshelf');
 
-export const defaultDb = initializeFirestore(
-  app,
-  { experimentalAutoDetectLongPolling: true }
-);
+export const defaultDb = db;
 
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'us-central1');

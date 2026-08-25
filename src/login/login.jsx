@@ -1,11 +1,17 @@
 import styles from "./login.module.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LogoMetade from "../assets/Group 28.png";
 import LogoIcone from "../assets/Group 32 (2).png";
 
-// 👇 IMPORTAÇÕES ALTERADAS 👇
-import { auth, functions } from "../firebase"; // Importe o 'functions' do seu arquivo firebase.js
-import { signInWithCustomToken } from "firebase/auth";
+// 👇 IMPORTAÇÕES ATUALIZADAS 👇
+import { auth, functions } from "../firebase"; 
+import { 
+  signInWithCustomToken, 
+  setPersistence, 
+  browserLocalPersistence, 
+  browserSessionPersistence,
+  onAuthStateChanged
+} from "firebase/auth"; // Importamos as regras de persistência
 import { httpsCallable } from "firebase/functions"; 
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -16,6 +22,22 @@ function Login() {
   const [senha, setSenha] = useState("");
   const [erroLogin, setErroLogin] = useState("");
   const [animacaoErro, setAnimacaoErro] = useState(0);
+  
+  // 👇 NOVO ESTADO: Começa marcado como "true" (Lembrar de mim ativado por padrão)
+  const [lembrar, setLembrar] = useState(true);
+
+  useEffect(() => {
+  // Fica escutando se existe uma sessão ativa salva no navegador
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Se já estiver logado, joga direto pro dashboard sem precisar digitar senha
+      navigate("/dashboard");
+    }
+  });
+
+  // Limpa o observador quando o componente for desmontado
+  return () => unsubscribe();
+}, [navigate]);
 
   const mostrarErro = (mensagem) => {
     setErroLogin(mensagem);
@@ -25,7 +47,6 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Validação rápida no front para evitar gastar requisições à toa
     if (!email || !senha) {
       mostrarErro("Por favor, preencha o e-mail e a senha.");
       return;
@@ -34,16 +55,20 @@ function Login() {
     try {
       setErroLogin("");
       
-      // 1. Prepara a conexão com a nossa Função Blindada
+      // 👇 PASSO 1: Define como o Firebase vai salvar a sessão ANTES de logar
+      const tipoPersistencia = lembrar ? browserLocalPersistence : browserSessionPersistence;
+      await setPersistence(auth, tipoPersistencia);
+      
+      // 2. Prepara a conexão com a nossa Função Blindada
       const loginSeguro = httpsCallable(functions, "loginComLimite");
       
-      // 2. Envia os dados para a função avaliar (IP, email, senha)
+      // 3. Envia os dados para a função avaliar
       const result = await loginSeguro({ 
         email: email, 
         senha: senha,
       });
 
-      // 3. Se a função aprovar, ela devolve um Token Customizado. Usamos ele para entrar.
+      // 4. Se a função aprovar, ela devolve um Token Customizado. Usamos ele para entrar.
       await signInWithCustomToken(auth, result.data.customToken);
       
       navigate("/dashboard");
@@ -54,11 +79,9 @@ function Login() {
       if (error.code === "functions/resource-exhausted") {
         mostrarErro("Muitas tentativas. Tente novamente em 15 minutos.");
       } 
-      // 👇 AGORA ELE LÊ O ERRO CERTO DE SENHA
       else if (error.code === "functions/permission-denied") {
         mostrarErro("E-mail ou senha incorretos.");
       } 
-      // 👇 SE FOR ERRO DE APP CHECK, ELE AVISA
       else if (error.code === "functions/unauthenticated") {
         mostrarErro("O seu navegador bloqueou a verificação de segurança (reCAPTCHA). Tente por outro navegador.");
       }
@@ -75,6 +98,7 @@ function Login() {
         onKeyDown={(e) => e.key === "Enter" && handleLogin(e)}
       >
         <div className={styles["lado-roxo"]}>
+          {/* ... (Todo o seu código de animação foi mantido igual) ... */}
           <Link to="/" />
           <img
             src={LogoMetade}
@@ -158,9 +182,22 @@ function Login() {
                   {erroLogin}
                 </div>
               )}
-              <Link to="/esqueci-senha" className={styles.esqueci}>
-                Esqueci minha senha
-              </Link>
+              
+              {/* 👇 ADICIONADO: Opções abaixo da senha (Checkbox e Esqueci Senha) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={lembrar}
+                    onChange={(e) => setLembrar(e.target.checked)}
+                  />
+                  Lembrar de mim
+                </label>
+                
+                <Link to="/esqueci-senha" className={styles.esqueci} style={{ marginTop: '0' }}>
+                  Esqueci minha senha
+                </Link>
+              </div>
             </div>
 
             <button className={styles["btn-entrar"]} onClick={handleLogin}>

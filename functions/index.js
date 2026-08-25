@@ -2,6 +2,7 @@ const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https')
 const { initializeApp, getApps } = require('firebase-admin/app')
 const { getAuth } = require('firebase-admin/auth')
 const { FieldValue, getFirestore } = require('firebase-admin/firestore')
+const { onDocumentWritten } = require('firebase-functions/v2/firestore')
 
 if (!getApps().length) initializeApp()
 
@@ -727,4 +728,34 @@ exports.loginComLimite = onCall(
     secrets: [identityToolkitApiKey],
   },
   loginComLimiteHandler
+);
+
+// 🔥 MÁGICA DOS CUSTOM CLAIMS: Isso roda toda vez que um usuário é criado/alterado
+exports.syncUserRole = onDocumentWritten(
+  {
+    document: "users/{userId}",
+    region: "us-central1"
+  },
+  async (event) => {
+    const snap = event.data.after;
+    
+    // Se o usuário foi deletado, ignoramos
+    if (!snap.exists) return;
+
+    const dados = snap.data();
+    const role = dados.role || "professor";
+    const escolaId = dados.escolaId || null;
+
+    try {
+      const auth = getAuth();
+      // Cola o adesivo de Coordenador no JWT (Crachá) do usuário
+      await auth.setCustomUserClaims(event.params.userId, { 
+        role: role,
+        escolaId: escolaId 
+      });
+      console.log(`Claims de ${event.params.userId} atualizadas com sucesso para: ${role}`);
+    } catch (error) {
+      console.error("Erro ao atualizar claims:", error);
+    }
+  }
 );

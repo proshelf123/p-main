@@ -39,6 +39,12 @@ const OPCOES_AVALIACAO = [
     { valor: "livre", label: "Avaliação Única (1 nota)" }
 ];
 
+const OPCOES_TIPO_NOTA = [
+    { valor: "numerica", label: "Numérica (0 a 10)" },
+    { valor: "etec", label: "Conceitos ETEC (MB, B, R, I)" },
+    { valor: "letras", label: "Letras (A+, A, B, C...)" }
+];
+
 export default function ConfiguracoesEscola({ uid }) {
     const [loading, setLoading] = useState(true);
     const [salvando, setSalvando] = useState(false);
@@ -50,7 +56,9 @@ export default function ConfiguracoesEscola({ uid }) {
 
     const [config, setConfig] = useState({
         sistemaAvaliacao: "bimestral",
+        tipoNota: "numerica",
         mediaAprovacao: 6.0,
+        conceitoAprovacao: "B",
         anoLetivo: new Date().getFullYear().toString(),
         datasPeriodos: {}
     });
@@ -62,7 +70,13 @@ export default function ConfiguracoesEscola({ uid }) {
     async function carregar() {
         try {
             const dados = await buscarConfiguracoesEscola(uid);
-            setConfig(dados);
+            // CORREÇÃO 1: Mescla os dados do banco com o estado padrão para garantir 
+            // que "datasPeriodos" nunca seja undefined em escolas antigas.
+            setConfig((prev) => ({
+                ...prev,
+                ...dados,
+                datasPeriodos: dados?.datasPeriodos || {} 
+            }));
         } catch (error) {
             setErro("Não foi possível carregar as configurações.");
         } finally {
@@ -71,16 +85,22 @@ export default function ConfiguracoesEscola({ uid }) {
     }
 
     function handleDataChange(periodoKey, tipo, valor) {
-        setConfig((prev) => ({
-            ...prev,
-            datasPeriodos: {
-                ...prev.datasPeriodos,
-                [periodoKey]: {
-                    ...prev.datasPeriodos[periodoKey],
-                    [tipo]: valor
+        setConfig((prev) => {
+            // CORREÇÃO 2: Garante que os objetos existam antes de usar o spread (...)
+            const safeDatasPeriodos = prev.datasPeriodos || {};
+            const safePeriodoAtual = safeDatasPeriodos[periodoKey] || {};
+
+            return {
+                ...prev,
+                datasPeriodos: {
+                    ...safeDatasPeriodos,
+                    [periodoKey]: {
+                        ...safePeriodoAtual,
+                        [tipo]: valor
+                    }
                 }
-            }
-        }));
+            };
+        });
     }
 
     async function salvar() {
@@ -104,9 +124,10 @@ export default function ConfiguracoesEscola({ uid }) {
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
 
             <div style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)", marginBottom: 32 }}>
-                          <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
-
-                <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--texto)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}> Configuraçõesda Escola
+                <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
+                {/* CORREÇÃO DO ESPAÇAMENTO DO TÍTULO */}
+                <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--texto)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}> 
+                    Configurações da Escola
                 </h2>
                 <p style={{ fontSize: 14, color: "var(--texto-sec)", margin: "4px 0 0" }}>
                     Defina as regras globais do ano letivo, média e prazos de lançamento de notas.
@@ -130,18 +151,6 @@ export default function ConfiguracoesEscola({ uid }) {
                     />
                 </div>
 
-                <div className="perfil-grupo">
-                    <label className="perfil-label">Média de Aprovação</label>
-                    <input
-                        type="number"
-                        step="0.1"
-                        min="0" max="10"
-                        className="perfil-input"
-                        value={config.mediaAprovacao}
-                        onChange={(e) => setConfig({ ...config, mediaAprovacao: parseFloat(e.target.value) })}
-                    />
-                </div>
-
                 <div style={{ width: "100%" }}>
                     <DropdownComPortal
                         id="dropdown-sistema-avaliacao"
@@ -154,6 +163,47 @@ export default function ConfiguracoesEscola({ uid }) {
                         dropdownAberto={dropdownAberto}
                         setDropdownAberto={setDropdownAberto}
                     />
+                </div>
+
+                <div style={{ width: "100%" }}>
+                    <DropdownComPortal
+                        id="dropdown-tipo-nota"
+                        label="Formato de Nota"
+                        opcoes={OPCOES_TIPO_NOTA}
+                        valor={config.tipoNota || "numerica"}
+                        onChange={(novoValor) => {
+                            setConfig({ ...config, tipoNota: novoValor });
+                        }}
+                        dropdownAberto={dropdownAberto}
+                        setDropdownAberto={setDropdownAberto}
+                    />
+                </div>
+
+                <div className="perfil-grupo">
+                    <label className="perfil-label">
+                        {(!config.tipoNota || config.tipoNota === "numerica") 
+                            ? "Média de Aprovação" 
+                            : "Conceito Mín. p/ Aprovação"}
+                    </label>
+                    
+                    {(!config.tipoNota || config.tipoNota === "numerica") ? (
+                        <input
+                            type="number"
+                            step="0.1"
+                            min="0" max="10"
+                            className="perfil-input"
+                            value={config.mediaAprovacao}
+                            onChange={(e) => setConfig({ ...config, mediaAprovacao: parseFloat(e.target.value) })}
+                        />
+                    ) : (
+                        <input
+                            type="text"
+                            className="perfil-input"
+                            placeholder="Ex: B, C, R..."
+                            value={config.conceitoAprovacao || ""}
+                            onChange={(e) => setConfig({ ...config, conceitoAprovacao: e.target.value })}
+                        />
+                    )}
                 </div>
             </div>
 
@@ -179,7 +229,8 @@ export default function ConfiguracoesEscola({ uid }) {
                             <CustomDatePicker
                                 id={`${periodo.key}-inicio`}
                                 label="Abre em (Início)"
-                                value={config.datasPeriodos[periodo.key]?.inicio || ""}
+                                // CORREÇÃO 3: Adicionado o `?.` antes do [periodo.key]
+                                value={config.datasPeriodos?.[periodo.key]?.inicio || ""}
                                 onChange={(dataStr) => handleDataChange(periodo.key, "inicio", dataStr)}
                                 dropdownAberto={dropdownAberto}
                                 setDropdownAberto={setDropdownAberto}
@@ -190,7 +241,8 @@ export default function ConfiguracoesEscola({ uid }) {
                             <CustomDatePicker
                                 id={`${periodo.key}-fim`}
                                 label="Fecha em (Fim)"
-                                value={config.datasPeriodos[periodo.key]?.fim || ""}
+                                // CORREÇÃO 3: Adicionado o `?.` antes do [periodo.key]
+                                value={config.datasPeriodos?.[periodo.key]?.fim || ""}
                                 onChange={(dataStr) => handleDataChange(periodo.key, "fim", dataStr)}
                                 dropdownAberto={dropdownAberto}
                                 setDropdownAberto={setDropdownAberto}

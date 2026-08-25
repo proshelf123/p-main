@@ -48,6 +48,9 @@ export default function TurmaNotas({ turma, uid, professor }) {
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
 
+  const NOTAS_ETEC = ["MB", "B", "R", "I"];
+const NOTAS_LETRAS = ["A+", "A", "B+", "B", "C+", "C", "D", "F"];
+
   useEffect(() => { carregar(); }, [turma?.id]);
 
   async function carregar() {
@@ -166,29 +169,63 @@ export default function TurmaNotas({ turma, uid, professor }) {
                   </td>
                   
                   {/* 4. Inputs gerados de acordo com os períodos e os bloqueios */}
+{/* 4. Inputs gerados de acordo com o Formato de Nota da Escola */}
                   {periodos.map((p) => {
                     const bloqueado = isPeriodoBloqueado(p.key);
+                    const tipoNota = config?.tipoNota || "numerica";
+                    const valorAtual = notas[a.id]?.[p.key] ?? "";
+
                     return (
                       <td key={p.key} style={{ padding: 8, textAlign: "center" }}>
-                        <input
-                          type="number"
-                          min={0}
-                          max={10}
-                          step={0.1}
-                          disabled={isCoordenador || bloqueado}
-                          className="perfil-input"
-                          title={bloqueado && !isCoordenador ? "Período fechado para lançamentos" : ""}
-                          style={{ 
-                            width: 64, 
-                            textAlign: "center", 
-                            padding: "6px 4px",
-                            opacity: bloqueado && !isCoordenador ? 0.5 : 1, // Deixa meio transparente se bloqueado
-                            cursor: bloqueado ? "not-allowed" : "text",
-                            background: bloqueado ? "var(--bg)" : "var(--branco)" // Escurece o fundo
-                          }}
-                          value={notas[a.id]?.[p.key] ?? ""}
-                          onChange={(e) => handleNota(a.id, p.key, e.target.value)}
-                        />
+                        
+                        {tipoNota === "numerica" ? (
+                          /* RENDERIZA INPUT NUMÉRICO TRADICIONAL */
+                          <input
+                            type="number"
+                            min={0}
+                            max={10}
+                            step={0.1}
+                            disabled={isCoordenador || bloqueado}
+                            className="perfil-input"
+                            title={bloqueado && !isCoordenador ? "Período fechado para lançamentos" : ""}
+                            style={{ 
+                              width: 64, 
+                              textAlign: "center", 
+                              padding: "6px 4px",
+                              opacity: bloqueado && !isCoordenador ? 0.5 : 1,
+                              cursor: bloqueado ? "not-allowed" : "text",
+                              background: bloqueado ? "var(--bg)" : "var(--branco)" 
+                            }}
+                            value={valorAtual}
+                            onChange={(e) => handleNota(a.id, p.key, e.target.value)}
+                          />
+                        ) : (
+                          /* RENDERIZA DROPDOWN DE CONCEITOS / LETRAS */
+                          <select
+                            disabled={isCoordenador || bloqueado}
+                            className="perfil-input"
+                            title={bloqueado && !isCoordenador ? "Período fechado para lançamentos" : ""}
+                            style={{ 
+                              width: 74,
+                              textAlign: "center",
+                              padding: "6px 20px 6px 8px", // Espaço extra na direita para a setinha do select
+                              opacity: bloqueado && !isCoordenador ? 0.5 : 1,
+                              cursor: bloqueado ? "not-allowed" : "pointer",
+                              background: bloqueado ? "var(--bg)" : "var(--branco)",
+                              appearance: "none"
+                            }}
+                            value={valorAtual}
+                            onChange={(e) => handleNota(a.id, p.key, e.target.value)}
+                          >
+                            <option value="">-</option>
+                            
+                            {/* Renderiza as opções dependendo do tipo */}
+                            {(tipoNota === "etec" ? NOTAS_ETEC : NOTAS_LETRAS).map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        )}
+
                       </td>
                     );
                   })}
