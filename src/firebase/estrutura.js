@@ -614,3 +614,64 @@ export async function buscarTurmasDaSala(uid, nomeSala) {
     id: d.id, ownerUid: d.ref.parent.parent.id, ...d.data()
   }));
 }
+
+// Lista as avaliações cadastradas numa turma, ordenadas por período e data de criação
+export async function buscarAvaliacoes(ownerUid, turmaId) {
+  const ref = collection(db, "turmas", ownerUid, "lista", turmaId, "avaliacoes");
+  const q = query(ref, orderBy("periodo"), orderBy("criadoEm"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// Professor cria uma avaliação nova (ex: "Prova 1", periodo_1, tipo "prova")
+export async function criarAvaliacao(ownerUid, turmaId, { nome, periodo, tipo, uid }) {
+  const ref = collection(db, "turmas", ownerUid, "lista", turmaId, "avaliacoes");
+  const novo = await addDoc(ref, {
+    nome,
+    periodo,
+    tipo: tipo || "avaliacao",
+    criadoEm: Date.now(),
+    criadoPor: uid,
+  });
+  return novo.id;
+}
+
+// Apaga a avaliação e limpa a nota correspondente de todos os alunos da turma
+export async function excluirAvaliacao(ownerUid, turmaId, avaliacaoId, alunoIds) {
+  const avaliacaoRef = doc(db, "turmas", ownerUid, "lista", turmaId, "avaliacoes", avaliacaoId);
+  await deleteDoc(avaliacaoRef);
+
+  await Promise.all(
+    (alunoIds || []).map((alunoId) => {
+      const notaRef = doc(db, "turmas", ownerUid, "lista", turmaId, "notas", alunoId);
+      return updateDoc(notaRef, {
+        [`notasDetalhadas.${avaliacaoId}`]: null,
+      }).catch(() => {});
+    })
+  );
+}
+
+// Busca as notas detalhadas (por avaliação) de todos os alunos da turma
+export async function buscarNotasDetalhadasDaTurma(ownerUid, turmaId) {
+  const ref = collection(db, "turmas", ownerUid, "lista", turmaId, "notas");
+  const snap = await getDocs(ref);
+  const resultado = {};
+  snap.docs.forEach((d) => {
+    resultado[d.id] = d.data()?.notasDetalhadas || {};
+  });
+  return resultado;
+}
+
+// Lança/atualiza a nota de UM aluno em UMA avaliação específica
+export async function salvarNotaAvaliacao(ownerUid, turmaId, alunoId, avaliacaoId, valor, uid) {
+  const notaRef = doc(db, "turmas", ownerUid, "lista", turmaId, "notas", alunoId);
+  await setDoc(
+    notaRef,
+    {
+      notasDetalhadas: { [avaliacaoId]: valor },
+      atualizadoPor: uid,
+      atualizadoEm: Date.now(),
+    },
+    { merge: true }
+  );
+}

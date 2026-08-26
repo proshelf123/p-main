@@ -6,6 +6,7 @@ import {
   salvarPresenca, 
   buscarCronograma 
 } from "../firebase/estrutura";
+import CustomDatePicker from "./dropdown-calendario";
 
 const STATUS = {
   presente: { label: "Presente", cor: "#0BDB23", icon: Check },
@@ -36,8 +37,9 @@ export default function TurmaPresenca({ turma, uid, professor }) {
   const [alunos, setAlunos] = useState([]);
   const [data, setData] = useState(hojeISO());
   const [status, setStatus] = useState({}); 
-  const [aulasNoDia, setAulasNoDia] = useState(1); 
-  
+  const [aulasNoDia, setAulasNoDia] = useState(1);
+  const [dropdownAberto, setDropdownAberto] = useState(null); 
+  const [semAulaHoje, setSemAulaHoje] = useState(false);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState("");
@@ -73,9 +75,19 @@ export default function TurmaPresenca({ turma, uid, professor }) {
                normalizarAgressivo(aula.disciplina) === discNorm &&
                normalizarAgressivo(aula.professor) === profNorm; // Conta apenas as aulas deste professor!
       });
+      if (aulasHoje.length === 0) {
+  setSemAulaHoje(true);
+  setAlunos([]);
+  setStatus({});
+  setAulasNoDia(0);
+  setLoading(false);
+  return;
+}
+setSemAulaHoje(false);
+setAlunos(listaAlunos);
 
-      const qtdAulas = Math.max(1, aulasHoje.length);
-      setAulasNoDia(qtdAulas);
+const qtdAulas = aulasHoje.length; // ANTES: Math.max(1, aulasHoje.length)
+setAulasNoDia(qtdAulas);
 
       setAlunos(listaAlunos);
       const inicial = {};
@@ -140,28 +152,37 @@ export default function TurmaPresenca({ turma, uid, professor }) {
           <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--texto)" }}>
             {isCoordenador ? "Visualizar presença" : "Registrar presença"}
           </h3>
-          {aulasNoDia > 1 && (
+          {aulasNoDia > 1 && !semAulaHoje && (
             <span style={{ display: "inline-block", marginTop: 6, fontSize: 11, background: "var(--roxo-claro)", color: "var(--roxo)", padding: "2px 8px", borderRadius: 10, fontWeight: 600 }}>
               Detectado: {aulasNoDia} tempos de aula neste dia
             </span>
           )}
         </div>
-        <input 
-          type="date" 
-          className="perfil-input" 
-          style={{ width: "auto", padding: "6px 10px" }}
-          value={data} 
-          onChange={(e) => setData(e.target.value)} 
-        />
+  <div style={{ minWidth: 160 }}>
+    <CustomDatePicker
+      id="data-presenca"
+      label={null}
+      value={data}
+      onChange={setData}
+      dropdownAberto={dropdownAberto}
+      setDropdownAberto={setDropdownAberto}
+    /> 
+    </div>
       </div>
 
       {erro && <p style={{ color: "#c0392b", fontSize: 12 }}>{erro}</p>}
       {mensagem && <p style={{ color: "#047857", fontSize: 12 }}>{mensagem}</p>}
 
-      {alunos.length === 0 ? (
-        <p className="secao-vazia">Nenhum aluno cadastrado nesta sala ainda.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      
+
+    {semAulaHoje ? (
+      <p className="secao-vazia">
+        Não há aula desta matéria para esta turma no dia selecionado.
+      </p>
+    ) : alunos.length === 0 ? (
+      <p className="secao-vazia">Nenhum aluno cadastrado nesta sala ainda.</p>
+    ) : (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {alunos.map((a) => (
             <div key={a.id} style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px", borderRadius: 12, background: "var(--bg)", border: "1px solid var(--borda)" }}>
               

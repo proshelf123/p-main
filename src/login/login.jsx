@@ -2,6 +2,7 @@ import styles from "./login.module.css";
 import React, { useState, useEffect } from "react";
 import LogoMetade from "../assets/Group 28.png";
 import LogoIcone from "../assets/Group 32 (2).png";
+import { Email } from "@smastrom/react-email-autocomplete";
 
 // 👇 IMPORTAÇÕES ATUALIZADAS 👇
 import { auth, functions } from "../firebase";
@@ -43,6 +44,11 @@ function Login() {
     setErroLogin(mensagem);
     setAnimacaoErro((valorAtual) => valorAtual + 1);
   };
+
+  const dominiosEmail = [
+    'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 
+    'uol.com.br', 'bol.com.br', 'terra.com.br', 'ig.com.br'
+  ];
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -144,17 +150,24 @@ function Login() {
           <div className={styles["form-wrapper"]}>
             <div className={styles.campo}>
               <label>E-mail</label>
-              <input
-                type="email"
-                placeholder="Digite seu e-mail"
-                value={email}
-                className={erroLogin ? styles["input-login-erro"] : ""}
-                aria-invalid={erroLogin ? "true" : "false"}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setErroLogin("");
-                }}
-              />
+<Email
+            classNames={{
+              wrapper: styles["email-wrapper"],
+              input: erroLogin ? styles["input-login-erro"] : "",
+              dropdown: styles["email-dropdown"],
+              suggestion: styles["email-suggestion"],
+            }}
+            baseList={dominiosEmail}
+            type="email"
+            placeholder="Digite seu e-mail"
+            value={email}
+            aria-invalid={erroLogin ? "true" : "false"}
+            onChange={(valorAtualizado) => {
+              // A biblioteca retorna a string diretamente, então não precisa de "e.target.value"
+              setEmail(valorAtualizado);
+              setErroLogin("");
+            }}
+          />
             </div>
 
             <div className={styles.campo}>

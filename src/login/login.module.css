@@ -407,6 +407,54 @@
     box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.25);
 }
 
+/* ── Autocomplete de E-mail ─────────────────────────────────────────────── */
+
+/* O container precisa ser relativo para ancorar a lista suspensa */
+.email-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* O menu suspenso das sugestões */
+.email-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    margin-top: 6px;
+    padding: 0;
+    list-style: none;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    overflow: hidden;
+}
+
+/* Estilo individual de cada linha de sugestão */
+.email-suggestion {
+    padding: 12px 16px;
+    font-size: 15px;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* 
+A biblioteca recomenda usar 'data-active-email' no lugar de ':hover' 
+para evitar problemas de foco quando usar as setas do teclado. 
+*/
+.email-suggestion[data-active-email="true"] {
+    background-color: #f4f0f9; /* Fundo roxo bem claro que combina com o tema */
+}
+
+/* Destaca o domínio (depois do @) com o roxo da sua marca */
+.email-suggestion span:last-of-type {
+    color: #6F3B9D;
+    font-weight: 600;
+}
+
 /* ── Responsivo ────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .lado-branco { --form-width: 300px; }

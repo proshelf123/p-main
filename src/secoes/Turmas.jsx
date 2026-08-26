@@ -17,9 +17,11 @@ import {
 import useCoresDisciplinas from "../hooks/useCoresDisciplinas";
 import { montarCoresDisciplina } from "./coresDisciplinas";
 import ModalNovaTurmaUnificada from "../coordenador/ModalNovaTurmaUnificada";
+import { motion, AnimatePresence } from "motion/react";
 
 // IMPORTANDO OS COMPONENTES DAS ABAS
 import TurmasNotas from "./TurmasNotas";
+import TurmaAvaliacoes from "./TurmaAvaliacoes"
 import TurmaPresenca from "./TurmaPresenca"; // Certifique-se de que este arquivo existe!
 
 const COR_TIPO = {
@@ -110,6 +112,8 @@ export default function Turmas({ uid, professor }) {
   const [turmaAberta, setTurmaAberta] = useState(null);
   const [secaoAtiva, setSecaoAtiva] = useState("registros"); // "registros" | "notas" | "presenca"
   const [turmaExpandidaId, setTurmaExpandidaId] = useState(null); // Para o Accordion da lista
+  const [subAbaNotas, setSubAbaNotas] = useState("resumo"); // "resumo" | "lancar" — novo
+
   
   // ── ESTADOS DOS REGISTROS ──
   const [registros, setRegistros] = useState([]);
@@ -156,6 +160,7 @@ export default function Turmas({ uid, professor }) {
   async function abrirSecaoTurma(turma, secao) {
     setTurmaAberta(turma);
     setSecaoAtiva(secao);
+    setSubAbaNotas("resumo");
     setErroRegistro("");
 
     try {
@@ -173,6 +178,7 @@ export default function Turmas({ uid, professor }) {
     setPainelRegistro(false);
     setRegistroAberto(null);
     setSecaoAtiva("registros");
+    setSubAbaNotas("resumo");
   }
 
   function handleEditarTurma(turma, e) {
@@ -379,9 +385,77 @@ export default function Turmas({ uid, professor }) {
           </>
         )}
 
-        {secaoAtiva === "notas" && (
+{secaoAtiva === "notas" && (
+  <>
+    {!isCoordenador && (
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {[          
+          { id: "lancar", label: "Lançar avaliações" },
+          { id: "resumo", label: "Ver totais" },
+        ].map((aba) => (
+          <motion.button
+            key={aba.id}
+            onClick={() => setSubAbaNotas(aba.id)}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              position: "relative",
+              padding: "6px 14px",
+              borderRadius: 8,
+              border: "1px solid var(--borda)",
+              background: "transparent",
+              color: subAbaNotas === aba.id ? "#fff" : "var(--texto)",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              overflow: "hidden",
+              transition: "color 0.2s ease",
+            }}
+          >
+            {subAbaNotas === aba.id && (
+              <motion.div
+                layoutId="pill-sub-notas"
+                transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "var(--roxo)",
+                  borderRadius: 7,
+                  zIndex: 0,
+                }}
+              />
+            )}
+            <span style={{ position: "relative", zIndex: 1 }}>{aba.label}</span>
+          </motion.button>
+        ))}
+      </div>
+    )}
+
+    <AnimatePresence mode="wait">
+      {isCoordenador || subAbaNotas === "resumo" ? (
+        <motion.div
+          key="resumo"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        >
           <TurmasNotas turma={turmaAberta} uid={uid} professor={professor} />
-        )}
+        </motion.div>
+      ) : (
+        <motion.div
+          key="lancar"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        >
+          <TurmaAvaliacoes turma={turmaAberta} uid={uid} professor={professor} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </>
+)}
 
         {secaoAtiva === "presenca" && (
           <TurmaPresenca turma={turmaAberta} uid={uid} professor={professor} />

@@ -53,6 +53,12 @@ function diasDoMes(ano, mes) {
   return cells;
 }
 
+// Filtra cronogramas que caem no dia da semana de hoje
+function aulasDeHoje(cronogramas) {
+  const diaAtual = DIAS_SEMANA[hoje().getDay()]; // ex: "Seg"
+  return cronogramas.filter((c) => c.dia === diaAtual);
+}
+
 // ── Sub-componente: Mini Calendário ──────────────────────────────────────────
 
 function MiniCalendario({ eventos = [] }) {
@@ -250,9 +256,10 @@ export default function Bemvindo({
 }) {
   const eCoordenador = professor?.role === "coordenador";
   const nome = professor?.nome ?? "";
-  const tituloCronogramas = eCoordenador ? "Cronogramas" : "Próximas aulas";
+  const cronogramasHoje = aulasDeHoje(cronogramas);
+  const tituloCronogramas = eCoordenador ? "Suas aulas de hoje" : "Próximas aulas";
   const textoVazioCronogramas = eCoordenador
-    ? "Nenhum cronograma encontrado."
+    ? "Nenhuma aula agendada para hoje."
     : "Nenhuma aula agendada para hoje.";
 
   return (
@@ -285,10 +292,10 @@ export default function Bemvindo({
             <Layers size={14} />
             <span>
               {eCoordenador
-                ? `${cronogramas.length} cronograma${cronogramas.length !== 1 ? "s" : ""
+                ? `${cronogramasHoje.length} aulas hoje ${cronogramasHoje.length !== 1 ? "" : ""
                 }`
-                : cronogramas.length > 0
-                  ? `${cronogramas.length} próxima${cronogramas.length > 1 ? "s" : ""} aula${cronogramas.length > 1 ? "s" : ""}`
+                : cronogramasHoje.length > 0
+                  ? `${cronogramasHoje.length} próxima${cronogramasHoje.length > 1 ? "s" : ""} aula${cronogramasHoje.length > 1 ? "s" : ""}`
                   : "Sem próximas aulas"}
             </span>
           </div>
@@ -325,11 +332,11 @@ export default function Bemvindo({
             </button>
           </div>
 
-          {cronogramas.length === 0 ? (
+          {cronogramasHoje.length === 0 ? (
             <p className="bv-vazio">{textoVazioCronogramas}</p>
           ) : (
             <div className="bv-crono-lista">
-              {cronogramas.slice(0, 5).map((c, i) => (
+              {cronogramasHoje.slice(0, 5).map((c, i) => (
                 <CardCronograma
                   key={c.id ?? i}
                   item={c}
