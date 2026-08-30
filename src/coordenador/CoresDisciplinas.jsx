@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Palette, Save } from 'lucide-react'
+import { Palette, Save, CheckCircle } from 'lucide-react'
 import {
   buscarCronograma,
   buscarTurmas,
@@ -20,6 +20,59 @@ import './coordenador.css'
 
 const MotionDiv = motion.div
 
+// ─── Modal Salvo com Sucesso ────────────────────────────────────────────────
+
+function ModalSalvoSucesso({ onFechar }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFechar()
+    }, 2500) // O modal fechará passados 2,5 segundos
+    return () => clearTimeout(timer)
+  }, [onFechar])
+
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={onFechar} />
+      <div className='modal-confirmar'>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#D1FAE5', // Verde bem claro para o fundo do ícone
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <CheckCircle size={26} color='#10B981' strokeWidth={2.2} /> {/* Verde esmeralda */}
+        </div>
+
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Salvo com sucesso!
+        </h3>
+
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
+          Todas as suas alterações foram registradas e já estão ativas no sistema.
+        </p>
+
+        <div style={{ display: 'flex' }}>
+          <button
+            onClick={onFechar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#10B981', // Verde principal
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Entendi
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function coletarDisciplinasDasAulas(aulas = []) {
   const nomes = []
   aulas.forEach((aula) => {
@@ -34,10 +87,10 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
   const coresSalvas = useCoresDisciplinas()
   const [coresDraft, setCoresDraft] = useState({})
   const [disciplinas, setDisciplinas] = useState([])
-  const [status, setStatus] = useState('')
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [carregando, setCarregando] = useState(true)
+  const [mostrarModalSalvo, setMostrarModalSalvo] = useState(false)
 
   useEffect(() => {
     setCoresDraft(coresSalvas)
@@ -87,7 +140,6 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
   function definirCor(nome, cor) {
     const chave = normalizarDisciplina(nome)
     const corNormalizada = normalizarHex(cor)
-    setStatus('')
     setErro('')
     setCoresDraft((atual) => ({
       ...atual,
@@ -118,11 +170,10 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
 
     setSalvando(true)
     setErro('')
-    setStatus('')
     try {
       await salvarCoresDisciplinas(uid, coresParaSalvar)
       setCoresDraft(coresParaSalvar)
-      setStatus('Cores das disciplinas atualizadas.')
+      setMostrarModalSalvo(true)
     } catch (err) {
       console.error('Erro ao salvar cores das disciplinas:', err)
       setErro('Erro ao salvar as cores. Verifique as permissoes do Firestore.')
@@ -189,7 +240,6 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
 
       <section className='cores-disc-card-2'>
         {erro && <p className='cores-disc-feedback erro'>{erro}</p>}
-        {status && <p className='cores-disc-feedback sucesso'>{status}</p>}
 
         {carregando ? (
           <p className='cores-disc-vazio'>Carregando disciplinas...</p>
@@ -231,6 +281,10 @@ export default function CoresDisciplinas({ uid, professor, cronogramas = [] }) {
           </div>
         )}
       </section>
+
+      {mostrarModalSalvo && (
+        <ModalSalvoSucesso onFechar={() => setMostrarModalSalvo(false)} />
+      )}
     </div>
   )
 }

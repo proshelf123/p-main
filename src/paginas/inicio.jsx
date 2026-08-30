@@ -5,10 +5,10 @@ import { Link, useNavigate } from 'react-router-dom'; //[cite: 1]
 import { UserRoundPlus, School } from 'lucide-react';
 
 // IMPORTANTE: Atualize os caminhos abaixo com as imagens reais do seu projeto
-import Logo from '../assets/Group 32 (2).png';
-import ImagemProfessores from '../assets/image 21.png';
-import ImagemAlunos from '../assets/image 20.png';
-import IconeEscola from '../assets/Union.png';
+import Logo from '../assets/Group 32 (2).webp';
+import ImagemProfessores from '../assets/image-21.webp';
+import ImagemAlunos from '../assets/image 20.webp';
+import IconeEscola from '../assets/Union.webp';
 
 // Variáveis de animação mantidas do protótipo original[cite: 1]
 const container = {

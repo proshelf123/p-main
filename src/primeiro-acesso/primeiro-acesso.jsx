@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router';
 import styles from './primeiro-acesso.module.css';
-import LogoMetade from '../assets/Group 28.png'
-import LogoIcone from "../assets/Group 32 (2).png"
+import LogoMetade from '../assets/Group 28.webp'
+import LogoIcone from "../assets/Group 32 (2).webp"
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
 import { ArrowLeft } from 'lucide-react';

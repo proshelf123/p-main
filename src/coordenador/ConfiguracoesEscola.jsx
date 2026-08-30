@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Settings, Calendar, Save, CheckCircle } from "lucide-react";
+import { Settings, Calendar, Save, CheckCircle, TriangleAlert } from "lucide-react";
 import { buscarConfiguracoesEscola, salvarConfiguracoesEscola } from "../firebase/estrutura";
 
 // Importe seus componentes customizados 
@@ -45,11 +45,64 @@ const OPCOES_TIPO_NOTA = [
     { valor: "letras", label: "Letras (A+, A, B, C...)" }
 ];
 
+// --- MODAL DE CONFIGURAÇÕES SALVAS COM SUCESSO ---
+function ModalConfiguracoesSalvas({ onFechar }) {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onFechar();
+        }, 2500); // O modal fechará passados 2,5 segundos
+        return () => clearTimeout(timer);
+    }, [onFechar]);
+
+    return (
+        <>
+            <div className='modal-confirmar-overlay' onClick={onFechar} style={{ zIndex: 99999 }} />
+            <div className='modal-confirmar' style={{ zIndex: 100000 }}>
+                <div style={{
+                    width: 52, height: 52, borderRadius: '50%',
+                    background: '#D1FAE5', // Verde bem claro para o fundo do ícone
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+                }}>
+                    <CheckCircle size={26} color='#10B981' strokeWidth={2.2} /> {/* Verde esmeralda */}
+                </div>
+
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+                    Configurações salvas!
+                </h3>
+
+                <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
+                    As regras da escola foram atualizadas e já estão ativas no sistema.
+                </p>
+
+                <div style={{ display: 'flex' }}>
+                    <button
+                        onClick={onFechar}
+                        style={{
+                            flex: 1, padding: '11px', borderRadius: 10,
+                            border: 'none', background: '#10B981', // Verde principal
+                            fontSize: 13, fontFamily: "'Poppins', sans-serif",
+                            fontWeight: 600, color: '#fff', cursor: 'pointer',
+                            transition: 'all .15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.transform = 'scale(1.02)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.transform = 'scale(1)' }}
+                    >
+                        Entendi
+                    </button>
+                </div>
+            </div>
+        </>
+    )
+}
+
 export default function ConfiguracoesEscola({ uid }) {
     const [loading, setLoading] = useState(true);
     const [salvando, setSalvando] = useState(false);
-    const [mensagem, setMensagem] = useState("");
+    const [mostrarModalSalvo, setMostrarModalSalvo] = useState(false);
     const [erro, setErro] = useState("");
+    const [animacaoErro, setAnimacaoErro] = useState(0); // dispara a animação da caixa de erro a cada novo erro
 
     // ESTADO GLOBAL PARA OS DROPDOWNS CUSTOMIZADOS FECHAREM UNS AOS OUTROS
     const [dropdownAberto, setDropdownAberto] = useState(null);
@@ -62,6 +115,11 @@ export default function ConfiguracoesEscola({ uid }) {
         anoLetivo: new Date().getFullYear().toString(),
         datasPeriodos: {}
     });
+
+    const dispararErro = (mensagem) => {
+        setErro(mensagem);
+        setAnimacaoErro((valorAtual) => valorAtual + 1);
+    };
 
     useEffect(() => {
         carregar();
@@ -78,7 +136,7 @@ export default function ConfiguracoesEscola({ uid }) {
                 datasPeriodos: dados?.datasPeriodos || {} 
             }));
         } catch (error) {
-            setErro("Não foi possível carregar as configurações.");
+            dispararErro("Não foi possível carregar as configurações.");
         } finally {
             setLoading(false);
         }
@@ -104,13 +162,12 @@ export default function ConfiguracoesEscola({ uid }) {
     }
 
     async function salvar() {
-        setSalvando(true); setErro(""); setMensagem("");
+        setSalvando(true); setErro("");
         try {
             await salvarConfiguracoesEscola(uid, config);
-            setMensagem("Configurações salvas com sucesso!");
-            setTimeout(() => setMensagem(""), 3000);
+            setMostrarModalSalvo(true);
         } catch (error) {
-            setErro("Erro ao salvar as configurações.");
+            dispararErro("Erro ao salvar as configurações.");
         } finally {
             setSalvando(false);
         }
@@ -134,8 +191,15 @@ export default function ConfiguracoesEscola({ uid }) {
                 </p>
             </div>
 
-            {erro && <p style={{ color: "#c0392b", fontSize: 13, marginBottom: 16 }}>{erro}</p>}
-            {mensagem && <p style={{ color: "#047857", fontSize: 13, marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}><CheckCircle size={16} />{mensagem}</p>}
+            {erro && (
+                <div
+                    key={animacaoErro}
+                    className='upload-erro upload-erro-anim'
+                    style={{ marginBottom: 16 }}
+                >
+                    <TriangleAlert size={18} /> {erro}
+                </div>
+            )}
 
             {/* --- BLOCO 1: REGRAS GERAIS --- */}
             <h3 style={{ fontSize: 15, color: "var(--roxo)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 16 }}>Regras Gerais</h3>
@@ -256,6 +320,11 @@ export default function ConfiguracoesEscola({ uid }) {
                 <Save size={18} />
                 {salvando ? "Salvando parâmetros..." : "Salvar Configurações da Escola"}
             </button>
+
+            {/* RENDERIZA O MODAL DE SUCESSO AO SALVAR */}
+            {mostrarModalSalvo && (
+                <ModalConfiguracoesSalvas onFechar={() => setMostrarModalSalvo(false)} />
+            )}
 
         </div>
     );

@@ -1,7 +1,7 @@
 import styles from "./login.module.css";
 import React, { useState, useEffect } from "react";
-import LogoMetade from "../assets/Group 28.png";
-import LogoIcone from "../assets/Group 32 (2).png";
+import LogoMetade from "../assets/Group 28.webp";
+import LogoIcone from "../assets/Group 32 (2).webp";
 import { Email } from "@smastrom/react-email-autocomplete";
 
 // 👇 IMPORTAÇÕES ATUALIZADAS 👇

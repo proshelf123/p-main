@@ -23,9 +23,9 @@ import {
   removerTemaVisual,
   salvarTemaLocal,
 } from '../tema'
-import Logo from '../assets/Group 32 (2).png'
-import LogoMini from '../assets/Group 34.png'
-import { UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck, ChevronDown, ChevronRight, FileTextIcon, Plus } from 'lucide-react'
+import Logo from '../assets/Group 32 (2).webp'
+import LogoMini from '../assets/Group-34.webp'
+import { UserRound, Settings, LogOut, Users, Menu, X, Palette, BookOpenCheck, ChevronDown, ChevronRight, FileTextIcon, Plus, UserStar  } from 'lucide-react'
 import Bemvindo from './Bem-vindo'
 import Cronogramas from '../secoes/Cronogramas'
 import Turmas from '../secoes/Turmas'
@@ -34,8 +34,9 @@ import Calendario from '../secoes/Calendario'
 import Configuracoes from '../secoes/config'
 import Perfil from '../perfil/Perfil'
 import NotificationBell from '../notificacoes/notificacoes.jsx'
-import IconePerfil from '../assets/Group 48.png'
-import LogoDarkMode from '../assets/PROSHELF COM LIVROSD.png'
+import IconePerfil from '../assets/Group-48.webp'
+import LogoDarkMode from '../assets/PROSHELF-COM-LIVROSD.webp'
+import LogoMiniDarkMode from '../assets/Group-52.webp'
 import NotificationToast from '../notificacoes/notificacaoToast.jsx'
 import useNotificacoes from "../notificacoes/useNotificacoes"
 import CadastroProfessores from '../coordenador/CadastroProfessores'
@@ -45,6 +46,7 @@ import ModalNovaTurmaUnificada from '../coordenador/ModalNovaTurmaUnificada'
 import AlunosTurmas from '../coordenador/TurmaAlunos'
 import ConfiguracoesEscola from '../coordenador/ConfiguracoesEscola'
 import Boletins from '../coordenador/Boletins'
+import GerenciarCoordenadores from '../coordenador/GerenciarCoordenadores.jsx'
 
 const MotionDiv = motion.div
 
@@ -65,7 +67,7 @@ function Dashboard() {
   const dropdownRef = useRef(null)
   const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
   const eCoordenador = professor?.role === 'coordenador'
-  const SECOES_COORDENADOR = ['Professores', 'Alunos', 'Cores', 'Disciplinas', 'Configurações da Escola', 'Boletins']
+  const SECOES_COORDENADOR = ['Professores', 'Alunos', 'Cores', 'Disciplinas', 'Config. da Escola', 'Boletins', 'Gerenciar Coordenadores']
 
   // ── Listener único: alimenta o sino e dispara os toasts em tempo real ──
   const { notificacoes } = useNotificacoes(uid)
@@ -188,6 +190,7 @@ function Dashboard() {
       case 'Disciplinas': return <ProfessoresDisciplinas uid={uid} />
       case 'Configurações da Escola': return <ConfiguracoesEscola uid={uid} />
       case 'Boletins': return <Boletins uid={uid} />
+      case 'Gerenciar Coordenadores': return <GerenciarCoordenadores uid={uid} />
       default: return null
     }
   }
@@ -251,8 +254,10 @@ function Dashboard() {
                 {s === 'Alunos' && <UserRound size={14} />}
                 {s === 'Cores' && <Palette size={14} />}
                 {s === 'Disciplinas' && <BookOpenCheck size={14} />}
-                {s === 'Configurações da Escola' && <Settings size={14} />}
+                {s === 'Config. da Escola' && <Settings size={14} />}
                 {s === 'Boletins' && <FileTextIcon size={14} />}
+                {s === 'Gerenciar Coordenadores' && <FileTextIcon size={14} />}
+
                 {s}
               </button>
             ))}
@@ -269,18 +274,21 @@ function Dashboard() {
           <img src={LogoDarkMode} alt='ProShelf' className='logo-escuro' />
         </div>
 
-        {/* Substituímos o ícone <Menu /> pela imagem LogoMini */}
-        <button
-          className='nav-hamburger'
-          onClick={() => setMenuMobileAberto(v => !v)}
-          aria-label='Abrir menu'
-        >
-          {menuMobileAberto ? (
-            <X size={28} /> /* Mantemos o X para fechar o menu */
-          ) : (
-            <img src={LogoMini} alt='Menu' className='logo-mini-btn' />
-          )}
-        </button>
+{/* Substituímos o ícone <Menu /> pela imagem LogoMini (clara e escura) */}
+<button
+  className='nav-hamburger'
+  onClick={() => setMenuMobileAberto(v => !v)}
+  aria-label='Abrir menu'
+>
+  {menuMobileAberto ? (
+    <X size={28} />
+  ) : (
+    <>
+      <img src={LogoMini} alt='Menu' className='logo-mini-claro' />
+      <img src={LogoMiniDarkMode} alt='Menu' className='logo-mini-escuro' />
+    </>
+  )}
+</button>
 
         <nav>
           <ul className='lista-nav'>
@@ -352,6 +360,9 @@ function Dashboard() {
                               </button>
                               <button className={`nav-coord-item ${secaoAtiva === 'Alunos' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Alunos'); setCoordAberto(false) }}>
                                 <UserRound size={15} /> Alunos
+                              </button>
+                               <button className={`nav-coord-item ${secaoAtiva === 'Gerenciar Coordenadores' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Gerenciar Coordenadores'); setCoordAberto(false) }}>
+                                <UserStar  size={15} /> Coordenadores
                               </button>
                             </div>
                           </div>

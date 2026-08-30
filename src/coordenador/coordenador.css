@@ -55,7 +55,27 @@ main, .pagina-conteudo {
   color: var(--texto-sec);
   margin: 0;
 }
+@keyframes campo-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
 
+@keyframes upload-erro-entrada {
+  0% { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.upload-erro-anim {
+  animation: upload-erro-entrada 0.25s ease both, campo-shake 0.4s ease;
+}
+
+.perfil-input-erro {
+  border-color: #ED235C !important;
+  animation: campo-shake 0.4s ease;
+}
 .cores-disc-salvar,
 .cores-disc-add-btn {
   display: inline-flex;

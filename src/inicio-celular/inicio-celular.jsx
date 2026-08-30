@@ -1,18 +1,14 @@
 import './inicio-celular.css'
 import { motion } from "framer-motion";
 import { useNavigate } from 'react-router';
-import LogoMobile from '../assets/Group 44.png'
-import Background from '../assets/background.webp'
-import { Link } from "react-router"
+import LogoMobile from '../assets/Group-44.webp'
+// import { Link } from "react-router" <-- Removido (não estava sendo usado)
 
 export default function InicioMobile() {
   const navigate = useNavigate();
 
   return (
-    <div className="im-wrapper">
-
-      {/* Fundo com padrão de ícones */}
-<div className="im-bg-pattern" aria-hidden="true" style={{ backgroundImage: `url(${Background})` }} />
+      <div className="im-wrapper">
 
       {/* Círculos laranja */}
       <div className="im-circulo-laranja" />
@@ -31,6 +27,7 @@ export default function InicioMobile() {
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
                 className="im-barra-animada"
+                style={{ transformOrigin: "left" }} /* Evita o reflow forçado na animação */
               />
             </span>
             <span className="im-sem-barra">g</span>
@@ -41,6 +38,7 @@ export default function InicioMobile() {
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.6, ease: "easeOut", delay: 0.8 }}
                 className="im-barra-animada"
+                style={{ transformOrigin: "left" }} /* Evita o reflow forçado na animação */
               />
             </span>
           </span>
@@ -48,22 +46,30 @@ export default function InicioMobile() {
           {" "}do professor
         </h1>
 
-<motion.button
-  className="im-botao"
-  onClick={() => navigate("/login")}
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.5, ease: "easeOut", delay: 1.0 }}
-  whileTap={{ scale: 0.96 }}
->
-  Entrar
-</motion.button>
+      <motion.button
+        className="im-botao"
+        onClick={() => navigate("/login")}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 1.0 }}
+        whileTap={{ scale: 0.96 }}
+      >
+        Entrar
+      </motion.button>
 
       </main>
 
       {/* Footer com logo */}
       <footer className="im-footer">
-        <img src={LogoMobile} alt="ProShelf" className="im-logo-footer" />
+        <img 
+          src={LogoMobile} 
+          alt="ProShelf" 
+          className="im-logo-footer" 
+          width="150" /* Substitua pela largura real em pixels da sua logo */
+          height="50" /* Substitua pela altura real em pixels da sua logo */
+          loading="lazy" /* Só baixa a imagem quando o scroll chegar perto */
+          decoding="async" /* Evita que a imagem trave o JavaScript principal */
+        />
       </footer>
 
     </div>

@@ -8,12 +8,15 @@
     <title>ProShelf</title>
 
     <!-- Fontes: um único request otimizado (substitui os ~12 @import bloqueantes espalhados nos CSS) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- 2. Faz o preload do CSS da fonte com alta prioridade -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap">
+
+    <!-- 3. Carrega o CSS de forma assíncrona (não bloqueia a renderização da tela) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'">
   </head>
   <body>
     <div id="root"></div>

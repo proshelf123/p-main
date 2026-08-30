@@ -675,3 +675,19 @@ export async function salvarNotaAvaliacao(ownerUid, turmaId, alunoId, avaliacaoI
     { merge: true }
   );
 }
+
+export async function promoverACoordenador(uid) {
+  try {
+    const userRef = doc(db, 'users', uid);
+    
+    await updateDoc(userRef, {
+      role: 'coordenador'
+    });
+    
+    console.log("Cargo do usuário atualizado para coordenador com sucesso!");
+    return { sucesso: true };
+  } catch (error) {
+    console.error("Erro ao atualizar o role para coordenador:", error);
+    throw error;
+  }
+}

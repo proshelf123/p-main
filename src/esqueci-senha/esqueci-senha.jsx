@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from './esqueci-senha.module.css';
-import LogoMetade from '../assets/Group 28.png'
-import LogoIcone from "../assets/Group 32 (2).png"
+import LogoMetade from '../assets/Group 28.webp'
+import LogoIcone from "../assets/Group 32 (2).webp"
 import { auth } from "../firebase"; 
 import { sendPasswordResetEmail } from "firebase/auth";
 import { Link, useNavigate } from 'react-router';

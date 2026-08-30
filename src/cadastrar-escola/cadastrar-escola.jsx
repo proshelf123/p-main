@@ -1,7 +1,7 @@
 import '../cadastrar-escola/cadastrar-escola.css'
 import React, { useState, useRef } from 'react';
-import LogoMetade from '../assets/Group 28.png';
-import LogoIcone from '../assets/Group 32 (2).png';
+import LogoMetade from '../assets/Group 28.webp';
+import LogoIcone from '../assets/Group 32 (2).webp';
 import { Link, useNavigate } from 'react-router';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';

@@ -112,11 +112,58 @@ body > *:not(.dash-wrapper) {
   z-index: 9999;
 }
 
-.logo-mini-btn {
-  height: 28px; /* Ajuste essa altura conforme ficar melhor no seu layout */
+/* ── Estilo e alternância das imagens do Hambúrguer ── */
+.logo-mini-claro,
+.logo-mini-escuro {
+  height: 28px;
   object-fit: contain;
 }
 
+.logo-mini-claro {
+  display: block;
+}
+
+.logo-mini-escuro {
+  display: none;
+}
+
+/* Quando o Dark Mode estiver ativo */
+:root.dark-mode .logo-mini-claro {
+  display: none;
+}
+
+:root.dark-mode .logo-mini-escuro {
+  display: block;
+}
+
+/* ── Correção unificada para telas até 768px ── */
+@media (max-width: 768px) {
+  .cabecalho-dashboard {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 16px;
+    min-height: 64px;
+  }
+
+  /* Esconde a logo grande e a nav principal no mobile */
+  .cabecalho-logo,
+  .cabecalho-dashboard > nav {
+    display: none !important;
+  }
+
+  /* Garante visibilidade do botão hambúrguer */
+  .nav-hamburger {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Empurra o perfil e sininho para a extrema direita */
+  .cabecalho-acoes {
+    margin-left: auto;
+  }
+}
 /* Altura dinâmica baseada no tamanho da fonte */
 :root.font-size-grande .cabecalho-dashboard {
   min-height: 80px;
@@ -517,6 +564,7 @@ body:has(.dash-wrapper) {
     height: auto !important;
   }
 
+
   /* 1. Mudamos de grid para flex e usamos space-between para afastar os itens */
   .cabecalho-dashboard {
     display: flex;
@@ -755,80 +803,6 @@ body:has(.dash-wrapper) {
   .perfil-icone {
     width: 48px;
     height: 48px;
-  }
-}
-
-/* ── 768px: esconde nav horizontal, mostra hambúrguer ── */
-@media (max-width: 768px) {
-  
-  body:has(.dash-wrapper) {
-    overflow: auto !important;
-    height: auto !important;
-  }
-
-  .cabecalho-dashboard {
-    grid-template-columns: auto auto 1fr;
-    padding: 0 16px;
-    min-height: 64px;
-  }
-
-  .cabecalho-logo {
-    margin-right: 12px;
-  }
-
-  /* Esconde a nav central */
-  .cabecalho-dashboard > nav {
-    display: none;
-  }
-
-  /* Hambúrguer visível */
-  .nav-hamburger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: start;   /* era center */
-  }
-
-  #logo,
-  .logo-claro,
-  .logo-escuro {
-    height: 44px;
-  }
-  .perfil-icone {
-    width: 42px;
-    height: 42px;
-  }
-
-  /* Conteúdo principal */
-  .dash-conteudo {
-    padding: 80px 16px 32px;
-  }
-  :root.font-size-grande .dash-conteudo {
-    padding: 88px 16px 32px;
-  }
-
-  /* Cards e grids */
-  .grid-2,
-  .grid-3 {
-    grid-template-columns: 1fr;
-  }
-  .bv-stats {
-    display: none;
-  }
-
-  /* Boas-vindas */
-  .boas-vindas {
-    flex-wrap: wrap;
-  }
-
-  /* Botão flutuante sobe do bottom nav se houver */
-  .btn-adicionar {
-    bottom: 24px;
-  }
-
-  /* Dropdown de perfil */
-  .dropdown {
-    min-width: 170px;
   }
 }
 

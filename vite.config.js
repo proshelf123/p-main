@@ -1,31 +1,34 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   base: '/',
   plugins: [react()],
   
   server: {
-    host: true, // Ou '0.0.0.0'
+    host: true, 
   },
 
   build: {
+    target: 'esnext', // Gera código nativo moderno (Remove polyfills pesados e reduz tamanho em até 20%)
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // Separa dependências grandes em chunks próprios: mudam pouco entre
-        // deploys, então o navegador reaproveita o cache e só rebaixa o app.
-        // Obs.: o Vite 8 usa rolldown, que exige manualChunks como FUNÇÃO.
         manualChunks(id) {
-          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
-            return 'firebase'
+          // Isola o React
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
           }
-          if (id.includes('node_modules/framer-motion') || id.includes('node_modules/motion-dom') || id.includes('node_modules/motion-utils')) {
-            return 'motion'
+          // Isola o Firebase (que é gigantesco)
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'firebase';
+          }
+          // Isola o Framer Motion
+          if (id.includes('node_modules/framer-motion')) {
+            return 'motion';
           }
         },
       },
     },
   },
-
 })

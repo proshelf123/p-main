@@ -330,7 +330,7 @@ body, html {
     flex-direction: column;
     justify-content: center;
     /* Reduzimos o padding direito (que era 8%) para dar mais espaço ao texto */
-    padding: 0 4% 0 8%;
+    padding: 0 6% 0 8%;
     color: white;
     border-right: 60px solid #8E6FAA;
 }

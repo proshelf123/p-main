@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Printer, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   escutarTurmasPeriodo, 
   buscarAlunos, 
@@ -174,24 +175,46 @@ export default function Boletins({ uid }) {
       ) : disciplinasUnicas.length === 0 ? (
         <p className="secao-vazia">Nenhuma disciplina vinculada a esta sala ainda.</p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {alunos.map((aluno) => {
-            const expandido = alunoExpandido === aluno.id;
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            style={{ display: "flex", flexDirection: "column", gap: 10 }}
+          >
+            {alunos.map((aluno, index) => {
+              const expandido = alunoExpandido === aluno.id;
 
-            return (
-              <div key={aluno.id} style={{ border: "1px solid var(--borda)", borderRadius: 12, overflow: "hidden", background: expandido ? "var(--branco)" : "white", transition: "all 0.2s" }}>
+              return (
+                <AnimatePresence key={aluno.id} mode="wait">
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: 10 }}
+                    whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.08)", transition: { duration: 0.2 } }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ border: "1px solid var(--borda)", borderRadius: 12, overflow: "hidden", background: expandido ? "var(--branco)" : "white" }}
+                  >
                 
                 {/* CABEÇALHO DO ACCORDION (Nome do Aluno) */}
-                <button 
+                <motion.button 
                   className="nao-imprimir"
                   onClick={() => setAlunoExpandido(expandido ? null : aluno.id)}
+                  whileTap={{ scale: 0.98 }}
                   style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "transparent", border: "none", cursor: "pointer" }}
                 >
                   <span style={{ fontSize: 15, fontWeight: 600, color: "var(--texto)" }}>
                     {aluno.numero ? `${aluno.numero} · ` : ""}{aluno.nome}
                   </span>
-                  <span style={{ fontSize: 18, color: "var(--texto-sec)", transform: expandido ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>›</span>
-                </button>
+                  <motion.span 
+                    animate={{ rotate: expandido ? 90 : 0 }} 
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    style={{ fontSize: 18, color: "var(--texto-sec)" }}
+                  >
+                    ›
+                  </motion.span>
+                </motion.button>
 
                 {/* CORPO DO BOLETIM (Tabela de Notas) */}
                 {expandido && (
@@ -220,14 +243,20 @@ export default function Boletins({ uid }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {disciplinasUnicas.map(disciplina => {
+                        {disciplinasUnicas.map((disciplina, dIndex) => {
                           const notasDoAluno = notasGerais[aluno.id]?.[disciplina] || {};
                           const media = calcularMedia(notasDoAluno, periodos);
                           const mediaNum = parseFloat(media);
-                          const corMedia = !isNaN(mediaNum) ? (mediaNum >= mediaCorte ? "#047857" : "#ED235C") : "var(--texto)"; // Verde ou Vermelho
+                          const corMedia = !isNaN(mediaNum) ? (mediaNum >= mediaCorte ? "#047857" : "#ED235C") : "var(--texto)";
 
                           return (
-                            <tr key={disciplina} style={{ borderBottom: "1px solid var(--borda)" }}>
+                            <motion.tr
+                              key={disciplina}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: dIndex * 0.05, ease: [0.4, 0, 0.2, 1] }}
+                              style={{ borderBottom: "1px solid var(--borda)" }}
+                            >
                               <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--texto)" }}>{disciplina}</td>
                               
                               {periodos.map(p => {
@@ -243,7 +272,7 @@ export default function Boletins({ uid }) {
                               <td style={{ padding: "10px 12px", textAlign: "center", fontWeight: 700, color: corMedia, background: "#fafafa" }}>
                                 {media}
                               </td>
-                            </tr>
+                            </motion.tr>
                           );
                         })}
                       </tbody>
@@ -253,10 +282,12 @@ export default function Boletins({ uid }) {
                     </p>
                   </div>
                 )}
-              </div>
-            );
-          })}
-        </div>
+              </motion.div>
+            </AnimatePresence>
+          );
+        })}
+      </motion.div>
+    </AnimatePresence>
       )}
     </div>
   );

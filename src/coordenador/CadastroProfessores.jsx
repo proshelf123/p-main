@@ -78,7 +78,7 @@ async function chamarFuncaoProfessor(nomeFuncao, dados) {
   }
 }
 
-// --- NOVO MODAL DE CONFIRMAÇÃO ---
+// --- MODAL DE CONFIRMAÇÃO (exclusão) ---
 function ModalConfirmarProfessor({ professor, onConfirmar, onCancelar }) {
   const nome = obterNomeProfessor(professor);
   const email = professor?.email || '';
@@ -150,21 +150,82 @@ function ModalConfirmarProfessor({ professor, onConfirmar, onCancelar }) {
   );
 }
 
+// --- MODAL DE PROFESSOR CADASTRADO (sucesso) ---
+function ModalProfessorCadastrado({ nome, onFechar }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFechar()
+    }, 2500) // O modal fechará passados 2,5 segundos
+    return () => clearTimeout(timer)
+  }, [onFechar])
+
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={onFechar} style={{ zIndex: 99999 }} />
+      <div className='modal-confirmar' style={{ zIndex: 100000 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#D1FAE5', // Verde bem claro para o fundo do ícone
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <CircleCheckBig size={26} color='#10B981' strokeWidth={2.2} /> {/* Verde esmeralda */}
+        </div>
+
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Professor cadastrado!
+        </h3>
+
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
+          {nome ? `${nome} já` : 'Ele já'} pode fazer login com o e-mail e senha definidos.
+        </p>
+
+        <div style={{ display: 'flex' }}>
+          <button
+            onClick={onFechar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#10B981', // Verde principal
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Entendi
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function CadastroProfessores() {
   const [professores, setProfessores] = useState([])
   const [loading, setLoading]         = useState(true)
   const [form, setForm]               = useState(FORM_INICIAL)
   const [salvando, setSalvando]       = useState(false)
-  const [salvo, setSalvo]             = useState(false)
   const [erro, setErro]               = useState('')
+  const [animacaoErro, setAnimacaoErro] = useState(0) // dispara a animação a cada novo erro
+  const [camposComErro, setCamposComErro] = useState([]) // quais inputs devem tremer/contornar de vermelho
   const [mostrarSenha, setMostrarSenha] = useState(false)
-  
+
+  // Estado do modal de sucesso do cadastro
+  const [professorCadastrado, setProfessorCadastrado] = useState(null)
+
   // Estados para o Modal de Exclusão
   const [excluindoId, setExcluindoId] = useState('')
   const [professorParaDeletar, setProfessorParaDeletar] = useState(null)
 
   const componenteAtivoRef = useRef(true)
-  const salvoTimeoutRef = useRef(null)
+
+  const dispararErro = useCallback((mensagem, campos = []) => {
+    setErro(mensagem)
+    setCamposComErro(campos)
+    setAnimacaoErro((valorAtual) => valorAtual + 1)
+  }, [])
 
   const carregarProfessores = useCallback(async ({ mostrarLoading = true } = {}) => {
     if (mostrarLoading) setLoading(true)
@@ -202,12 +263,12 @@ export default function CadastroProfessores() {
       console.error('Erro ao carregar professores:', error)
 
       if (!componenteAtivoRef.current) return
-      setErro(mensagemErro(error, 'Erro ao carregar professores.'))
+      dispararErro(mensagemErro(error, 'Erro ao carregar professores.'))
       setProfessores([])
     } finally {
       if (componenteAtivoRef.current) setLoading(false)
     }
-  }, [])
+  }, [dispararErro])
 
   useEffect(() => {
     componenteAtivoRef.current = true
@@ -215,7 +276,6 @@ export default function CadastroProfessores() {
 
     return () => {
       componenteAtivoRef.current = false
-      if (salvoTimeoutRef.current) clearTimeout(salvoTimeoutRef.current)
     }
   }, [carregarProfessores])
 
@@ -223,6 +283,7 @@ export default function CadastroProfessores() {
     const { name, value } = e.target
     setForm((formAtual) => ({ ...formAtual, [name]: value }))
     setErro('')
+    setCamposComErro([])
   }
 
 
@@ -269,18 +330,25 @@ export default function CadastroProfessores() {
     }
 
     if (!dados.nome || !dados.email || !dados.senha) {
-      setErro('Preencha todos os campos.'); return
+      dispararErro('Preencha todos os campos.', [
+        !dados.nome && 'nome',
+        !dados.email && 'email',
+        !dados.senha && 'senha',
+      ].filter(Boolean))
+      return
     }
     if (!dados.email.includes('@')) {
-      setErro('Digite um e-mail válido.'); return
+      dispararErro('Digite um e-mail válido.', ['email'])
+      return
     }
     if (dados.senha.length < 6) {
-      setErro('A senha deve ter pelo menos 6 caracteres.'); return
+      dispararErro('A senha deve ter pelo menos 6 caracteres.', ['senha'])
+      return
     }
 
     setSalvando(true)
     setErro('')
-    setSalvo(false)
+    setCamposComErro([])
 
     try {
       const resultadoId = await chamarFuncaoProfessor('criarProfessor', dados)
@@ -298,13 +366,8 @@ export default function CadastroProfessores() {
       await enviarNotificacaoBoasVindas(uidCriado, dados.nome)
 
       if (!componenteAtivoRef.current) return
+      setProfessorCadastrado(dados.nome)
       setForm(FORM_INICIAL)
-      setSalvo(true)
-
-      if (salvoTimeoutRef.current) clearTimeout(salvoTimeoutRef.current)
-      salvoTimeoutRef.current = setTimeout(() => {
-        if (componenteAtivoRef.current) setSalvo(false)
-      }, 3000)
 
       await carregarProfessores({ mostrarLoading: false })
 
@@ -312,7 +375,7 @@ export default function CadastroProfessores() {
       console.error('Erro ao cadastrar professor:', error)
 
       if (componenteAtivoRef.current) {
-        setErro(mensagemErro(error, 'Erro ao cadastrar professor.'))
+        dispararErro(mensagemErro(error, 'Erro ao cadastrar professor.'))
       }
     } finally {
       if (componenteAtivoRef.current) setSalvando(false)
@@ -323,7 +386,7 @@ export default function CadastroProfessores() {
   function solicitarDelecao(professor) {
     const email = normalizarEmail(professor?.email)
     if (!email) {
-      setErro('Não foi possível remover: o professor está sem e-mail cadastrado.')
+      dispararErro('Não foi possível remover: o professor está sem e-mail cadastrado.')
       return
     }
     setProfessorParaDeletar(professor)
@@ -337,6 +400,7 @@ export default function CadastroProfessores() {
     const id = professorParaDeletar?.id || email
 
     setErro('')
+    setCamposComErro([])
     setExcluindoId(id)
     setProfessorParaDeletar(null) // Fecha o modal imediatamente para não prender o ecrã
     
@@ -347,7 +411,7 @@ export default function CadastroProfessores() {
       console.error('Erro ao remover professor:', error)
 
       if (componenteAtivoRef.current) {
-        setErro(mensagemErro(error, 'Erro ao remover professor.'))
+        dispararErro(mensagemErro(error, 'Erro ao remover professor.'))
       }
     } finally {
       if (componenteAtivoRef.current) setExcluindoId('')
@@ -386,21 +450,30 @@ export default function CadastroProfessores() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
         <div className='perfil-grupo'>
           <label className='perfil-label'>Nome completo do professor</label>
-          <input className='perfil-input' name='nome' value={form.nome}
-            onChange={handleChange} placeholder='Ex: Maria José da Silva' />
+          <input
+            key={camposComErro.includes('nome') ? `nome-erro-${animacaoErro}` : 'nome'}
+            className={`perfil-input ${camposComErro.includes('nome') ? 'perfil-input-erro' : ''}`}
+            name='nome' value={form.nome}
+            onChange={handleChange} placeholder='Ex: Maria José da Silva'
+          />
         </div>
 
         <div className='perfil-grupo'>
           <label className='perfil-label'>E-mail de acesso</label>
-          <input className='perfil-input' type='email' name='email' value={form.email}
-            onChange={handleChange} placeholder='professor@email.com' />
+          <input
+            key={camposComErro.includes('email') ? `email-erro-${animacaoErro}` : 'email'}
+            className={`perfil-input ${camposComErro.includes('email') ? 'perfil-input-erro' : ''}`}
+            type='email' name='email' value={form.email}
+            onChange={handleChange} placeholder='professor@email.com'
+          />
         </div>
 
         <div className='perfil-grupo'>
           <label className='perfil-label'>Senha temporária</label>
           <div style={{ position: 'relative' }}>
             <input
-              className='perfil-input'
+              key={camposComErro.includes('senha') ? `senha-erro-${animacaoErro}` : 'senha'}
+              className={`perfil-input ${camposComErro.includes('senha') ? 'perfil-input-erro' : ''}`}
               type={mostrarSenha ? 'text' : 'password'}
               name='senha' value={form.senha}
               onChange={handleChange}
@@ -420,11 +493,9 @@ export default function CadastroProfessores() {
           </span>
         </div>
 
-        {erro && <div className='upload-erro'><TriangleAlert size={25}/> {erro}</div>}
-
-        {salvo && (
-          <div className='upload-sucesso'>
-            <CircleCheckBig /> Professor cadastrado! Ele já pode fazer login com o e-mail e senha definidos.
+        {erro && (
+          <div key={animacaoErro} className='upload-erro upload-erro-anim'>
+            <TriangleAlert size={25}/> {erro}
           </div>
         )}
 
@@ -493,6 +564,14 @@ export default function CadastroProfessores() {
           professor={professorParaDeletar}
           onConfirmar={executarDelecao}
           onCancelar={() => setProfessorParaDeletar(null)}
+        />
+      )}
+
+      {/* RENDERIZA O MODAL DE SUCESSO DO CADASTRO */}
+      {professorCadastrado && (
+        <ModalProfessorCadastrado
+          nome={professorCadastrado}
+          onFechar={() => setProfessorCadastrado(null)}
         />
       )}
 

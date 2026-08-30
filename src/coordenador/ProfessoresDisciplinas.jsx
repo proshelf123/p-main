@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, Save, Trash2, UsersRound } from 'lucide-react'
+import { CheckCircle, Plus, Save, Trash2, TriangleAlert, UsersRound } from 'lucide-react'
 import {
   buscarProfessores,
   escutarProfessoresDisciplinas,
@@ -102,19 +102,79 @@ function ModalConfirmarDesvinculo({ disciplina, professorLetra, professorValor, 
   );
 }
 
+// --- MODAL DE SUCESSO (genérico: disciplina adicionada / vínculos salvos) ---
+function ModalSucessoDisciplinas({ mensagem, onFechar }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFechar()
+    }, 2500) // O modal fechará passados 2,5 segundos
+    return () => clearTimeout(timer)
+  }, [onFechar])
+
+  return (
+    <>
+      <div className='modal-confirmar-overlay' onClick={onFechar} style={{ zIndex: 99999 }} />
+      <div className='modal-confirmar' style={{ zIndex: 100000 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#D1FAE5', // Verde bem claro para o fundo do ícone
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'confirm-icon-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
+        }}>
+          <CheckCircle size={26} color='#10B981' strokeWidth={2.2} /> {/* Verde esmeralda */}
+        </div>
+
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
+          Salvo com sucesso!
+        </h3>
+
+        <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
+          {mensagem}
+        </p>
+
+        <div style={{ display: 'flex' }}>
+          <button
+            onClick={onFechar}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 10,
+              border: 'none', background: '#10B981', // Verde principal
+              fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600, color: '#fff', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.transform = 'scale(1.02)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.transform = 'scale(1)' }}
+          >
+            Entendi
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function ProfessoresDisciplinas({ uid }) {
   const coresDisciplinas = useCoresDisciplinas()
   const [professores, setProfessores] = useState([])
   const [vinculosDraft, setVinculosDraft] = useState({})
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [status, setStatus] = useState('')
   const [erro, setErro] = useState('')
+  const [animacaoErro, setAnimacaoErro] = useState(0) // dispara a animação da caixa de erro a cada novo erro
+  const [campoDisciplinaComErro, setCampoDisciplinaComErro] = useState(false)
   const [dropdownAberto, setDropdownAberto] = useState(null)
   const [professoresExtras, setProfessoresExtras] = useState({})
   const [novaDisciplina, setNovaDisciplina] = useState('')
   const [adicionando, setAdicionando] = useState(false)
   const [confirmarDeleteProfessor, setConfirmarDeleteProfessor] = useState(null);
+  const [mensagemSucesso, setMensagemSucesso] = useState('')
+
+  const dispararErro = (mensagem, comCampoDisciplina = false) => {
+    setErro(mensagem)
+    setCampoDisciplinaComErro(comCampoDisciplina)
+    setAnimacaoErro((valorAtual) => valorAtual + 1)
+  }
 
   useEffect(() => {
     let ativo = true
@@ -124,7 +184,7 @@ export default function ProfessoresDisciplinas({ uid }) {
     })
       .catch((err) => {
         console.error('Erro ao carregar professores para disciplinas:', err)
-        if (ativo) setErro('Nao foi possivel carregar os professores.')
+        if (ativo) dispararErro('Nao foi possivel carregar os professores.')
       })
 
     return () => { ativo = false }
@@ -138,7 +198,7 @@ export default function ProfessoresDisciplinas({ uid }) {
       },
       (err) => {
         console.error('Erro ao carregar vinculos de disciplinas:', err)
-        setErro('Nao foi possivel carregar os vinculos.')
+        dispararErro('Nao foi possivel carregar os vinculos.')
         setCarregando(false)
       }
     )
@@ -172,7 +232,7 @@ export default function ProfessoresDisciplinas({ uid }) {
     if (!chave) return
 
     if (coresDisciplinas[chave]) {
-      setErro(`A disciplina "${nome}" já existe.`)
+      dispararErro(`A disciplina "${nome}" já existe.`, true)
       return
     }
 
@@ -180,17 +240,17 @@ export default function ProfessoresDisciplinas({ uid }) {
 
     setAdicionando(true)
     setErro('')
-    setStatus('')
+    setCampoDisciplinaComErro(false)
     try {
       await salvarCoresDisciplinas(uid, {
         ...coresDisciplinas,
         [chave]: { nome, cor },
       })
       setNovaDisciplina('')
-      setStatus(`Disciplina "${nome}" adicionada.`)
+      setMensagemSucesso(`Disciplina "${nome}" adicionada.`)
     } catch (err) {
       console.error('Erro ao adicionar disciplina:', err)
-      setErro('Erro ao adicionar a disciplina. Verifique as permissoes do Firestore.')
+      dispararErro('Erro ao adicionar a disciplina. Verifique as permissoes do Firestore.')
     } finally {
       setAdicionando(false)
     }
@@ -236,8 +296,8 @@ export default function ProfessoresDisciplinas({ uid }) {
     const chaveBase = normalizarDisciplina(disciplina);
     const chaveLetra = normalizarDisciplina(`${disciplina} ${letra}`);
 
-    setStatus('');
     setErro('');
+    setCampoDisciplinaComErro(false);
     
     // 1. Remove da lista de visíveis
     setProfessoresExtras((atual) => ({
@@ -260,8 +320,8 @@ export default function ProfessoresDisciplinas({ uid }) {
     const chave = normalizarDisciplina(nomeDisciplina)
     const professor = dadosProfessor(professores, professorValor)
 
-    setStatus('')
     setErro('')
+    setCampoDisciplinaComErro(false)
     setVinculosDraft((atual) => {
       const proximo = { ...atual }
 
@@ -277,15 +337,15 @@ export default function ProfessoresDisciplinas({ uid }) {
 
   async function salvarVinculos() {
     setSalvando(true)
-    setStatus('')
     setErro('')
+    setCampoDisciplinaComErro(false)
 
     try {
       await salvarProfessoresDisciplinas(uid, vinculosDraft)
-      setStatus('Professores vinculados as disciplinas.')
+      setMensagemSucesso('Professores vinculados as disciplinas.')
     } catch (err) {
       console.error('Erro ao salvar vinculos de disciplinas:', err)
-      setErro('Erro ao salvar os vinculos. Verifique as permissoes do Firestore.')
+      dispararErro('Erro ao salvar os vinculos. Verifique as permissoes do Firestore.')
     } finally {
       setSalvando(false)
     }
@@ -329,8 +389,14 @@ export default function ProfessoresDisciplinas({ uid }) {
           <div className='cores-disc-input-wrap'>
             <label>Adicionar disciplina</label>
             <input
+              key={campoDisciplinaComErro ? `nova-disciplina-erro-${animacaoErro}` : 'nova-disciplina'}
+              className={campoDisciplinaComErro ? 'perfil-input-erro' : ''}
               value={novaDisciplina}
-              onChange={(e) => setNovaDisciplina(e.target.value)}
+              onChange={(e) => {
+                setNovaDisciplina(e.target.value)
+                setErro('')
+                setCampoDisciplinaComErro(false)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') adicionarDisciplina()
               }}
@@ -354,8 +420,11 @@ export default function ProfessoresDisciplinas({ uid }) {
           </div>
         </div>
 
-        {erro && <p className='cores-disc-feedback erro'>{erro}</p>}
-        {status && <p className='cores-disc-feedback sucesso'>{status}</p>}
+        {erro && (
+          <div key={animacaoErro} className='cores-disc-feedback erro upload-erro-anim'>
+            <TriangleAlert size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} /> {erro}
+          </div>
+        )}
 
         {carregando ? (
           <p className='cores-disc-vazio'>Carregando vinculos...</p>
@@ -467,6 +536,14 @@ export default function ProfessoresDisciplinas({ uid }) {
           professorLetra={confirmarDeleteProfessor.letra}
           onConfirmar={executarRemocaoProfessorExtra}
           onCancelar={() => setConfirmarDeleteProfessor(null)}
+        />
+      )}
+
+      {/* RENDERIZA O MODAL DE SUCESSO (disciplina adicionada / vínculos salvos) */}
+      {mensagemSucesso && (
+        <ModalSucessoDisciplinas
+          mensagem={mensagemSucesso}
+          onFechar={() => setMensagemSucesso('')}
         />
       )}
 
