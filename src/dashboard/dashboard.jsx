@@ -56,7 +56,20 @@ function Dashboard() {
   const navigate = useNavigate()
   const [uid, setUid] = useState(null)
   const [professor, setProfessor] = useState(null)
-  const [secaoAtiva, setSecaoAtiva] = useState('Início')
+
+// 1. Inicializa o estado buscando do localStorage (se não houver, padrão é 'Início')
+  const [secaoAtiva, setSecaoAtiva] = useState(() => {
+    return localStorage.getItem('proshelf_secao_ativa') || 'Início'
+  })
+
+  // 2. Sempre que o usuário trocar de seção, salvamos no localStorage
+  useEffect(() => {
+    if (secaoAtiva) {
+      localStorage.setItem('proshelf_secao_ativa', secaoAtiva)
+    }
+  }, [secaoAtiva])
+    
+  
   const [cronogramas, setCronogramas] = useState([])
   const [cronogramasCarregados, setCronogramasCarregados] = useState(false)
   const [eventos, setEventos] = useState([])
@@ -67,7 +80,7 @@ function Dashboard() {
   const dropdownRef = useRef(null)
   const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
   const eCoordenador = professor?.role === 'coordenador'
-  const SECOES_COORDENADOR = ['Professores', 'Alunos', 'Cores', 'Disciplinas', 'Config. da Escola', 'Boletins', 'Gerenciar Coordenadores']
+  const SECOES_COORDENADOR = ['Professores', 'Alunos', 'Cores', 'Disciplinas', 'Config. da Escola', 'Boletins', 'Gerenciar Coord.']
 
   // ── Listener único: alimenta o sino e dispara os toasts em tempo real ──
   const { notificacoes } = useNotificacoes(uid)
@@ -190,7 +203,7 @@ function Dashboard() {
       case 'Disciplinas': return <ProfessoresDisciplinas uid={uid} />
       case 'Configurações da Escola': return <ConfiguracoesEscola uid={uid} />
       case 'Boletins': return <Boletins uid={uid} />
-      case 'Gerenciar Coordenadores': return <GerenciarCoordenadores uid={uid} />
+      case 'Gerenciar Coord.': return <GerenciarCoordenadores uid={uid} />
       default: return null
     }
   }
@@ -256,7 +269,7 @@ function Dashboard() {
                 {s === 'Disciplinas' && <BookOpenCheck size={14} />}
                 {s === 'Config. da Escola' && <Settings size={14} />}
                 {s === 'Boletins' && <FileTextIcon size={14} />}
-                {s === 'Gerenciar Coordenadores' && <FileTextIcon size={14} />}
+                {s === 'Gerenciar Coord.' && <UserStar size={14} />}
 
                 {s}
               </button>
@@ -361,7 +374,7 @@ function Dashboard() {
                               <button className={`nav-coord-item ${secaoAtiva === 'Alunos' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Alunos'); setCoordAberto(false) }}>
                                 <UserRound size={15} /> Alunos
                               </button>
-                               <button className={`nav-coord-item ${secaoAtiva === 'Gerenciar Coordenadores' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Gerenciar Coordenadores'); setCoordAberto(false) }}>
+                               <button className={`nav-coord-item ${secaoAtiva === 'Gerenciar Coord.' ? 'ativo' : ''}`} onClick={() => { setSecaoAtiva('Gerenciar Coord.'); setCoordAberto(false) }}>
                                 <UserStar  size={15} /> Coordenadores
                               </button>
                             </div>

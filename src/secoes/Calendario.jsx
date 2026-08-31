@@ -6,6 +6,7 @@ import CustomDatePicker from './dropdown-calendario'
 import { Trash2, AlertTriangle } from 'lucide-react'
 import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
 import { auth } from "../firebase"
+import { motion, AnimatePresence } from "motion/react" // <-- ADICIONE ESTA LINHA
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB']
@@ -112,6 +113,7 @@ export default function Calendario({ uid, professor }) {
   const [diaSelecionado, setDiaSelecionado] = useState(null)
   const [dropdownAberto, setDropdownAberto] = useState(null)
   const [confirmarDelete, setConfirmarDelete] = useState(null)
+  const [eventoExpandidoId, setEventoExpandidoId] = useState(null)
 
   useEffect(() => {
     if (!uid) return
@@ -336,18 +338,65 @@ export default function Calendario({ uid, professor }) {
                   {String(diaSelecionado).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
                 </span>
               </div>
-              {eventosDiaSel.length === 0 ? (
+{eventosDiaSel.length === 0 ? (
                 <p style={{ fontSize: 12, color: 'var(--texto-sec)', margin: 0 }}>Nenhum evento neste dia.</p>
               ) : (
                 eventosDiaSel.map(ev => {
                   const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
+                  const temDescricao = !!ev.descricao?.trim()
+                  const isExpandido = eventoExpandidoId === ev.id
+
                   return (
-                    <div key={ev.id} className='cal-evento' style={{ borderLeftColor: tipo.cor }}>
-                      <div className='cal-evento-nome'>{ev.titulo}</div>
-                      <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                      {isCoordenador && (
-                        <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
-                      )}
+                    <div 
+                      key={ev.id} 
+                      className='cal-evento' 
+                      style={{ 
+                        borderLeftColor: tipo.cor,
+                        cursor: temDescricao ? 'pointer' : 'default',
+                        flexDirection: 'column', 
+                        alignItems: 'flex-start',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onClick={() => {
+                        if (temDescricao) {
+                          setEventoExpandidoId(isExpandido ? null : ev.id)
+                        }
+                      }}
+                    >
+                      {/* Linha principal com título e tags */}
+                      <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 8 }}>
+                        <div className='cal-evento-nome'>{ev.titulo}</div>
+                        <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
+                        {isCoordenador && (
+                          <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                        )}
+                      </div>
+
+                      {/* --- NOVA DESCRIÇÃO ANIMADA --- */}
+                      <AnimatePresence>
+                        {isExpandido && temDescricao && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            style={{ overflow: "hidden", width: "100%" }}
+                          >
+                            <div style={{ 
+                              marginTop: 8, 
+                              fontSize: 13, 
+                              color: 'var(--texto-sec)', 
+                              lineHeight: 1.4, 
+                              borderTop: '1px dashed var(--borda)', 
+                              paddingTop: 8, 
+                              width: '100%' 
+                            }}>
+                              {ev.descricao}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      {/* ------------------------------ */}
                     </div>
                   )
                 })
@@ -374,22 +423,62 @@ export default function Calendario({ uid, professor }) {
           ) : (
             eventosDoMes().map(ev => {
               const tipo = COR_TIPO[ev.tipo] || COR_TIPO.reuniao
+              const temDescricao = !!ev.descricao?.trim()
+              const isExpandido = eventoExpandidoId === ev.id
+
               return (
                 <div
                   key={ev.id}
                   className='cal-evento'
-                  style={{ borderLeftColor: tipo.cor, cursor: 'pointer' }}
+                  style={{ 
+                    borderLeftColor: tipo.cor, 
+                    cursor: 'pointer',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => {
                     const dia = parseInt(ev.data.split('-')[2])
                     setDiaSelecionado(dia)
+                    if (temDescricao) {
+                      setEventoExpandidoId(isExpandido ? null : ev.id)
+                    }
                   }}
                 >
-                  <div className='cal-evento-data'>{formatarData(ev.data)}</div>
-                  <div className='cal-evento-nome'>{ev.titulo}</div>
-                  <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
-                  {isCoordenador && (
-                    <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
-                  )}
+                  <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 8 }}>
+                    <div className='cal-evento-data'>{formatarData(ev.data)}</div>
+                    <div className='cal-evento-nome'>{ev.titulo}</div>
+                    <span className='cal-evento-badge' style={{ background: tipo.bg, color: tipo.cor }}>{tipo.label}</span>
+                    {isCoordenador && (
+                      <button className='arquivo-acao' onClick={(e) => handleDeletar(ev, e)} title='Remover'><Trash2 size={16} /></button>
+                    )}
+                  </div>
+                  
+                  {/* --- NOVA DESCRIÇÃO ANIMADA --- */}
+                  <AnimatePresence>
+                    {isExpandido && temDescricao && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        style={{ overflow: "hidden", width: "100%" }}
+                      >
+                        <div style={{ 
+                          marginTop: 8, 
+                          fontSize: 13, 
+                          color: 'var(--texto-sec)', 
+                          lineHeight: 1.4, 
+                          borderTop: '1px dashed var(--borda)', 
+                          paddingTop: 8, 
+                          width: '100%' 
+                        }}>
+                          {ev.descricao}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {/* ------------------------------ */}
                 </div>
               )
             })

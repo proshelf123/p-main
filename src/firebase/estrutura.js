@@ -133,6 +133,13 @@ export async function salvarProfessoresDisciplinas(uid, vinculos) {
 }
 
 export async function criarTurma(uid, dados) {
+  // --- NOVA TRAVA DE SEGURANÇA ---
+  const isDuplicada = await verificarTurmaDuplicada(uid, dados);
+  if (isDuplicada) {
+    throw new Error("Já existe uma turma cadastrada com este exato nome, matéria e período.");
+  }
+  // -------------------------------
+
   const escolaId = await getEscolaId(uid);
   const ref = collection(db, "turmas", uid, "lista");
   return await addDoc(ref, {
@@ -167,6 +174,13 @@ export async function buscarTurmas(uid, perfil = null) {
 }
 
 export async function atualizarTurma(uid, turmaId, dados) {
+  // --- NOVA TRAVA DE SEGURANÇA ---
+  const isDuplicada = await verificarTurmaDuplicada(uid, dados, turmaId);
+  if (isDuplicada) {
+    throw new Error("Não é possível editar. Já existe outra turma com este nome, matéria e período.");
+  }
+  // -------------------------------
+
   await updateDoc(doc(db, "turmas", uid, "lista", turmaId), dados);
 }
 
@@ -690,4 +704,21 @@ export async function promoverACoordenador(uid) {
     console.error("Erro ao atualizar o role para coordenador:", error);
     throw error;
   }
+}
+
+// Função para checar se já existe uma turma idêntica
+export async function verificarTurmaDuplicada(uid, dados, turmaId = null) {
+  const escolaId = await getEscolaId(uid);
+  const q = query(
+    collection(db, "turmas", uid, "lista"),
+    where("escolaId", "==", escolaId),
+    where("nome", "==", dados.nome),
+    where("disciplina", "==", dados.disciplina),
+    where("periodo", "==", dados.periodo || "Matutino")
+  );
+  
+  const snap = await getDocs(q);
+  
+  // Se for uma edição (turmaId não for null), ignoramos o ID da própria turma sendo editada
+  return snap.docs.some(doc => doc.id !== turmaId);
 }

@@ -701,6 +701,29 @@ body:has(.dash-wrapper) {
   color: var(--roxo);
 }
 
+/* ── AJUSTES DO MENU LATERAL ── */
+
+/* 1. Aumenta a fonte e o tamanho base de todos os botões do menu */
+.nav-btn {
+  font-size: 15px; /* Ajuste esse valor para 15px ou 16px */
+  min-height: 44px; /* Garante uma altura mínima confortável */
+}
+
+/* 2. Aumenta a altura e dá destaque extra APENAS no botão ativo */
+.nav-btn.ativo {
+  padding-top: 16px;    /* Empurra o topo, aumentando a altura */
+  padding-bottom: 16px; /* Empurra a base, aumentando a altura */
+  font-size: 16px;      /* Deixa a fonte do ativo levemente maior (opcional) */
+  font-weight: 500;     /* Deixa o texto sutilmente mais gordinho */
+  transition: all 0.2s ease; /* Adiciona uma transição suave ao clicar */
+}
+
+/* 3. Aumenta também a fonte do submenu da Coordenação (se houver) */
+.nav-coord-sub-item, .nav-coord-sub-menu button {
+  font-size: 14px;
+  padding: 10px 12px;
+}
+
 /* Suporte ao modo escuro para o botão */
 :root.dark-mode .btn-fechar-drawer {
   color: var(--texto);
@@ -844,8 +867,31 @@ body:has(.dash-wrapper) {
   .dash-wrapper h2 {
     font-size: calc(15px * var(--font-size-base));
   }
-}
+/* 1. Força o empilhamento: nome em cima, botão embaixo */
+  .cores-disc-item {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid var(--borda) !important;
+  }
 
+  /* Remove a linha do último item para não sobrar espaço */
+  .cores-disc-item:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* 2. Destrói o grid antigo que estava esmagando o componente para fora */
+  .cores-disc-controles {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  /* 3. Faz o botão do seletor esticar, ficando muito mais fácil de clicar no celular */
+  .cores-disc-controles > * {
+    width: 100% !important;
+  }
+}
 
 /* ── Submenus do Coordenador (Hover Lateral) ── */
 .nav-coord-sub-wrapper {
@@ -895,4 +941,33 @@ body:has(.dash-wrapper) {
 /* Suporte ao Modo Escuro */
 :root.dark-mode .nav-coord-sub-menu {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* ── ANTECIPAÇÃO DO MENU MOBILE PARA 986px ── */
+@media (max-width: 986px) {
+  .cabecalho-dashboard {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 20px;
+    min-height: 64px;
+  }
+
+  /* Esconde a logo grande e a navegação principal (texto) */
+  .cabecalho-logo,
+  .cabecalho-dashboard > nav {
+    display: none !important;
+  }
+
+  /* Mostra o ícone do menu hambúrguer */
+  .nav-hamburger {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Empurra os ícones da direita (sino e perfil) para o canto */
+  .cabecalho-acoes {
+    margin-left: auto;
+  }
 }
