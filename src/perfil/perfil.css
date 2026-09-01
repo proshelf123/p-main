@@ -110,6 +110,30 @@
   letter-spacing: 0.4px;
 }
 
+.perfil-avatar-wrapper { position: relative; flex-shrink: 0; }
+
+.perfil-avatar { position: relative; cursor: pointer; overflow: hidden; }
+
+.perfil-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.perfil-avatar-overlay {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: rgba(0,0,0,0.45); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s;
+}
+.perfil-avatar:hover .perfil-avatar-overlay { opacity: 1; }
+
+.perfil-avatar-remover {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #c0392b; color: #fff; border: 2px solid #fff;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+
+.perfil-spin { animation: perfil-spin 0.8s linear infinite; }
+@keyframes perfil-spin { to { transform: rotate(360deg); } }
+
 .perfil-input {
   padding: 10px 12px;
   border-radius: 10px;

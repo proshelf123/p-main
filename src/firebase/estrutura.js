@@ -205,6 +205,38 @@ export async function criarRegistroAula(uid, turmaId, dados) {
   });
 }
 
+// =======================================================
+// CRUD DE LEMBRETES DA TURMA
+// =======================================================
+
+export async function criarLembrete(uid, turmaId, dados) {
+  const escolaId = await getEscolaId(uid);
+  const ref = collection(db, "turmas", uid, "lista", turmaId, "lembretes");
+  return await addDoc(ref, {
+    data: dados.data || "",
+    titulo: dados.titulo || "",
+    tipo: dados.tipo || "avaliacao",
+    escolaId: escolaId,
+    criadoEm: serverTimestamp(),
+    ownerUid: auth.currentUser?.uid || uid
+  });
+}
+
+export async function buscarLembretes(uid, turmaId) {
+  const ref = collection(db, "turmas", uid, "lista", turmaId, "lembretes");
+  // Ordena pela data para que os lembretes fiquem na ordem cronológica correta
+  const snap = await getDocs(query(ref, orderBy("data", "asc")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function atualizarLembrete(uid, turmaId, lembreteId, dados) {
+  await updateDoc(doc(db, "turmas", uid, "lista", turmaId, "lembretes", lembreteId), dados);
+}
+
+export async function deletarLembrete(uid, turmaId, lembreteId) {
+  await deleteDoc(doc(db, "turmas", uid, "lista", turmaId, "lembretes", lembreteId));
+}
+
 export async function buscarRegistros(uid, turmaId) {
   const ref = collection(db, "turmas", uid, "lista", turmaId, "registros");
   const snap = await getDocs(query(ref, orderBy("data", "asc"), limit(50)));
@@ -721,4 +753,36 @@ export async function verificarTurmaDuplicada(uid, dados, turmaId = null) {
   
   // Se for uma edição (turmaId não for null), ignoramos o ID da própria turma sendo editada
   return snap.docs.some(doc => doc.id !== turmaId);
+}
+
+// Redimensiona a imagem no client antes de subir, pra economizar Storage
+// (mesma lógica que vocês já usam na compressão de imagens do audit)
+function redimensionarImagem(file, maxDim = 300, qualidade = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const escala = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * escala;
+      canvas.height = img.height * escala;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => resolve(blob), 'image/jpeg', qualidade);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+export async function uploadFotoPerfil(uid, file) {
+  const blobRedimensionado = await redimensionarImagem(file);
+  const ref = storageRef(storage, `perfis/${uid}/foto.jpg`);
+  await uploadBytes(ref, blobRedimensionado, { contentType: 'image/jpeg' });
+  const url = await getDownloadURL(ref);
+  await setDoc(doc(db, "users", uid), { fotoURL: url, atualizadoEm: serverTimestamp() }, { merge: true });
+  return url;
+}
+
+export async function removerFotoPerfil(uid) {
+  try { await deleteObject(storageRef(storage, `perfis/${uid}/foto.jpg`)); } catch (e) {}
+  await setDoc(doc(db, "users", uid), { fotoURL: "", atualizadoEm: serverTimestamp() }, { merge: true });
 }

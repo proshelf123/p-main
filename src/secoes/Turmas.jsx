@@ -6,6 +6,10 @@ import {
   buscarRegistros,
   criarRegistroAula,
   deletarRegistro,
+  criarLembrete,
+  buscarLembretes,
+  atualizarLembrete,
+  deletarLembrete
 } from "../firebase/estrutura";
 import "./secoes.css";
 import { Trash2, AlertTriangle, X, Pencil, Users } from "lucide-react";
@@ -131,6 +135,16 @@ export default function Turmas({ uid, professor }) {
   const [turmaEditando, setTurmaEditando] = useState(null);
   const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false);
 
+  // ── ESTADOS DOS LEMBRETES ──
+  const FORM_LEMBRETE_INICIAL = { data: "", titulo: "", tipo: "avaliacao" };
+  const [lembretes, setLembretes] = useState([]); // Array para listar os lembretes
+  const [painelLembrete, setPainelLembrete] = useState(false);
+  const [formLembrete, setFormLembrete] = useState(FORM_LEMBRETE_INICIAL);
+  const [lembreteEditando, setLembreteEditando] = useState(null);
+  const [lembreteParaDeletar, setLembreteParaDeletar] = useState(null);
+  const [salvandoLembrete, setSalvandoLembrete] = useState(false);
+  const [erroLembrete, setErroLembrete] = useState("");
+
   useEffect(() => {
     if (uid) carregarTurmas();
   }, [uid, professor?.role]);
@@ -157,19 +171,29 @@ export default function Turmas({ uid, professor }) {
   }
 
   // Abre a turma e já direciona para a seção escolhida nos botões do accordion
-  async function abrirSecaoTurma(turma, secao) {
+async function abrirSecaoTurma(turma, secao) {
     setTurmaAberta(turma);
     setSecaoAtiva(secao);
     setSubAbaNotas("resumo");
     setErroRegistro("");
+    setErroLembrete(""); // Limpa erro do lembrete também
 
     try {
-      const regs = await buscarRegistros(turma.ownerUid || uid, turma.id);
+      const ownerUid = turma.ownerUid || uid;
+      
+      // Busca registros e lembretes ao mesmo tempo
+      const [regs, lems] = await Promise.all([
+        buscarRegistros(ownerUid, turma.id),
+        buscarLembretes(ownerUid, turma.id)
+      ]);
+      
       setRegistros(regs);
+      setLembretes(lems);
     } catch (erro) {
-      console.error("Erro ao carregar registros:", erro);
+      console.error("Erro ao carregar dados da turma:", erro);
       setRegistros([]);
-      setErroRegistro("Não foi possível carregar os registros desta turma.");
+      setLembretes([]);
+      setErroRegistro("Não foi possível carregar os dados desta turma.");
     }
   }
 
@@ -241,6 +265,63 @@ export default function Turmas({ uid, professor }) {
   async function handleDeletarRegistro(registroId) {
     await deletarRegistro(turmaAberta.ownerUid || uid, turmaAberta.id, registroId);
     setRegistros((prev) => prev.filter((r) => r.id !== registroId));
+  }
+
+  // ── LÓGICA DE LEMBRETES ──
+// ── LÓGICA DE LEMBRETES REAL (INTEGRADA AO FIREBASE) ──
+  async function handleSalvarLembrete() {
+    if (!formLembrete.data) { setErroLembrete("Informe a data do lembrete."); return; }
+    if (!formLembrete.titulo.trim()) { setErroLembrete("Informe o título."); return; }
+    
+    setSalvandoLembrete(true);
+    setErroLembrete("");
+    
+    try {
+      const ownerUid = turmaAberta.ownerUid || uid;
+      
+      if (lembreteEditando) {
+        await atualizarLembrete(ownerUid, turmaAberta.id, lembreteEditando.id, formLembrete);
+      } else {
+        await criarLembrete(ownerUid, turmaAberta.id, formLembrete);
+      }
+      
+      // Recarrega a lista do banco para garantir que está sincronizado
+      const lems = await buscarLembretes(ownerUid, turmaAberta.id);
+      setLembretes(lems);
+      
+      setPainelLembrete(false);
+      setFormLembrete(FORM_LEMBRETE_INICIAL);
+      setLembreteEditando(null);
+    } catch (erro) {
+      console.error("Erro ao salvar lembrete:", erro);
+      setErroLembrete("Erro ao salvar o lembrete. Tente novamente.");
+    } finally {
+      setSalvandoLembrete(false);
+    }
+  }
+
+  function handleEditarLembrete(lembrete, e) {
+    e.stopPropagation();
+    setErroLembrete("");
+    setLembreteEditando(lembrete);
+    setFormLembrete({
+      data: lembrete.data,
+      titulo: lembrete.titulo,
+      tipo: lembrete.tipo || "avaliacao",
+    });
+    setPainelLembrete(true);
+  }
+
+  async function handleDeletarLembrete(lembreteId) {
+    try {
+      const ownerUid = turmaAberta.ownerUid || uid;
+      await deletarLembrete(ownerUid, turmaAberta.id, lembreteId);
+      
+      // Remove do estado local instantaneamente para a tela não piscar
+      setLembretes(prev => prev.filter(l => l.id !== lembreteId));
+    } catch (erro) {
+      console.error("Erro ao deletar lembrete:", erro);
+    }
   }
 
   const turmasFiltradas = turmas.filter((t) => t.disciplina === disciplinaAtiva);
@@ -373,6 +454,8 @@ export default function Turmas({ uid, professor }) {
               </div>
             </div>
 
+            
+
             {/* LEGENDA DE CORES DOS REGISTROS */}
             <div className="card" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, padding: "20px" }}>
               {Object.entries(COR_TIPO).map(([k, v]) => (
@@ -380,7 +463,68 @@ export default function Turmas({ uid, professor }) {
                   <div style={{ width: 12, height: 12, borderRadius: "50%", background: v.bg, flexShrink: 0 }} />
                   <span style={{ fontSize: 14, color: "var(--texto)", fontWeight: 500, lineHeight: 1 }}>{v.label}</span>
                 </div>
+
+                
               ))}
+            </div>
+
+{/* 2. NOVO CARD DOS LEMBRETES (Agenda) */}
+            <div className="card" style={{ minHeight: 150 }}>
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: 18, fontWeight: 600, color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
+                <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "4px 0 0" }}>Provas, trabalhos e atividades futuras.</p>
+              </div>
+
+              {erroLembrete && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>{erroLembrete}</p>}
+
+              {lembretes.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>Nenhum lembrete agendado para esta turma.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {lembretes.map((l, idx) => {
+                    const tipo = COR_TIPO[l.tipo] || COR_TIPO.avaliacao;
+                    return (
+                      <div key={l.id} className="registro-pill" style={{ background: "var(--bg)", border: "1px solid var(--borda)", borderLeft: `4px solid ${tipo.bg}`, animationDelay: `${idx * 50}ms` }}>
+                        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "4px" }}>
+                          <span style={{ color: tipo.bg, fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                            {l.data.split("-").reverse().join("/")} • {tipo.label}
+                          </span>
+                          <span style={{ color: "var(--texto)", fontSize: 14, fontWeight: 500 }}>
+                            {l.titulo}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button className="arquivo-acao" style={{ color: "var(--texto-sec)" }} onClick={(e) => handleEditarLembrete(l, e)} title="Editar"><Pencil size={14} /></button>
+                          <button className="arquivo-acao" style={{ color: "var(--texto-sec)" }} onClick={(e) => { e.stopPropagation(); setLembreteParaDeletar(l); }} title="Remover"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--borda)", display: "flex", justifyContent: "center" }}>
+                <button
+                  className="btn-upload"
+                  style={{
+                    marginTop: 0,
+                    borderStyle: "dashed",
+                    borderColor: "var(--roxo)",
+                    background: "transparent",
+                    color: "var(--roxo)"
+                  }}
+                  onClick={() => {
+                    setErroLembrete("");
+                    setFormLembrete(FORM_LEMBRETE_INICIAL);
+                    setLembreteEditando(null);
+                    setPainelLembrete(true);
+                  }}
+                >
+                  + Novo lembrete
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -466,7 +610,7 @@ export default function Turmas({ uid, professor }) {
         {/* ========================================= */}
         {registroAberto && (
           <>
-            <div onClick={() => setRegistroAberto(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1100, backdropFilter: "blur(2px)" }} />
+            <div onClick={() => setRegistroAberto(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 9999999, backdropFilter: "blur(2px)" }} />
             <div className="registro-modal" style={{
               position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "calc(100% - 32px)", maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28, zIndex: 10000000, boxShadow: "0 12px 40px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", gap: 16, maxHeight: "85vh", overflowY: "auto", boxSizing: "border-box"
             }}>
@@ -489,7 +633,7 @@ export default function Turmas({ uid, professor }) {
 
         {painelRegistro && (
           <>
-            <div onClick={() => setPainelRegistro(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1100, backdropFilter: "blur(2px)" }} />
+            <div onClick={() => setPainelRegistro(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 9999999, backdropFilter: "blur(2px)" }} />
             <div className="registro-modal" style={{
               position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "calc(100% - 32px)", maxWidth: 480, background: "var(--branco)", borderRadius: 16, padding: 28, zIndex: 10000000, boxShadow: "0 12px 40px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", gap: 16, maxHeight: "95vh", overflow: dropdownAberto ? "visible" : "auto", boxSizing: "border-box"
             }}>
@@ -544,6 +688,75 @@ export default function Turmas({ uid, professor }) {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setRegistroParaDeletar(null)} className="btn-cancelar" style={{ flex: 1, padding: '11px', borderRadius: 10, fontSize: 13 }}>Cancelar</button>
                 <button onClick={() => { handleDeletarRegistro(registroParaDeletar.id); setRegistroParaDeletar(null); }} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#ED235C', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>Sim, remover</button>
+              </div>
+            </div>
+          </>
+        )}
+
+         {/* ========================================= */}
+        {/* MODAIS DE LEMBRETES */}
+        {/* ========================================= */}
+        {painelLembrete && (
+          <>
+            <div onClick={() => setPainelLembrete(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 9999999, backdropFilter: "blur(2px)" }} />
+            <div className="registro-modal" style={{
+              position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "calc(100% - 32px)", maxWidth: 440, background: "var(--branco)", borderRadius: 16, padding: 28, zIndex: 10000000, boxShadow: "0 12px 40px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", gap: 16, boxSizing: "border-box"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--texto)", margin: "0 0 2px" }}>{lembreteEditando ? "Editar lembrete" : "Novo lembrete"}</h3>
+                  <p style={{ fontSize: 14, color: "var(--texto-sec)", margin: 0 }}>Agende uma atividade futura</p>
+                </div>
+                <button onClick={() => setPainelLembrete(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", padding: 4 }}><X size={20} /></button>
+              </div>
+
+<div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                <CustomDatePicker 
+                  id="datepicker-lembrete"
+                  label="Data do Evento"
+                  value={formLembrete.data} 
+                  onChange={(dataStr) => setFormLembrete({ ...formLembrete, data: dataStr })} 
+                  eventos={lembretes} 
+                  dropdownAberto={dropdownAberto} 
+                  setDropdownAberto={setDropdownAberto} 
+                />
+              </div>
+
+              <div className="perfil-grupo">
+                <label className="perfil-label">Título (Ex: Prova Bimestral)</label>
+                <input className="perfil-input" value={formLembrete.titulo} onChange={(e) => setFormLembrete({ ...formLembrete, titulo: e.target.value })} placeholder="Nome da avaliação ou atividade" />
+              </div>
+
+              <div>
+                <label className="perfil-label" style={{ display: "block", marginBottom: 8 }}>Tipo de Lembrete</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {["avaliacao", "atividade"].map((key) => (
+                    <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <input type="radio" name="tipo-lembrete" value={key} checked={formLembrete.tipo === key} onChange={() => setFormLembrete({ ...formLembrete, tipo: key })} style={{ accentColor: "var(--roxo)", width: 16, height: 16 }} />
+                      <span style={{ fontSize: 13, color: "var(--texto)", fontWeight: 500 }}>{COR_TIPO[key].label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={handleSalvarLembrete} disabled={salvandoLembrete} className="perfil-salvar" style={{ marginTop: 10 }}>
+                {salvandoLembrete ? "Salvando..." : "Salvar lembrete"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {lembreteParaDeletar && (
+          <>
+            <div className="modal-confirmar-overlay" onClick={() => setLembreteParaDeletar(null)} style={{ zIndex: 9999999 }} />
+            <div className="modal-confirmar" style={{ zIndex: 9999999 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>Remover lembrete?</h3>
+              <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
+                Cancelar o agendamento: <b>{lembreteParaDeletar.titulo}</b>?
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setLembreteParaDeletar(null)} className="btn-cancelar" style={{ flex: 1, padding: '11px', borderRadius: 10, fontSize: 13 }}>Cancelar</button>
+                <button onClick={() => { handleDeletarLembrete(lembreteParaDeletar.id); setLembreteParaDeletar(null); }} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#ED235C', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>Sim, remover</button>
               </div>
             </div>
           </>

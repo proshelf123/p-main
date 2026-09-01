@@ -9,6 +9,10 @@ export default defineConfig({
     host: true, 
   },
 
+    optimizeDeps: {
+    include: ['react-joyride'],
+  },
+
   build: {
     target: 'esnext', // Gera código nativo moderno (Remove polyfills pesados e reduz tamanho em até 20%)
     cssCodeSplit: true,

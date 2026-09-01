@@ -1,11 +1,12 @@
 // src/perfil/Perfil.jsx
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef  } from 'react'
 import { motion } from 'framer-motion'
-import { buscarPerfil, salvarPerfil } from '../firebase/estrutura'
+import { buscarPerfil, salvarPerfil, uploadFotoPerfil, removerFotoPerfil } from '../firebase/estrutura'
 import { auth } from '../firebase'
 import DropdownComPortal from '../secoes/DropwdownComPortal'
 import './perfil.css'
+import { Camera, Loader2, Trash2 } from 'lucide-react'
 
 const MotionDiv = motion.div
 
@@ -24,11 +25,15 @@ export default function Perfil({ uid, onFechar }) {
   const [salvo, setSalvo] = useState(false)
   const [erro, setErro] = useState('')
   const [dropdownAberto, setDropdownAberto] = useState(null)
+  const [fotoURL, setFotoURL] = useState('')
+const [enviandoFoto, setEnviandoFoto] = useState(false)
+const inputFotoRef = useRef(null)
 
-  useEffect(() => {
-    if (!uid) return
-    buscarPerfil(uid).then(dados => {
-      if (dados) setForm({
+useEffect(() => {
+  if (!uid) return
+  buscarPerfil(uid).then(dados => {
+    if (dados) {
+      setForm({
         nome:        dados.nome        || '',
         nomeUsuario: dados.nomeUsuario || '',
         rp:          dados.rp          || '',
@@ -36,8 +41,35 @@ export default function Perfil({ uid, onFechar }) {
         email:       dados.email       || auth.currentUser?.email || '',
         modalidade:  dados.modalidade  || 'Presencial',
       })
-    })
-  }, [uid])
+      setFotoURL(dados.fotoURL || '')
+    }
+  })
+}, [uid])
+
+async function handleSelecionarFoto(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  setEnviandoFoto(true)
+  try {
+    const url = await uploadFotoPerfil(uid, file)
+    setFotoURL(url)
+  } catch {
+    setErro('Erro ao enviar a foto. Tente novamente.')
+  } finally {
+    setEnviandoFoto(false)
+    e.target.value = ''
+  }
+}
+
+async function handleRemoverFoto() {
+  setEnviandoFoto(true)
+  try {
+    await removerFotoPerfil(uid)
+    setFotoURL('')
+  } finally {
+    setEnviandoFoto(false)
+  }
+}
 
   const inicial = form.nome?.charAt(0).toUpperCase() || '?'
 
@@ -75,8 +107,26 @@ export default function Perfil({ uid, onFechar }) {
       >
         {/* Cabeçalho */}
         <div className='perfil-header'>
-          <div className='perfil-avatar'>{inicial}</div>
-          <div>
+<div className='perfil-avatar-wrapper'>
+  <div className='perfil-avatar' onClick={() => inputFotoRef.current?.click()}>
+    {fotoURL ? <img src={fotoURL} alt='Foto de perfil' /> : inicial}
+    <div className='perfil-avatar-overlay'>
+      {enviandoFoto ? <Loader2 size={16} className='perfil-spin' /> : <Camera size={16} />}
+    </div>
+  </div>
+  {fotoURL && !enviandoFoto && (
+    <button className='perfil-avatar-remover' onClick={handleRemoverFoto} aria-label='Remover foto'>
+      <Trash2 size={12} />
+    </button>
+  )}
+  <input
+    ref={inputFotoRef}
+    type='file'
+    accept='image/*'
+    hidden
+    onChange={handleSelecionarFoto}
+  />
+</div>          <div>
             <h2 className='perfil-titulo'>Editar perfil</h2>
             <p className='perfil-subtitulo'>
               {form.nome ? `Prof. ${form.nome.split(' ')[0]}` : 'Preencha seus dados'}

@@ -330,6 +330,7 @@ body > *:not(.dash-wrapper) {
   border-radius: 50%;
   max-width: 60px;
   max-height: 60px;
+  object-fit: cover; /* novo — evita distorcer a foto */
 }
 
 .cabecalho-acoes {

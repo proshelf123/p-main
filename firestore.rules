@@ -163,6 +163,16 @@ service cloud.firestore {
       allow write: if eCoordenador();
     }
 
+match /usuarios/{userId} {
+  allow read: if request.auth.uid == userId;
+
+  allow update: if request.auth.uid == userId
+    && (
+      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['atalhoRapido'])
+      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tutorialConcluido'])
+    );
+}
+
     match /{document=**} {
       allow read, write: if false;
     }

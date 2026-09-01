@@ -181,6 +181,7 @@ function Dashboard() {
             eventos={eventos}
             onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
             onIrCalendario={() => setSecaoAtiva('Calendário')}
+            onAtalhoClick={(secao) => setSecaoAtiva(secao)}
           />
         )
       case 'Cronogramas':
@@ -420,13 +421,17 @@ function Dashboard() {
         <div className='cabecalho-acoes'>
           <NotificationBell uid={uid} notificacoes={notificacoes} />
           <div className='perfil-wrapper' ref={dropdownRef}>
-            <button
-              className='perfil-btn'
-              onClick={() => setDropdownAberto(v => !v)}
-              aria-label='Menu do usuário'
-            >
-              <img src={IconePerfil} alt='Perfil' className='perfil-icone' />
-            </button>
+<button
+  className='perfil-btn'
+  onClick={() => setDropdownAberto(v => !v)}
+  aria-label='Menu do usuário'
+>
+  <img
+    src={professor?.fotoURL || IconePerfil}
+    alt='Perfil'
+    className='perfil-icone'
+  />
+</button>
 
             <AnimatePresence>
               {dropdownAberto && (
