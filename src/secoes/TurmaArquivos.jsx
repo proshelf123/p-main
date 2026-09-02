@@ -5,6 +5,8 @@ import {
   ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen,
   Trash2, Upload, AlertTriangle, Plus, Link2
 } from "lucide-react";
+// 1. IMPORTAÇÕES DO STORAGE ADICIONADAS AQUI:
+import { getStorage, ref, deleteObject } from "firebase/storage"; 
 import {
   escutarArquivosDaTurma,
   enviarArquivoTurma,
@@ -89,7 +91,7 @@ function ModalConfirmarArquivo({ arquivo, onConfirmar, onCancelar }) {
   );
 }
 
-// --- BLOCO DE LISTAGEM DE ARQUIVOS (reutilizado para os dois grupos) ---
+// --- BLOCO DE LISTAGEM DE ARQUIVOS ---
 function BlocoArquivos({ titulo, corTitulo, arquivos, podeDeletarArquivo, onDeletar, vazioTexto, destaque }) {
   return (
     <div
@@ -192,7 +194,6 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   const [erroAdicionar, setErroAdicionar] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  // ESTADO PARA O ARQUIVO QUE SERÁ DELETADO
   const [arquivoParaDeletar, setArquivoParaDeletar] = useState(null);
 
   useEffect(() => {
@@ -261,11 +262,29 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
     setNovoArquivo((prev) => ({ ...prev, arquivo, nome: prev.nome || arquivo?.name || "" }));
   }
 
-  // FUNÇÃO QUE EXECUTA A DELEÇÃO APÓS A CONFIRMAÇÃO
+  // 2. FUNÇÃO ATUALIZADA PARA DELETAR DO STORAGE E DEPOIS DO FIRESTORE
   async function handleConfirmarDeleteArquivo() {
     if (!arquivoParaDeletar) return;
+    
     try {
+      // Se não for um link do Google Drive e tiver uma URL, tenta apagar o arquivo físico no Storage
+      if (arquivoParaDeletar.tipo !== "link" && arquivoParaDeletar.url) {
+        const storage = getStorage();
+        // Cria a referência direta usando a URL de download que está salva no banco
+        const arquivoRef = ref(storage, arquivoParaDeletar.url);
+        
+        try {
+          await deleteObject(arquivoRef);
+          console.log("Arquivo físico deletado do Storage com sucesso.");
+        } catch (storageErr) {
+          // Apenas loga o erro, pois o arquivo pode já ter sido apagado antes
+          console.warn("Aviso: Arquivo não encontrado no Storage ou já deletado:", storageErr);
+        }
+      }
+
+      // Após garantir a deleção física, apaga o registro no banco de dados (Firestore)
       await deletarArquivoAprovado(arquivoParaDeletar.id);
+      
     } catch (err) {
       console.error("Erro ao deletar arquivo:", err);
     } finally {
@@ -277,8 +296,6 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
     return isCoordenador || arq.enviadoPorUid === usuarioFormatado.uid;
   }
 
-  // Arquivos antigos (aprovados antes desta mudança) não têm "origem" salva —
-  // como só a coordenação podia gravar nessa coleção antes, tratamos como dela.
   const origemDe = (arq) => arq.origem || "coordenador";
   const arquivosCoordenacao = arquivos.filter((a) => origemDe(a) === "coordenador");
   const arquivosProfessores = arquivos.filter((a) => origemDe(a) !== "coordenador");
@@ -286,7 +303,6 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   return (
     <div className="turma-arquivos-pagina" style={{ fontFamily: "'Poppins', sans-serif", background: "var(--branco)", color: "var(--texto)", border: "1px solid var(--borda)", borderRadius: 14, padding: 24, boxSizing: "border-box", overflow: "hidden", width: "100%", maxWidth: "100%" }}>
 
-      {/* 🛡️ BLINDAGEM MÁXIMA CSS: Isola todos os problemas de Grid e regras do secoes.css */}
       <style>{`
         .turma-arquivos-pagina * {
           box-sizing: border-box;
@@ -304,7 +320,6 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
           max-width: 100% !important;
           width: 100% !important;
         }
-        /* Limita nomes gigantes de arquivos a 2 linhas com "..." no final */
         .card-documento-item .nome-arquivo {
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -318,7 +333,6 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
           text-overflow: ellipsis;
           min-width: 0 !important;
         }
-        /* Blinda a lixeira contra a regra "button:last-child { width: 100% }" do secoes.css */
         .turma-arquivos-pagina button.btn-lixeira {
           width: 42px !important;
           height: 42px !important;

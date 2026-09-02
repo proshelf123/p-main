@@ -117,12 +117,55 @@ export async function salvarCoresDisciplinas(uid, cores) {
 export function escutarProfessoresDisciplinas(uid, callback, onErro = () => {}) {
   let unsubscribe = () => {};
   let isUnsubscribed = false;
-  getEscolaId(uid).then(escolaId => {
-    if (isUnsubscribed) return;
-    const ref = doc(db, "configuracoes_escola", `${escolaId}_professores_disciplinas`);
-    unsubscribe = onSnapshot(ref, (snap) => callback(snap.exists() ? (snap.data().vinculos || {}) : {}), onErro);
-  });
-  return () => { isUnsubscribed = true; unsubscribe(); };
+
+  // Garante que callback seja uma função
+  if (typeof callback !== 'function') {
+    console.error(
+      '[escutarProfessoresDisciplinas] callback inválido:',
+      callback
+    );
+    return () => {};
+  }
+
+  getEscolaId(uid)
+    .then(escolaId => {
+      if (isUnsubscribed) return;
+
+      const ref = doc(
+        db,
+        "configuracoes_escola",
+        `${escolaId}_professores_disciplinas`
+      );
+
+      unsubscribe = onSnapshot(
+        ref,
+        (snap) => {
+          if (isUnsubscribed) return;
+
+          callback(
+            snap.exists()
+              ? (snap.data().vinculos || {})
+              : {}
+          );
+        },
+        onErro
+      );
+    })
+    .catch((erro) => {
+      console.error(
+        '[escutarProfessoresDisciplinas] Erro ao obter escola:',
+        erro
+      );
+
+      if (typeof onErro === 'function') {
+        onErro(erro);
+      }
+    });
+
+  return () => {
+    isUnsubscribed = true;
+    unsubscribe();
+  };
 }
 
 export async function salvarProfessoresDisciplinas(uid, vinculos) {

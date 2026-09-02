@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Joyride, STATUS } from "react-joyride"; // v3: named export, não é mais default
 import { doc, updateDoc } from "firebase/firestore";
-import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell } from "lucide-react";
+import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell, CircleHelp } from "lucide-react";
 import { db } from "../firebase"; // ajuste o caminho conforme seu projeto
 import "./Bem-vindo.css";
 import { buscarTurmas, buscarLembretes } from "../firebase/estrutura";
@@ -78,9 +78,9 @@ const PASSOS_TOUR = [
   },
   {
     target: '[data-tour="cronogramas"]',
-    title: "Suas aulas",
+    title: "Suas aulas e lembretes",
     content:
-      "Aqui aparecem as aulas do dia. Clique em qualquer card, ou em 'Ver todos', para ir até a tela completa de cronogramas.",
+      "Aqui aparecem as aulas do dia. Clique em qualquer card, ou em 'Ver todos', para ir até a tela completa de cronogramas. Os lembretes ficam mais abaixo e você consegue ver tudo o que foi marcado.",
     placement: "right",
   },
   {
@@ -519,16 +519,6 @@ export default function Bemvindo({
                 : ""}
             </span>
           </div>
-
-          {/* NOVO BOTÃO DE REVER TUTORIAL */}
-          <button 
-            className="bv-chip bv-chip-btn" 
-            onClick={reiniciarTutorial}
-            title="Rever tutorial da tela inicial"
-          >
-            <PlayCircle size={14} />
-            <span>Ver Tutorial</span>
-          </button>
         </div>
       </motion.div>
 
@@ -649,6 +639,45 @@ export default function Bemvindo({
           </div>
         </aside>
       </div>
+
+      {/* ── Botão flutuante de ajuda/tutorial ── */}
+<button
+  type="button"
+  onClick={reiniciarTutorial}
+  title="Ver tutorial"
+  aria-label="Ver tutorial"
+  style={{
+    position: "fixed",
+    right: "24px",
+    bottom: "24px",
+    width: "52px",
+    height: "52px",
+    borderRadius: "50%",
+    border: "none",
+    background: "var(--roxo)",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+    zIndex: 9998,
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "scale(1.08)";
+    e.currentTarget.style.boxShadow =
+      "0 10px 28px rgba(0, 0, 0, 0.24)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "scale(1)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 24px rgba(0, 0, 0, 0.18)";
+  }}
+>
+  <CircleHelp size={25} strokeWidth={2.2} />
+</button>
+
     </div>
   );
 }

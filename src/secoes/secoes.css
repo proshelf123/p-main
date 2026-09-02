@@ -1971,6 +1971,19 @@ select.perfil-input option:checked {
     grid-template-columns: 1fr;
   }
 
+  .react-joyride__tooltip button[data-action="next"] {
+  background-color: var(--roxo) !important;
+  color: #fff !important;
+  border-radius: 9px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.react-joyride__tooltip button[data-action="next"]:hover {
+  background-color: var(--roxo) !important;
+  color: #fff !important;
+}
+
   /* Cronogramas responsivo */
   .crono-cursos-grid {
     grid-template-columns: 1fr;

@@ -2,12 +2,23 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // Regra original para solicitações (mantida)
     match /solicitacoes_arquivos/{turma}/{arquivo} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.resource.size < 20 * 1024 * 1024;
     }
 
+    // NOVA REGRA: Liberando o acesso para a pasta do erro
+    match /turmas_arquivos/{escola}/{arquivo} {
+      allow read: if request.auth != null;
+      // Mantive a mesma trava de segurança de 20MB da outra regra
+      allow write: if request.auth != null
+        && request.resource.size < 20 * 1024 * 1024; 
+    }
+
+    // Bloqueia qualquer outra pasta que não esteja listada acima
     match /{allPaths=**} {
       allow read, write: if false;
     }

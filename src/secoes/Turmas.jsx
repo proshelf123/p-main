@@ -12,7 +12,7 @@ import {
   deletarLembrete
 } from "../firebase/estrutura";
 import "./secoes.css";
-import { Trash2, AlertTriangle, X, Pencil, Users } from "lucide-react";
+import { Trash2, AlertTriangle, X, Pencil, CircleHelp } from "lucide-react";
 import CustomDatePicker from "./dropdown-calendario";
 import {
   criarNotificacao,
@@ -22,6 +22,7 @@ import useCoresDisciplinas from "../hooks/useCoresDisciplinas";
 import { montarCoresDisciplina } from "./coresDisciplinas";
 import ModalNovaTurmaUnificada from "../coordenador/ModalNovaTurmaUnificada";
 import { motion, AnimatePresence } from "motion/react";
+import { Joyride } from "react-joyride";
 
 // IMPORTANDO OS COMPONENTES DAS ABAS
 import TurmasNotas from "./TurmasNotas";
@@ -34,6 +35,64 @@ const COR_TIPO = {
   atividade: { bg: "#FFBB00", cor: "#fff", label: "Atividades" },
   avaliacao: { bg: "#188AF5", cor: "#fff", label: "Avaliações" },
 };
+
+// ── TOUR DA LISTA DE TURMAS ──────────────────────────────────────────────────
+
+const PASSOS_TOUR_TURMAS = [
+  {
+    target: '[data-tour="turmas-titulo"]',
+    title: "Conhecendo as Turmas",
+    content:
+      "Aqui você encontra todas as suas turmas e pode acessar os registros, notas e controle de presença de cada uma.",
+    placement: "bottom",
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="turmas-disciplinas"]',
+    title: "Suas disciplinas",
+    content:
+      "Use essas abas para filtrar suas turmas por disciplina e encontrar rapidamente a turma que deseja.",
+    placement: "bottom",
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="turmas-card"]',
+    title: "Suas turmas",
+    content:
+      "Clique em uma turma para expandir o card. Depois você poderá escolher entre Registros, Notas e Presença.",
+    placement: "bottom",
+    skipBeacon: true,
+  },
+];
+
+// ── TOUR DA TURMA ABERTA ─────────────────────────────────────────────────────
+
+const PASSOS_TOUR_TURMA_ABERTA = [
+  {
+    target: '[data-tour="turma-aberta-header"]',
+    title: "Informações da turma",
+    content:
+      "Aqui você encontra as principais informações da turma, como disciplina, professor, nome e período.",
+    placement: "bottom",
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="turma-aberta-abas"]',
+    title: "Áreas da turma",
+    content:
+      "Use estas abas para alternar entre Registros, Notas e Presença.",
+    placement: "bottom",
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="turma-aberta-conteudo"]',
+    title: "Conteúdo",
+    content:
+      "Nesta área ficam as informações e ferramentas relacionadas à seção que você selecionou.",
+    placement: "top",
+    skipBeacon: true,
+  },
+];
 
 const FORM_REGISTRO_INICIAL = {
   data: "",
@@ -135,6 +194,70 @@ export default function Turmas({ uid, professor }) {
   const [turmaEditando, setTurmaEditando] = useState(null);
   const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false);
 
+  // ── ONBOARDING / TOUR ──
+const [runTour, setRunTour] = useState(false);
+const [tourKey, setTourKey] = useState(0);
+
+const [tipoTour, setTipoTour] = useState("lista");
+
+// Abre automaticamente apenas na primeira visita.
+useEffect(() => {
+  if (!uid || turmaAberta || loading) return;
+
+  const chaveTour = `proshelf:tour:turmas:${uid}`;
+  const tourJaVisto = localStorage.getItem(chaveTour);
+
+  if (tourJaVisto === "true") return;
+
+  // Espera existir pelo menos uma turma para destacar.
+  if (!turmas.length || !disciplinas.length || !disciplinaAtiva) return;
+
+  const timer = setTimeout(() => {
+    // Marca como visto ANTES de abrir.
+    localStorage.setItem(chaveTour, "true");
+
+    setTipoTour("lista");
+    setRunTour(true);
+  }, 500);
+
+  return () => clearTimeout(timer);
+}, [
+  uid,
+  turmaAberta,
+  loading,
+  turmas.length,
+  disciplinas.length,
+  disciplinaAtiva,
+]);
+
+const handleJoyrideCallback = (data) => {
+  const { status } = data;
+
+  if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+    setRunTour(false);
+
+    if (uid) {
+      localStorage.setItem(
+        `proshelf:tour:turmas:${uid}`,
+        "true"
+      );
+    }
+  }
+};
+
+const reiniciarTutorial = () => {
+  setRunTour(false);
+
+  setTimeout(() => {
+    setTourKey((prev) => prev + 1);
+
+    // Se estiver dentro da turma, mostra o tutorial daquela tela.
+    setTipoTour(turmaAberta ? "turma" : "lista");
+
+    setRunTour(true);
+  }, 150);
+};
+
   // ── ESTADOS DOS LEMBRETES ──
   const FORM_LEMBRETE_INICIAL = { data: "", titulo: "", tipo: "avaliacao" };
   const [lembretes, setLembretes] = useState([]); // Array para listar os lembretes
@@ -148,6 +271,8 @@ export default function Turmas({ uid, professor }) {
   useEffect(() => {
     if (uid) carregarTurmas();
   }, [uid, professor?.role]);
+
+  
 
   async function carregarTurmas() {
     setLoading(true); setErroTurma("");
@@ -331,6 +456,7 @@ async function abrirSecaoTurma(turma, secao) {
   // ══════════════════════════════════════
   if (turmaAberta) {
     return (
+
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         
         {/* HEADER DA TURMA */}
@@ -871,6 +997,44 @@ async function abrirSecaoTurma(turma, secao) {
 
       {confirmarDelete && <ModalConfirmar turma={confirmarDelete} onConfirmar={executarDelete} onCancelar={() => setConfirmarDelete(null)} />}
       {isCoordenador && modalNovaTurmaAberto && <ModalNovaTurmaUnificada uid={uid} professorLogado={professor} turmaParaEditar={turmaEditando} onClose={fecharModalNovaTurma} />}
+
+      {/* ── Botão flutuante de ajuda/tutorial ── */}
+<button
+  type="button"
+  onClick={reiniciarTutorial}
+  title="Ver tutorial"
+  aria-label="Ver tutorial"
+  style={{
+    position: "fixed",
+    right: "24px",
+    bottom: "24px",
+    width: "52px",
+    height: "52px",
+    borderRadius: "50%",
+    border: "none",
+    background: "var(--roxo)",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+    zIndex: 9998,
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "scale(1.08)";
+    e.currentTarget.style.boxShadow =
+      "0 10px 28px rgba(0, 0, 0, 0.24)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "scale(1)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 24px rgba(0, 0, 0, 0.18)";
+  }}
+>
+  <CircleHelp size={25} strokeWidth={2.2} />
+</button>
     </div>
   );
 }

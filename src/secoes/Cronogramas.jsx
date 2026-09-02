@@ -1,7 +1,7 @@
 // src/secoes/Cronogramas.jsx
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Plus, Save, Trash2, PencilLine, AlertTriangle, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Save, Trash2, PencilLine, AlertTriangle, CheckCircle, CircleHelp } from 'lucide-react'
 import {
   buscarCronograma,
   buscarProfessores,
@@ -17,6 +17,7 @@ import {
   montarOpcoesProfessoresDisciplina,
   professorPadraoDisciplina,
 } from './vinculosDisciplinas'
+import { Joyride } from 'react-joyride'
 import '../dashboard/dashboard.css'
 import './secoes.css'
 
@@ -34,6 +35,49 @@ const CURSOS_CRONOGRAMA = {
   DS: 'Desenvolvimento de Sistemas',
   INFONET: 'Informática para Internet',
 }
+const PASSOS_TOUR_CRONOGRAMAS = [
+  {
+    target: '[data-tour="cronogramas-titulo"]',
+    title: 'Conhecendo os Cronogramas',
+    content:
+      'Aqui você encontra os cronogramas das turmas e pode consultar os horários das aulas.',
+    placement: 'bottom',
+skipBeacon: true  },
+  {
+    target: '[data-tour="cronogramas-cursos"]',
+    title: 'Seus cronogramas',
+    content:
+      'Aqui ficam todos os cursos organizados por período e ano. Clique em um curso para visualizar o cronograma completo.',
+    placement: 'top',
+skipBeacon: true  },
+]
+
+const PASSOS_TOUR_CRONOGRAMAS_COORDENADOR = [
+  {
+    target: '[data-tour="cronogramas-titulo"]',
+    title: 'Conhecendo os Cronogramas',
+    content:
+      'Aqui você encontra os cronogramas das turmas e pode consultar os horários das aulas.',
+    placement: 'bottom',
+skipBeacon: true
+  },
+  {
+    target: '[data-tour="cronogramas-editor"]',
+    title: 'Editor de cronogramas',
+    content:
+      'Como coordenador, você pode criar e editar os cronogramas das turmas nesta área.',
+    placement: 'bottom',
+skipBeacon: true
+  },
+  {
+    target: '[data-tour="cronogramas-cursos"]',
+    title: 'Seus cronogramas',
+    content:
+      'Aqui ficam todos os cursos organizados por período e ano. Clique em um curso para visualizar o cronograma completo.',
+    placement: 'top',
+skipBeacon: true
+  },
+]
 
 // NOVO: Mapeamento de cores dos períodos idêntico à tela de Arquivos
 const PERIODOS_BASE = [
@@ -133,7 +177,7 @@ function ModalSalvoSucesso({ onFechar }) {
     }, 2500); // O modal fechará passados 2,5 segundos
     return () => clearTimeout(timer);
   }, [onFechar]);
-  
+
   return (
     <>
       <div className='modal-confirmar-overlay' onClick={onFechar} />
@@ -151,7 +195,7 @@ function ModalSalvoSucesso({ onFechar }) {
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--texto)', margin: '0 0 8px', textAlign: 'center' }}>
           Salvo com sucesso!
         </h3>
-        
+
         <p style={{ fontSize: 13, color: 'var(--texto-sec)', margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
           Todas as suas alterações foram registradas e já estão ativas no sistema.
         </p>
@@ -258,7 +302,7 @@ function ModalConfirmarAula({ aula, onConfirmar, onCancelar, coresDisciplinas })
   const gradeCores = corDisciplina(nomeDisciplina(discPrincipal), coresDisciplinas);
   const bg = gradeCores?.bg || '#FFF0F3';
   const cor = gradeCores?.cor || '#ED235C';
-  
+
   const ordemLabel = aula?.ordem ? `${aula.ordem}ª Aula` : 'Aula';
   const horarioLabel = aula?.horario ? `(${formatarHorarioCurto(aula.horario)})` : '';
   const discLabel = aula?.dividida ? 'Turma Dividida (A/B)' : (aula?.disciplina || 'Sem disciplina');
@@ -555,9 +599,9 @@ function rotuloAulaComHorario(aula) {
 
 function agruparPorPeriodo(aulas) {
   const grupos = {
-    Matutino:   [],
+    Matutino: [],
     Vespertino: [],
-    Noturno:    [],
+    Noturno: [],
   }
   aulas.forEach((aula) => {
     const p = (aula.periodo || '').toLowerCase()
@@ -579,13 +623,13 @@ export default function Cronogramas({
   professor,
   cronogramasIniciais = [],
   cronogramasCarregados = false,
-  onCronogramasAtualizados = () => {},
+  onCronogramasAtualizados = () => { },
 }) {
   const [diaAtivo, setDiaAtivo] = useState(() => DIAS[new Date().getDay()])
   const [cronograma, setCronograma] = useState(() => cronogramasIniciais)
   const [cursoSelecionado, setCursoSelecionado] = useState(null)
   const [draftCursoId, setDraftCursoId] = useState(null)
-  
+
   const [loading, setLoading] = useState(() => !cronogramasCarregados)
   const [status, setStatus] = useState(() =>
     cronogramasCarregados && cronogramasIniciais.length === 0 ? MENSAGEM_SEM_HORARIO : ''
@@ -597,7 +641,7 @@ export default function Cronogramas({
   const [professoresEditor, setProfessoresEditor] = useState([])
   const [professoresDisciplinas, setProfessoresDisciplinas] = useState({})
   const [salvandoEditor, setSalvandoEditor] = useState(false)
-  
+
   const [deletandoCursoId, setDeletandoCursoId] = useState('')
   const [confirmarDeleteCurso, setConfirmarDeleteCurso] = useState(null)
   const [confirmarDeleteAulaIndex, setConfirmarDeleteAulaIndex] = useState(null)
@@ -608,7 +652,53 @@ export default function Cronogramas({
   const coresDisciplinas = useCoresDisciplinas()
   const [mostrarModalSalvo, setMostrarModalSalvo] = useState(false)
 
+  const [runTour, setRunTour] = useState(false)
+  const [tourKey, setTourKey] = useState(0)
+
+const reiniciarTour = () => {
+  console.log('🔄 REINICIANDO TOUR')
+
+  setRunTour(false)
+
+  setTimeout(() => {
+    console.log('🟢 ATIVANDO TOUR')
+
+    setTourKey((prev) => {
+      console.log('🔑 NOVA TOUR KEY:', prev + 1)
+      return prev + 1
+    })
+
+    setRunTour(true)
+  }, 500)
+}
+
   const isCoordenador = professor?.role === 'coordenador'
+
+  const passosTour = isCoordenador
+    ? PASSOS_TOUR_CRONOGRAMAS_COORDENADOR
+    : PASSOS_TOUR_CRONOGRAMAS
+
+
+useEffect(() => {
+  if (!uid) return
+
+  const chaveTour = `proshelf:tour:cronogramas:${uid}`
+
+  const tourJaVisto = localStorage.getItem(chaveTour)
+
+  if (tourJaVisto === 'true') {
+    return
+  }
+
+  const timer = setTimeout(() => {
+    // Marca como visto ANTES de abrir
+    localStorage.setItem(chaveTour, 'true')
+
+    setRunTour(true)
+  }, 500)
+
+  return () => clearTimeout(timer)
+}, [uid])
 
   useEffect(() => {
     if (!uid) return
@@ -643,7 +733,8 @@ export default function Cronogramas({
     if (!isCoordenador) return
 
     return escutarProfessoresDisciplinas(
-      setProfessoresDisciplinas, uid,
+      uid,
+      setProfessoresDisciplinas,
       (err) => {
         console.error('Erro ao carregar professores por disciplina:', err)
         setProfessoresDisciplinas({})
@@ -757,7 +848,7 @@ export default function Cronogramas({
   const diaEditorAtivo = DIAS_EDITOR.includes(DIA_LABEL[diaAtivo])
     ? DIA_LABEL[diaAtivo]
     : 'Segunda'
-  
+
   const aulasEditorDoDia = aulasEditor
     .map((aula, index) => ({ aula, index }))
     .filter(({ aula }) => aula.dia === diaEditorAtivo)
@@ -1094,22 +1185,134 @@ export default function Cronogramas({
 
   return (
     <div>
+
+{runTour && (
+  <Joyride
+    steps={passosTour}
+    run={runTour}
+    continuous
+    showProgress
+    showSkipButton
+    scrollToFirstStep
+    disableOverlayClose
+callback={(data) => {
+  const { status, action } = data
+
+  if (status === 'finished' || status === 'skipped') {
+    setRunTour(false)
+
+    if (uid) {
+      localStorage.setItem(
+        `proshelf:tour:cronogramas:${uid}`,
+        'true'
+      )
+    }
+  }
+}}
+
+      locale={{
+    back: 'Anterior',
+    close: 'Fechar',
+    last: 'Concluir',
+    next: 'Próximo',
+    skip: 'Pular tutorial',
+  }}
+  
+styles={{
+          tooltip: {
+            borderRadius: "12px",
+            padding: "20px",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+          },
+          tooltipTitle: {
+            fontSize: "16px",
+            fontWeight: "600",
+            color: "#1a1a1a",
+            marginBottom: "8px",
+          },
+          tooltipContent: {
+            fontSize: "14px",
+            color: "#666",
+            lineHeight: "1.5",
+          },
+          // Na V3, o botão "Próximo" chama buttonPrimary em vez de buttonNext
+          buttonPrimary: { 
+            backgroundColor: "#6F3B9D",
+            borderRadius: "8px",
+            padding: "8px 16px",
+            fontSize: "14px",
+            fontWeight: "600",
+            transition: "background 0.2s",
+          },
+          buttonBack: {
+            color: "#666",
+            marginRight: "14px",
+            fontSize: "14px",
+            fontWeight: "500",
+          },
+          buttonSkip: {
+            color: "#666",
+            fontSize: "14px",
+            fontWeight: "500",
+          }
+        }}
+  />
+)}
+
+      <button
+        type="button"
+        onClick={reiniciarTour}
+        title="Ver tutorial"
+        aria-label="Ver tutorial"
+        style={{
+          position: 'fixed',
+          right: '24px',
+          bottom: '24px',
+          width: '52px',
+          height: '52px',
+          borderRadius: '50%',
+          border: 'none',
+          background: 'var(--roxo)',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+          zIndex: 9998,
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.08)'
+          e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.24)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)'
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.18)'
+        }}
+      >
+        <CircleHelp size={25} strokeWidth={2.2} />
+      </button>
+
       <div className='crono-topo'>
-        <div 
-          style={{ 
-            width: "100%", 
-            marginBottom: "32px", 
-            paddingBottom: "24px", 
-            borderBottom: "1px solid var(--borda)" 
+        <div
+          style={{
+            width: "100%",
+            marginBottom: "32px",
+            paddingBottom: "24px",
+            borderBottom: "1px solid var(--borda)"
           }}
         >
-          <div 
-            style={{ 
+          <div
+            style={{
               paddingLeft: "15px",
-              borderLeft: "3px solid var(--roxo)" 
+              borderLeft: "3px solid var(--roxo)"
             }}
           >
-            <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+            <h2
+              data-tour="cronogramas-titulo"
+              style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}
+            >
               Cronogramas
             </h2>
             <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
@@ -1120,8 +1323,10 @@ export default function Cronogramas({
       </div>
 
       {isCoordenador && (
-        <section className='crono-editor'>
-          <div className='crono-editor-tabs'>
+        <section
+          className='crono-editor'
+          data-tour="cronogramas-editor"
+        >          <div className='crono-editor-tabs'>
             <button
               type='button'
               className={`crono-editor-tab ${abaEditor === 'curso' ? 'ativo' : ''}`}
@@ -1129,7 +1334,7 @@ export default function Cronogramas({
             >
               Curso
             </button>
-            
+
             {(cursoSelecionado || abaEditor === 'grade') && (
               <button
                 type='button'
@@ -1175,11 +1380,11 @@ export default function Cronogramas({
                   {cursoSelecionado ? (
                     <div className="perfil-grupo">
                       <label className="perfil-label">Período</label>
-                      <input 
-                        className="perfil-input" 
-                        value={formCurso.periodo} 
-                        disabled 
-                        style={{ background: "var(--bg)", cursor: "not-allowed", color: "var(--texto-sec)", opacity: 0.8 }} 
+                      <input
+                        className="perfil-input"
+                        value={formCurso.periodo}
+                        disabled
+                        style={{ background: "var(--bg)", cursor: "not-allowed", color: "var(--texto-sec)", opacity: 0.8 }}
                       />
                     </div>
                   ) : (
@@ -1232,7 +1437,7 @@ export default function Cronogramas({
                       <Save size={16} />
                       {salvandoEditor ? 'Salvando...' : 'Salvar'}
                     </button>
-                    
+
                   </div>
                 </div>
 
@@ -1417,8 +1622,12 @@ export default function Cronogramas({
       ) : (
         <AnimatePresence mode='wait'>
           {!cursoSelecionado ? (
-            <MotionDiv key='cursos' {...ANIMACAO_PAINEL} style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-              
+            <MotionDiv
+              key='cursos'
+              data-tour="cronogramas-cursos"
+              {...ANIMACAO_PAINEL}
+              style={{ display: 'flex', flexDirection: 'column', gap: 40 }}
+            >
               {/* --- AGRUPAMENTO DA LISTA DE CURSOS (NOVO LAYOUT) --- */}
               {(() => {
                 const cursosAgrupados = PERIODOS_BASE.map(p => ({
@@ -1434,7 +1643,7 @@ export default function Cronogramas({
                     turmasPorAno[ano].push(curso);
                   });
 
-                  const anosOrdenados = Object.keys(turmasPorAno).sort((a,b) => {
+                  const anosOrdenados = Object.keys(turmasPorAno).sort((a, b) => {
                     if (a === 'Outros') return 1;
                     if (b === 'Outros') return -1;
                     return a.localeCompare(b);
