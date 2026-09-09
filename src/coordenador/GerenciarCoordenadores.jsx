@@ -5,7 +5,7 @@ import { collection, getDocs, doc, getDoc, setDoc, updateDoc, serverTimestamp, q
 import { httpsCallable } from 'firebase/functions'
 import { auth, functions, db } from '../firebase'
 import './coordenador.css'
-import { TriangleAlert, CircleCheckBig, ShieldPlus, Search } from 'lucide-react'
+import { TriangleAlert, CircleCheckBig, ShieldPlus, Search, Eye, EyeOff } from 'lucide-react'
 
 const FORM_INICIAL = { nome: '', email: '', senha: '' }
 const FUNCTIONS_HTTP_BASE = 'https://us-central1-proshelf-8ecfd.cloudfunctions.net'
@@ -370,12 +370,18 @@ export default function GerenciarCoordenadores() {
                 placeholder='Mínimo 6 caracteres'
                 style={{ paddingRight: 80 }}
               />
-              <button type='button' onClick={() => setMostrarSenha(!mostrarSenha)} style={{
-                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 11, color: 'var(--texto-sec)', fontFamily: 'Poppins, sans-serif',
-              }}>
-                {mostrarSenha ? 'Ocultar' : 'Mostrar'}
+              <button
+                type='button'
+                onClick={() => setMostrarSenha(!mostrarSenha)}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--texto-sec)', display: 'flex', alignItems: 'center', padding: 4,
+                }}
+              >
+                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>

@@ -21,9 +21,7 @@
 ```bash
 npm run dev       # Inicia o servidor de desenvolvimento (Vite)
 npm run build     # Gera o build de produção em /dist
-npm run preview   # Pré-visualiza o build localmente
-npm run lint      # Executa o ESLint
-```
+npm run preview   # Pré-visualiza o build localmente```
 
 ---
 

@@ -902,17 +902,12 @@ select.perfil-input option:checked {
   border: none;
   border-radius: 999px;
   padding: 9px 16px;
-  background: #f0ebf8;
+  background: transparent;
   color: #6F3B9D;
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.crono-voltar-btn:hover {
-  background: #e2d9f3;
-  transform: translateY(-1px);
 }
 
 .crono-cursos-grid {
@@ -1194,7 +1189,8 @@ select.perfil-input option:checked {
 .crono-editor {
   border-radius: 14px;
   padding: 14px;
-  margin: 0 0 24px;
+  margin: 0 0 20px;
+  padding-left: 0 !important;
 }
 
 .crono-editor-tabs {
@@ -1339,14 +1335,15 @@ select.perfil-input option:checked {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 22px;
+  padding-left: 0 !important;
 }
 
 .crono-editor-grade-topo strong {
   display: block;
   margin-top: 3px;
   color: #1a1a2e;
-  font-size: 1rem;
+  font-size: 1.3rem;
 }
 
 .crono-editor-acoes {
@@ -1357,147 +1354,261 @@ select.perfil-input option:checked {
 
 .crono-editor-dia-tabs {
   display: flex;
-  gap: 8px;
+  gap: 20px;
   flex-wrap: wrap;
   margin: 4px 0 12px;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
 }
 
+/* =======================================================
+   EDITOR DE AULAS (DESIGN DE PÍLULAS - DESKTOP)
+   ======================================================= */
 .crono-editor-planilha {
-  overflow-x: auto;
-  border: 1px solid #e8def3;
-  border-radius: 10px;
-  background: #fff;
+  overflow-x: hidden;
+  border: none;
+  /* Remove a borda de tabela */
+  background: transparent;
+  /* Remove o fundo branco */
+  padding-top: 10px;
 }
 
 .crono-editor-head,
 .crono-editor-row {
   display: grid;
-  /* Alterado: Removemos os 130px do período */
-  grid-template-columns: 70px 110px 80px minmax(170px, 1.2fr) minmax(190px, 1.3fr) 110px 44px;
-  gap: 1px;
-  min-width: 820px; /* Reduzimos um pouco a largura mínima */
-  background: #e8def3;
+  /* Espaçamentos e larguras otimizados para as pílulas */
+  grid-template-columns: 60px 105px 105px minmax(170px, 1.8fr) minmax(170px, 1.6fr) 90px 44px;
+  gap: 12px;
+  min-width: 820px;
+  background: transparent;
+  /* Sem fundo de tabela */
+}
+
+/* Cabeçalho da grade (Titles das pílulas) */
+.crono-editor-head {
+  margin-bottom: 6px;
 }
 
 .crono-editor-head span {
-  background: #f5effb;
-  color: #6F3B9D;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.45px;
-  padding: 10px;
+  background: transparent;
+  color: #aaa;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 0 0 0 10px;
   text-transform: uppercase;
+  display: flex;
+  align-items: flex-end;
+  padding-left: 0 !important;
 }
 
+/* Linha da grade (agora transparente) */
 .crono-editor-row {
-  align-items: stretch;
-  border-top: 1px solid #e8def3;
+  align-items: center;
+  border-top: none;
+  margin-bottom: 12px;
 }
 
 .crono-editor-row>.crono-celula,
 .crono-editor-row>.crono-editor-remover {
-  background-color: #fff;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
+/* ── Estilizando os Inputs para parecerem Pílulas ── */
 .crono-editor-row>.crono-celula>input,
 .crono-editor-row>.crono-celula>label,
-.crono-editor-grade-dropdown,
-.crono-editor-stack {
-  border-radius: 0;
-  border: none;
-  background-color: transparent;
-  width: 100%;
-  height: 100%;
-}
-
-.crono-editor-row>.crono-celula>input {
-  min-height: 44px;
-  padding: 0 10px;
-}
-
-/* Deixa as labels ocultas no PC (porque já existe o cabeçalho) */
-.crono-celula::before {
-  content: attr(data-label);
-  display: none;
-}
-
-.crono-editor-grade-dropdown {
-  display: flex;
-  align-items: stretch;
-  min-height: 44px;
-}
-
-.crono-editor-grade-dropdown .perfil-grupo {
-  display: flex;
-  width: 100%;
-  margin: 0;
-}
-
-.crono-editor-grade-dropdown .dropdown-trigger {
-  min-height: 44px;
-  height: 100%;
-  border: none !important;
-  border-radius: 0 !important;
-  background: #fff !important;
-  box-shadow: none !important;
-  font-size: 0.82rem !important;
-  padding: 8px 10px !important;
-}
-
-.crono-editor-row.dividida {
-  background: #d9cbed;
-}
-
-.crono-editor-stack {
-  display: grid;
-  gap: 1px;
-}
-
+.crono-editor-grade-dropdown .dropdown-trigger,
 .crono-editor-stack input,
-.crono-editor-stack select {
+.crono-editor-stack .dropdown-trigger {
+  border-radius: 999px !important;
+  /* Formato de pílula arredondada */
+  border: 1px solid transparent !important;
+  background-color: #fff !important;
+  width: 100%;
   min-height: 42px;
-  border: none;
-  border-radius: 0;
+  padding: 9px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: #1a1a2e;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+  /* Sombra base suave */
+  transition: transform 0.15s ease, box-shadow 0.15s, border-color 0.15s;
 }
 
-.crono-editor-stack .crono-editor-grade-dropdown,
-.crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
-  min-height: 42px;
+.crono-editor-row>.crono-celula>input:focus,
+.crono-editor-grade-dropdown .dropdown-trigger:focus,
+.crono-editor-stack input:focus,
+.crono-editor-stack .dropdown-trigger:focus {
+  border-color: #6F3B9D !important;
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.1) !important;
+  transform: translateY(-1px);
 }
 
+/* Hover genérico nas pílulas do editor */
+.crono-editor-row>.crono-celula>input:hover:not(:focus),
+.crono-editor-grade-dropdown .dropdown-trigger:hover:not(:focus) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.09) !important;
+}
+
+/* ── Cores Específicas por Coluna (Idêntico ao card final) ── */
+
+/* Disciplina */
+.crono-editor-row>.crono-celula[data-label="Disciplina"] .dropdown-trigger {
+  font-weight: 700 !important;
+  color: #6F3B9D !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Professor */
+.crono-editor-row>.crono-celula[data-label="Professor"] .dropdown-trigger {
+  color: #6F3B9D !important;
+  box-shadow: 0 2px 6px rgba(46, 95, 122, 0.08) !important;
+  text-align: center;
+}
+
+/* Sala */
+.crono-editor-row>.crono-celula[data-label="Sala"] input {
+  background: #f5f5f5 !important;
+  color: #888 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  text-align: center;
+}
+
+/* Aula/Ordem e Horário */
+.crono-editor-row>.crono-celula[data-label="Aula"] input,
+.crono-editor-row>.crono-celula[data-label="Horário"] input {
+  color: #666;
+  text-align: center;
+}
+
+/* Botão Sim/Não (Turma A/B) */
 .crono-editor-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: #6F3B9D;
+  color: #6F3B9D !important;
   font-size: 0.78rem;
   font-weight: 800;
+  border-radius: 999px;
+  background: #f0ebf8 !important;
+  padding: 0 12px;
+  min-height: 42px;
+  height: 100%;
+  box-shadow: 0 2px 6px rgba(111, 59, 157, 0.08) !important;
 }
 
-.crono-editor-toggle input {
-  width: 16px;
-  min-height: 16px;
-  accent-color: #6F3B9D;
+/* Restaura o tamanho do checkbox que acabou herdando o formato de pílula */
+.crono-editor-toggle input[type="checkbox"] {
+  width: 16px !important;
+  min-height: 16px !important;
+  height: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  transform: none !important;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: #6F3B9D !important;
 }
 
+/* =======================================================
+   CENTRALIZAR TEXTO DOS DROPDOWNS (DISCIPLINA E PROFESSOR)
+   ======================================================= */
+.crono-editor-grade-dropdown .dropdown-trigger {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+/* O texto ocupa o espaço total e centraliza */
+.crono-editor-grade-dropdown .dropdown-trigger>span:first-child {
+  flex: 1;
+  text-align: center;
+}
+
+/* Trava a setinha sempre no canto direito */
+.crono-editor-grade-dropdown .dropdown-trigger svg,
+.crono-editor-grade-dropdown .dropdown-trigger .arrow {
+  position: absolute;
+  right: 14px;
+}
+
+/* Turma Dividida: Background envolvente sutil */
+.crono-editor-row.dividida {
+  background: #faf7ff;
+  padding: 12px;
+  border-radius: 20px;
+  margin-left: -12px;
+  margin-right: -12px;
+  width: calc(100% + 24px);
+}
+
+.crono-editor-stack {
+  display: grid;
+  gap: 8px;
+}
+
+/* Botão Lixeira em formato de bolinha redonda */
 .crono-editor-remover {
   display: flex;
   align-items: center;
   justify-content: center;
   color: #b42318;
   cursor: pointer;
-  border: none;
-  /* <-- Adicione esta linha para remover a borda 3D */
+  border: 1px solid #ffccc7;
   outline: none;
-  /* <-- Remove a borda preta que aparece quando você clica */
+  background: #fff1f0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  margin: 0 auto;
+  transition: all 0.15s ease;
 }
 
 .crono-editor-remover:hover {
-  background: #fff1f0;
+  background: #ffccc7;
+  transform: scale(1.05);
+}
+
+/* Pílula estática para o número da aula */
+.crono-pill-numero-fixo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  min-height: 42px;
+  font-size: 1.5 !important;
+  font-weight: 700 !important;
+  color: #666 !important;
+  user-select: none;
+  margin: 0 auto !important;
+}
+
+/* Centraliza o cabeçalho "AULA" */
+.crono-editor-head span:first-child {
+  justify-content: center !important;
+  text-align: center !important;
+  padding-left: 0 !important;
+}
+
+/* Centraliza a célula da pílula do número */
+.crono-editor-row>.crono-celula[data-label="Aula"] {
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Suporte ao Modo Escuro */
+:root.dark-mode .crono-pill-numero-fixo {
+  background-color: #242936 !important;
+  color: #ccc !important;
 }
 
 .crono-editor-feedback {
@@ -1972,17 +2083,17 @@ select.perfil-input option:checked {
   }
 
   .react-joyride__tooltip button[data-action="next"] {
-  background-color: var(--roxo) !important;
-  color: #fff !important;
-  border-radius: 9px !important;
-  border: none !important;
-  box-shadow: none !important;
-}
+    background-color: var(--roxo) !important;
+    color: #fff !important;
+    border-radius: 9px !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
 
-.react-joyride__tooltip button[data-action="next"]:hover {
-  background-color: var(--roxo) !important;
-  color: #fff !important;
-}
+  .react-joyride__tooltip button[data-action="next"]:hover {
+    background-color: var(--roxo) !important;
+    color: #fff !important;
+  }
 
   /* Cronogramas responsivo */
   .crono-cursos-grid {
@@ -2448,6 +2559,7 @@ select.perfil-input option:checked {
     padding: 6px 0;
     border-bottom: 1px dashed #e0d6ef;
     margin-bottom: 4px;
+    color: #6F3B9D !important;
   }
 
   /* Devolve as bordas aos inputs que haviam ficado transparentes na tabela */
@@ -2595,6 +2707,7 @@ select.perfil-input option:checked {
     justify-content: flex-start;
     padding: 6px 0;
     border-bottom: 1px dashed #e0d6ef;
+    color: #6F3B9D !important;
   }
 
   /* Lixeira vira um botão flutuante para fora do card! */
@@ -2777,5 +2890,35 @@ select.perfil-input option:checked {
 @media (max-width: 480px) {
   .turma-acoes-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =======================================================
+   REGRAS DE EXIBIÇÃO DOS DIAS (SIGLA vs COMPLETO)
+   ======================================================= */
+
+/* Por padrão (telas <= 900px): mostra apenas a sigla */
+.crono-dia-btn .dia-completo {
+  display: none !important;
+}
+
+.crono-dia-btn .dia-sigla {
+  display: inline !important;
+}
+
+/* Em telas maiores que 900px: mostra a nomenclatura completa */
+@media (min-width: 901px) {
+  .crono-dia-btn .dia-sigla {
+    display: none !important;
+  }
+
+  .crono-dia-btn .dia-completo {
+    display: inline !important;
+  }
+
+  /* Ajusta o padding para acomodar os nomes maiores */
+  .crono-dia-btn {
+    padding: 8px 20px !important;
+    font-size: 0.85rem !important;
   }
 }

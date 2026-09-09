@@ -22,7 +22,10 @@ import useCoresDisciplinas from "../hooks/useCoresDisciplinas";
 import { montarCoresDisciplina } from "./coresDisciplinas";
 import ModalNovaTurmaUnificada from "../coordenador/ModalNovaTurmaUnificada";
 import { motion, AnimatePresence } from "motion/react";
-import { Joyride } from "react-joyride";
+// CORREÇÃO: o export default da lib é o componente Joyride; STATUS é named export.
+// Antes: `import { Joyride } from "react-joyride";` — Joyride vinha undefined e
+// STATUS nunca era importado, então o callback quebrava e o tour nunca aparecia.
+import { STATUS, Joyride } from "react-joyride";
 
 // IMPORTANDO OS COMPONENTES DAS ABAS
 import TurmasNotas from "./TurmasNotas";
@@ -46,6 +49,7 @@ const PASSOS_TOUR_TURMAS = [
       "Aqui você encontra todas as suas turmas e pode acessar os registros, notas e controle de presença de cada uma.",
     placement: "bottom",
     skipBeacon: true,
+    disableBeacon: true,
   },
   {
     target: '[data-tour="turmas-disciplinas"]',
@@ -54,6 +58,7 @@ const PASSOS_TOUR_TURMAS = [
       "Use essas abas para filtrar suas turmas por disciplina e encontrar rapidamente a turma que deseja.",
     placement: "bottom",
     skipBeacon: true,
+    disableBeacon: true,
   },
   {
     target: '[data-tour="turmas-card"]',
@@ -62,6 +67,7 @@ const PASSOS_TOUR_TURMAS = [
       "Clique em uma turma para expandir o card. Depois você poderá escolher entre Registros, Notas e Presença.",
     placement: "bottom",
     skipBeacon: true,
+    disableBeacon: true,
   },
 ];
 
@@ -75,6 +81,7 @@ const PASSOS_TOUR_TURMA_ABERTA = [
       "Aqui você encontra as principais informações da turma, como disciplina, professor, nome e período.",
     placement: "bottom",
     skipBeacon: true,
+    disableBeacon: true,
   },
   {
     target: '[data-tour="turma-aberta-abas"]',
@@ -83,6 +90,7 @@ const PASSOS_TOUR_TURMA_ABERTA = [
       "Use estas abas para alternar entre Registros, Notas e Presença.",
     placement: "bottom",
     skipBeacon: true,
+    disableBeacon: true,
   },
   {
     target: '[data-tour="turma-aberta-conteudo"]',
@@ -91,8 +99,77 @@ const PASSOS_TOUR_TURMA_ABERTA = [
       "Nesta área ficam as informações e ferramentas relacionadas à seção que você selecionou.",
     placement: "top",
     skipBeacon: true,
+    disableBeacon: true,
   },
 ];
+
+// ── ESTILO E TEXTOS DO TOUR (personalização visual) ─────────────────────────
+const ESTILOS_TOUR = {
+  options: {
+    arrowColor: "var(--branco)",
+    backgroundColor: "var(--branco)",
+    primaryColor: "var(--roxo)",
+    textColor: "var(--texto)",
+    overlayColor: "rgba(0, 0, 0, 0.45)",
+    zIndex: 999999999999999,
+    width: 340,
+  },
+  tooltip: {
+    borderRadius: 16,
+    padding: 20,
+    fontFamily: "'Poppins', sans-serif",
+  },
+  tooltipTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    marginBottom: 4,
+  },
+  tooltipContent: {
+    fontSize: 14,
+    color: "var(--texto-sec)",
+    padding: "8px 0 0",
+  },
+  buttonNext: {
+    backgroundColor: "var(--roxo)",
+    borderRadius: 10,
+    padding: "8px 16px",
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: "'Poppins', sans-serif",
+    outline: "none",
+  },
+  buttonPrimary: {
+    backgroundColor: "#6F3B9D",
+    borderRadius: "8px",
+    padding: "8px 16px",
+    fontSize: "14px",
+    fontWeight: "600",
+    transition: "background 0.2s",
+  },
+  buttonBack: {
+    color: "var(--texto-sec)",
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: "'Poppins', sans-serif",
+    marginRight: 8,
+  },
+  buttonSkip: {
+    color: "var(--texto-sec)",
+    fontSize: 13,
+    fontFamily: "'Poppins', sans-serif",
+  },
+  spotlight: {
+    borderRadius: 12,
+  },
+};
+
+const LOCALE_TOUR = {
+  back: "Voltar",
+  close: "Fechar",
+  last: "Concluir",
+  next: "Próximo",
+  skip: "Pular tutorial",
+};
 
 const FORM_REGISTRO_INICIAL = {
   data: "",
@@ -104,6 +181,46 @@ const FORM_REGISTRO_INICIAL = {
 
 function coresDe(disciplina, coresCustomizadas = {}) {
   return montarCoresDisciplina(disciplina, coresCustomizadas);
+}
+
+// ── Botão flutuante de tutorial (reutilizado nas duas telas) ─────────────────
+function BotaoTutorial({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Ver tutorial"
+      aria-label="Ver tutorial"
+      style={{
+        position: "fixed",
+        right: "24px",
+        bottom: "24px",
+        width: "52px",
+        height: "52px",
+        borderRadius: "50%",
+        border: "none",
+        background: "var(--roxo)",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+        zIndex: 9998,
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "scale(1.08)";
+        e.currentTarget.style.boxShadow = "0 10px 28px rgba(0, 0, 0, 0.24)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "scale(1)";
+        e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
+      }}
+    >
+      <CircleHelp size={25} strokeWidth={2.2} />
+    </button>
+  );
 }
 
 // ── Modal de confirmação customizado ──────────────────────────
@@ -163,21 +280,21 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
 export default function Turmas({ uid, professor }) {
   const isCoordenador = professor?.role === "coordenador";
   const coresDisciplinas = useCoresDisciplinas();
-  
+
   const [turmas, setTurmas] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
   const [disciplinaAtiva, setDisciplinaAtiva] = useState(null);
-  
+
   const [loading, setLoading] = useState(true);
   const [erroTurma, setErroTurma] = useState("");
-  
+
   // ── ESTADOS DE NAVEGAÇÃO DA TURMA ──
   const [turmaAberta, setTurmaAberta] = useState(null);
   const [secaoAtiva, setSecaoAtiva] = useState("registros"); // "registros" | "notas" | "presenca"
   const [turmaExpandidaId, setTurmaExpandidaId] = useState(null); // Para o Accordion da lista
   const [subAbaNotas, setSubAbaNotas] = useState("resumo"); // "resumo" | "lancar" — novo
 
-  
+
   // ── ESTADOS DOS REGISTROS ──
   const [registros, setRegistros] = useState([]);
   const [painelRegistro, setPainelRegistro] = useState(false);
@@ -195,68 +312,70 @@ export default function Turmas({ uid, professor }) {
   const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false);
 
   // ── ONBOARDING / TOUR ──
-const [runTour, setRunTour] = useState(false);
-const [tourKey, setTourKey] = useState(0);
+  const [runTour, setRunTour] = useState(false);
+  const [tourKey, setTourKey] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [tipoTour, setTipoTour] = useState("lista");
 
-const [tipoTour, setTipoTour] = useState("lista");
+  // Abre automaticamente apenas na primeira visita.
+  useEffect(() => {
+    if (!uid || turmaAberta || loading) return;
 
-// Abre automaticamente apenas na primeira visita.
-useEffect(() => {
-  if (!uid || turmaAberta || loading) return;
+    const chaveTour = `proshelf:tour:turmas:${uid}`;
+    const tourJaVisto = localStorage.getItem(chaveTour);
 
-  const chaveTour = `proshelf:tour:turmas:${uid}`;
-  const tourJaVisto = localStorage.getItem(chaveTour);
+    if (tourJaVisto === "true") return;
 
-  if (tourJaVisto === "true") return;
+    // Espera existir pelo menos uma turma para destacar.
+    if (!turmas.length || !disciplinas.length || !disciplinaAtiva) return;
 
-  // Espera existir pelo menos uma turma para destacar.
-  if (!turmas.length || !disciplinas.length || !disciplinaAtiva) return;
+    const timer = setTimeout(() => {
+      // Marca como visto ANTES de abrir.
+      localStorage.setItem(chaveTour, "true");
 
-  const timer = setTimeout(() => {
-    // Marca como visto ANTES de abrir.
-    localStorage.setItem(chaveTour, "true");
+      setTipoTour("lista");
+      setRunTour(true);
+    }, 500);
 
-    setTipoTour("lista");
-    setRunTour(true);
-  }, 500);
+    return () => clearTimeout(timer);
+  }, [
+    uid,
+    turmaAberta,
+    loading,
+    turmas.length,
+    disciplinas.length,
+    disciplinaAtiva,
+  ]);
 
-  return () => clearTimeout(timer);
-}, [
-  uid,
-  turmaAberta,
-  loading,
-  turmas.length,
-  disciplinas.length,
-  disciplinaAtiva,
-]);
+  const handleJoyrideCallback = (data) => {
+    const { status, type, action, index } = data;
 
-const handleJoyrideCallback = (data) => {
-  const { status } = data;
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRunTour(false);
+      setStepIndex(0); // Reseta ao finalizar ou pular
 
-  if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-    setRunTour(false);
-
-    if (uid) {
-      localStorage.setItem(
-        `proshelf:tour:turmas:${uid}`,
-        "true"
-      );
+      if (uid) {
+        localStorage.setItem(`proshelf:tour:turmas:${uid}`, "true");
+      }
+    } else if (type === "step:after" || type === "target:notFound") {
+      // Atualiza o índice do passo de forma controlada
+      setStepIndex(index + (action === "prev" ? -1 : 1));
     }
-  }
-};
+  };
 
-const reiniciarTutorial = () => {
-  setRunTour(false);
+  const reiniciarTutorial = () => {
+    setRunTour(false);
+    setStepIndex(0);
 
-  setTimeout(() => {
-    setTourKey((prev) => prev + 1);
+    setTimeout(() => {
+      setTourKey((prev) => prev + 1);
 
-    // Se estiver dentro da turma, mostra o tutorial daquela tela.
-    setTipoTour(turmaAberta ? "turma" : "lista");
+      // Se estiver dentro da turma, mostra o tutorial daquela tela.
+      setTipoTour(turmaAberta ? "turma" : "lista");
 
-    setRunTour(true);
-  }, 150);
-};
+      setRunTour(true);
+    }, 150);
+  };
 
   // ── ESTADOS DOS LEMBRETES ──
   const FORM_LEMBRETE_INICIAL = { data: "", titulo: "", tipo: "avaliacao" };
@@ -272,7 +391,7 @@ const reiniciarTutorial = () => {
     if (uid) carregarTurmas();
   }, [uid, professor?.role]);
 
-  
+
 
   async function carregarTurmas() {
     setLoading(true); setErroTurma("");
@@ -296,7 +415,7 @@ const reiniciarTutorial = () => {
   }
 
   // Abre a turma e já direciona para a seção escolhida nos botões do accordion
-async function abrirSecaoTurma(turma, secao) {
+  async function abrirSecaoTurma(turma, secao) {
     setTurmaAberta(turma);
     setSecaoAtiva(secao);
     setSubAbaNotas("resumo");
@@ -305,13 +424,13 @@ async function abrirSecaoTurma(turma, secao) {
 
     try {
       const ownerUid = turma.ownerUid || uid;
-      
+
       // Busca registros e lembretes ao mesmo tempo
       const [regs, lems] = await Promise.all([
         buscarRegistros(ownerUid, turma.id),
         buscarLembretes(ownerUid, turma.id)
       ]);
-      
+
       setRegistros(regs);
       setLembretes(lems);
     } catch (erro) {
@@ -351,7 +470,7 @@ async function abrirSecaoTurma(turma, secao) {
         mensagem: `A turma "${confirmarDelete.nome}" foi encerrada.`,
         tipo: "turma", link: "/turmas", criadoPorUid: uid, criadoPorNome: professor?.nome || "Coordenação",
       });
-    } catch (err) {}
+    } catch (err) { }
     setConfirmarDelete(null); await carregarTurmas();
   }
 
@@ -393,27 +512,27 @@ async function abrirSecaoTurma(turma, secao) {
   }
 
   // ── LÓGICA DE LEMBRETES ──
-// ── LÓGICA DE LEMBRETES REAL (INTEGRADA AO FIREBASE) ──
+  // ── LÓGICA DE LEMBRETES REAL (INTEGRADA AO FIREBASE) ──
   async function handleSalvarLembrete() {
     if (!formLembrete.data) { setErroLembrete("Informe a data do lembrete."); return; }
     if (!formLembrete.titulo.trim()) { setErroLembrete("Informe o título."); return; }
-    
+
     setSalvandoLembrete(true);
     setErroLembrete("");
-    
+
     try {
       const ownerUid = turmaAberta.ownerUid || uid;
-      
+
       if (lembreteEditando) {
         await atualizarLembrete(ownerUid, turmaAberta.id, lembreteEditando.id, formLembrete);
       } else {
         await criarLembrete(ownerUid, turmaAberta.id, formLembrete);
       }
-      
+
       // Recarrega a lista do banco para garantir que está sincronizado
       const lems = await buscarLembretes(ownerUid, turmaAberta.id);
       setLembretes(lems);
-      
+
       setPainelLembrete(false);
       setFormLembrete(FORM_LEMBRETE_INICIAL);
       setLembreteEditando(null);
@@ -441,7 +560,7 @@ async function abrirSecaoTurma(turma, secao) {
     try {
       const ownerUid = turmaAberta.ownerUid || uid;
       await deletarLembrete(ownerUid, turmaAberta.id, lembreteId);
-      
+
       // Remove do estado local instantaneamente para a tela não piscar
       setLembretes(prev => prev.filter(l => l.id !== lembreteId));
     } catch (erro) {
@@ -454,13 +573,33 @@ async function abrirSecaoTurma(turma, secao) {
   // ══════════════════════════════════════
   //  TELA 2: DENTRO DA TURMA (Registros, Notas ou Presença)
   // ══════════════════════════════════════
+
+  const passosListaDinamicos = turmas.length === 0
+    ? PASSOS_TOUR_TURMAS.filter(p => p.target === '[data-tour="turmas-titulo"]')
+    : PASSOS_TOUR_TURMAS;
+
   if (turmaAberta) {
     return (
 
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        
+
+        <Joyride
+          key={`lista-${tourKey}`}
+          stepIndex={stepIndex} // Adicione esta linha
+          steps={passosListaDinamicos} // Substitua PASSOS_TOUR_TURMAS por esta variável
+          run={runTour && tipoTour === "lista"}
+          continuous
+          showProgress
+          showSkipButton
+          scrollToFirstStep
+          disableOverlayClose
+          callback={handleJoyrideCallback}
+          styles={ESTILOS_TOUR}
+          locale={LOCALE_TOUR}
+        />
+
         {/* HEADER DA TURMA */}
-        <div className="card">
+        <div className="card" data-tour="turma-aberta-header">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
               <button className="btn-voltar" onClick={fecharTurmaAberta}>
@@ -479,8 +618,9 @@ async function abrirSecaoTurma(turma, secao) {
               </div>
             </div>
 
-{/* SELETOR DE ABAS COM DESLIZAMENTO (Sliding Pill) */}
+            {/* SELETOR DE ABAS COM DESLIZAMENTO (Sliding Pill) */}
             <div
+              data-tour="turma-aberta-abas"
               style={{
                 position: "relative",
                 display: "flex",
@@ -503,10 +643,9 @@ async function abrirSecaoTurma(turma, secao) {
                   zIndex: 1,
                   // A mágica acontece aqui: uma transição suave baseada na aba ativa
                   transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  transform: `translateX(${
-                    secaoAtiva === "registros" ? "0%" :
-                    secaoAtiva === "notas" ? "100%" : "200%"
-                  })`,
+                  transform: `translateX(${secaoAtiva === "registros" ? "0%" :
+                      secaoAtiva === "notas" ? "100%" : "200%"
+                    })`,
                 }}
               />
 
@@ -544,192 +683,195 @@ async function abrirSecaoTurma(turma, secao) {
         </div>
 
         {/* ── CONTEÚDO CONDICIONAL DA ABA ── */}
+        <div data-tour="turma-aberta-conteudo" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
-        {secaoAtiva === "registros" && (
-          <>
-            <div className="card" style={{ minHeight: 300 }}>
-              {erroRegistro && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>{erroRegistro}</p>}
+          {secaoAtiva === "registros" && (
+            <>
+              <div className="card" style={{ minHeight: 300 }}>
+                {erroRegistro && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>{erroRegistro}</p>}
 
-              {registros.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 0" }}>
-                  <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>Nenhum registro ainda.</p>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {registros.map((r, idx) => {
-                    const tipo = COR_TIPO[r.tipo] || COR_TIPO.teorica;
-                    return (
-                      <div key={r.id} className="registro-pill" onClick={() => setRegistroAberto(r)} style={{ background: tipo.bg, animationDelay: `${idx * 50}ms`, cursor: "pointer" }}>
-                        <span style={{ color: tipo.cor, fontSize: 15, flex: 1 }}>
-                          Aula do dia {r.data.split("-").reverse().join("/")} — {r.conteudo}
-                        </span>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button className="arquivo-acao" style={{ color: tipo.cor, opacity: 0.6 }} onClick={(e) => handleEditarRegistro(r, e)} title="Editar"><Pencil size={14} /></button>
-                          <button className="arquivo-acao" style={{ color: tipo.cor, opacity: 0.6 }} onClick={(e) => { e.stopPropagation(); setRegistroParaDeletar(r); }} title="Remover"><Trash2 size={14} /></button>
+                {registros.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0" }}>
+                    <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>Nenhum registro ainda.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {registros.map((r, idx) => {
+                      const tipo = COR_TIPO[r.tipo] || COR_TIPO.teorica;
+                      return (
+                        <div key={r.id} className="registro-pill" onClick={() => setRegistroAberto(r)} style={{ background: tipo.bg, animationDelay: `${idx * 50}ms`, cursor: "pointer" }}>
+                          <span style={{ color: tipo.cor, fontSize: 15, flex: 1 }}>
+                            Aula do dia {r.data.split("-").reverse().join("/")} — {r.conteudo}
+                          </span>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button className="arquivo-acao" style={{ color: tipo.cor, opacity: 0.6 }} onClick={(e) => handleEditarRegistro(r, e)} title="Editar"><Pencil size={14} /></button>
+                            <button className="arquivo-acao" style={{ color: tipo.cor, opacity: 0.6 }} onClick={(e) => { e.stopPropagation(); setRegistroParaDeletar(r); }} title="Remover"><Trash2 size={14} /></button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--borda)", display: "flex", justifyContent: "center" }}>
+                  <button className="btn-upload" style={{ marginTop: 0 }} onClick={() => { setErroRegistro(""); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true); }}>
+                    + Novo registro
+                  </button>
+                </div>
+              </div>
+
+
+
+              {/* LEGENDA DE CORES DOS REGISTROS */}
+              <div className="card" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, padding: "20px" }}>
+                {Object.entries(COR_TIPO).map(([k, v]) => (
+                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: v.bg, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, color: "var(--texto)", fontWeight: 500, lineHeight: 1 }}>{v.label}</span>
+                  </div>
+
+
+                ))}
+              </div>
+
+              {/* 2. NOVO CARD DOS LEMBRETES (Agenda) */}
+              <div className="card" style={{ minHeight: 150 }}>
+                <div style={{ marginBottom: "20px" }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
+                  <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "4px 0 0" }}>Provas, trabalhos e atividades futuras.</p>
+                </div>
+
+                {erroLembrete && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>{erroLembrete}</p>}
+
+                {lembretes.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>Nenhum lembrete agendado para esta turma.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {lembretes.map((l, idx) => {
+                      const tipo = COR_TIPO[l.tipo] || COR_TIPO.avaliacao;
+                      return (
+                        <div key={l.id} className="registro-pill" style={{ background: "var(--bg)", border: "1px solid var(--borda)", borderLeft: `4px solid ${tipo.bg}`, animationDelay: `${idx * 50}ms` }}>
+                          <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "4px" }}>
+                            <span style={{ color: tipo.bg, fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                              {l.data.split("-").reverse().join("/")} • {tipo.label}
+                            </span>
+                            <span style={{ color: "var(--texto)", fontSize: 14, fontWeight: 500 }}>
+                              {l.titulo}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button className="arquivo-acao" style={{ color: "var(--texto-sec)" }} onClick={(e) => handleEditarLembrete(l, e)} title="Editar"><Pencil size={14} /></button>
+                            <button className="arquivo-acao" style={{ color: "var(--texto-sec)" }} onClick={(e) => { e.stopPropagation(); setLembreteParaDeletar(l); }} title="Remover"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--borda)", display: "flex", justifyContent: "center" }}>
+                  <button
+                    className="btn-upload"
+                    style={{
+                      marginTop: 0,
+                      borderStyle: "dashed",
+                      borderColor: "var(--roxo)",
+                      background: "transparent",
+                      color: "var(--roxo)"
+                    }}
+                    onClick={() => {
+                      setErroLembrete("");
+                      setFormLembrete(FORM_LEMBRETE_INICIAL);
+                      setLembreteEditando(null);
+                      setPainelLembrete(true);
+                    }}
+                  >
+                    + Novo lembrete
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {secaoAtiva === "notas" && (
+            <>
+              {!isCoordenador && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {[
+                    { id: "lancar", label: "Lançar avaliações" },
+                    { id: "resumo", label: "Ver totais" },
+                  ].map((aba) => (
+                    <motion.button
+                      key={aba.id}
+                      onClick={() => setSubAbaNotas(aba.id)}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      style={{
+                        position: "relative",
+                        padding: "6px 14px",
+                        borderRadius: 8,
+                        border: "1px solid var(--borda)",
+                        background: "transparent",
+                        color: subAbaNotas === aba.id ? "#fff" : "var(--texto)",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        cursor: "pointer",
+                        overflow: "hidden",
+                        transition: "color 0.2s ease",
+                      }}
+                    >
+                      {subAbaNotas === aba.id && (
+                        <motion.div
+                          layoutId="pill-sub-notas"
+                          transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            background: "var(--roxo)",
+                            borderRadius: 7,
+                            zIndex: 0,
+                          }}
+                        />
+                      )}
+                      <span style={{ position: "relative", zIndex: 1 }}>{aba.label}</span>
+                    </motion.button>
+                  ))}
                 </div>
               )}
 
-              <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--borda)", display: "flex", justifyContent: "center" }}>
-                <button className="btn-upload" style={{ marginTop: 0 }} onClick={() => { setErroRegistro(""); setFormRegistro(FORM_REGISTRO_INICIAL); setPainelRegistro(true); }}>
-                  + Novo registro
-                </button>
-              </div>
-            </div>
+              <AnimatePresence mode="wait">
+                {isCoordenador || subAbaNotas === "resumo" ? (
+                  <motion.div
+                    key="resumo"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  >
+                    <TurmasNotas turma={turmaAberta} uid={uid} professor={professor} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="lancar"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  >
+                    <TurmaAvaliacoes turma={turmaAberta} uid={uid} professor={professor} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
 
-            
+          {secaoAtiva === "presenca" && (
+            <TurmaPresenca turma={turmaAberta} uid={uid} professor={professor} />
+          )}
 
-            {/* LEGENDA DE CORES DOS REGISTROS */}
-            <div className="card" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, padding: "20px" }}>
-              {Object.entries(COR_TIPO).map(([k, v]) => (
-                <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: v.bg, flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, color: "var(--texto)", fontWeight: 500, lineHeight: 1 }}>{v.label}</span>
-                </div>
-
-                
-              ))}
-            </div>
-
-{/* 2. NOVO CARD DOS LEMBRETES (Agenda) */}
-            <div className="card" style={{ minHeight: 150 }}>
-              <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: 18, fontWeight: 600, color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
-                <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "4px 0 0" }}>Provas, trabalhos e atividades futuras.</p>
-              </div>
-
-              {erroLembrete && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>{erroLembrete}</p>}
-
-              {lembretes.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <p style={{ fontSize: 15, color: "var(--texto-sec)" }}>Nenhum lembrete agendado para esta turma.</p>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {lembretes.map((l, idx) => {
-                    const tipo = COR_TIPO[l.tipo] || COR_TIPO.avaliacao;
-                    return (
-                      <div key={l.id} className="registro-pill" style={{ background: "var(--bg)", border: "1px solid var(--borda)", borderLeft: `4px solid ${tipo.bg}`, animationDelay: `${idx * 50}ms` }}>
-                        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "4px" }}>
-                          <span style={{ color: tipo.bg, fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
-                            {l.data.split("-").reverse().join("/")} • {tipo.label}
-                          </span>
-                          <span style={{ color: "var(--texto)", fontSize: 14, fontWeight: 500 }}>
-                            {l.titulo}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button className="arquivo-acao" style={{ color: "var(--texto-sec)" }} onClick={(e) => handleEditarLembrete(l, e)} title="Editar"><Pencil size={14} /></button>
-                          <button className="arquivo-acao" style={{ color: "var(--texto-sec)" }} onClick={(e) => { e.stopPropagation(); setLembreteParaDeletar(l); }} title="Remover"><Trash2 size={14} /></button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--borda)", display: "flex", justifyContent: "center" }}>
-                <button
-                  className="btn-upload"
-                  style={{
-                    marginTop: 0,
-                    borderStyle: "dashed",
-                    borderColor: "var(--roxo)",
-                    background: "transparent",
-                    color: "var(--roxo)"
-                  }}
-                  onClick={() => {
-                    setErroLembrete("");
-                    setFormLembrete(FORM_LEMBRETE_INICIAL);
-                    setLembreteEditando(null);
-                    setPainelLembrete(true);
-                  }}
-                >
-                  + Novo lembrete
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-{secaoAtiva === "notas" && (
-  <>
-    {!isCoordenador && (
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {[          
-          { id: "lancar", label: "Lançar avaliações" },
-          { id: "resumo", label: "Ver totais" },
-        ].map((aba) => (
-          <motion.button
-            key={aba.id}
-            onClick={() => setSubAbaNotas(aba.id)}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            style={{
-              position: "relative",
-              padding: "6px 14px",
-              borderRadius: 8,
-              border: "1px solid var(--borda)",
-              background: "transparent",
-              color: subAbaNotas === aba.id ? "#fff" : "var(--texto)",
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              overflow: "hidden",
-              transition: "color 0.2s ease",
-            }}
-          >
-            {subAbaNotas === aba.id && (
-              <motion.div
-                layoutId="pill-sub-notas"
-                transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "var(--roxo)",
-                  borderRadius: 7,
-                  zIndex: 0,
-                }}
-              />
-            )}
-            <span style={{ position: "relative", zIndex: 1 }}>{aba.label}</span>
-          </motion.button>
-        ))}
-      </div>
-    )}
-
-    <AnimatePresence mode="wait">
-      {isCoordenador || subAbaNotas === "resumo" ? (
-        <motion.div
-          key="resumo"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-        >
-          <TurmasNotas turma={turmaAberta} uid={uid} professor={professor} />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="lancar"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-        >
-          <TurmaAvaliacoes turma={turmaAberta} uid={uid} professor={professor} />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </>
-)}
-
-        {secaoAtiva === "presenca" && (
-          <TurmaPresenca turma={turmaAberta} uid={uid} professor={professor} />
-        )}
+        </div>
 
         {/* ========================================= */}
         {/* MODAIS (Manter como estavam) */}
@@ -819,7 +961,7 @@ async function abrirSecaoTurma(turma, secao) {
           </>
         )}
 
-         {/* ========================================= */}
+        {/* ========================================= */}
         {/* MODAIS DE LEMBRETES */}
         {/* ========================================= */}
         {painelLembrete && (
@@ -836,15 +978,15 @@ async function abrirSecaoTurma(turma, secao) {
                 <button onClick={() => setPainelLembrete(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", padding: 4 }}><X size={20} /></button>
               </div>
 
-<div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                <CustomDatePicker 
+              <div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                <CustomDatePicker
                   id="datepicker-lembrete"
                   label="Data do Evento"
-                  value={formLembrete.data} 
-                  onChange={(dataStr) => setFormLembrete({ ...formLembrete, data: dataStr })} 
-                  eventos={lembretes} 
-                  dropdownAberto={dropdownAberto} 
-                  setDropdownAberto={setDropdownAberto} 
+                  value={formLembrete.data}
+                  onChange={(dataStr) => setFormLembrete({ ...formLembrete, data: dataStr })}
+                  eventos={lembretes}
+                  dropdownAberto={dropdownAberto}
+                  setDropdownAberto={setDropdownAberto}
                 />
               </div>
 
@@ -887,6 +1029,9 @@ async function abrirSecaoTurma(turma, secao) {
             </div>
           </>
         )}
+
+        {/* Botão flutuante de tutorial também dentro da turma */}
+        <BotaoTutorial onClick={reiniciarTutorial} />
       </div>
     );
   }
@@ -896,9 +1041,23 @@ async function abrirSecaoTurma(turma, secao) {
   // ══════════════════════════════════════
   return (
     <div>
+      <Joyride
+        key={`lista-${tourKey}`}
+        steps={PASSOS_TOUR_TURMAS}
+        run={runTour && tipoTour === "lista"}
+        continuous
+        showProgress
+        showSkipButton
+        scrollToFirstStep
+        disableOverlayClose
+        callback={handleJoyrideCallback}
+        styles={ESTILOS_TOUR}
+        locale={LOCALE_TOUR}
+      />
+
       <div className='crono-topo'>
         <div style={{ width: "100%", marginBottom: "32px", paddingBottom: "24px", borderBottom: "1px solid var(--borda)" }}>
-          <div style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)" }}>
+          <div data-tour="turmas-titulo" style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)" }}>
             <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0 }}>Turmas</h2>
             <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>Suas disciplinas ministradas.</p>
           </div>
@@ -913,7 +1072,7 @@ async function abrirSecaoTurma(turma, secao) {
         <p className="secao-vazia">Nenhuma turma cadastrada.</p>
       ) : (
         <>
-          <div className="turma-tabs" style={{ marginBottom: 28 }}>
+          <div className="turma-tabs" data-tour="turmas-disciplinas" style={{ marginBottom: 28 }}>
             {disciplinas.map((d) => {
               const c = coresDe(d, coresDisciplinas);
               const ativa = disciplinaAtiva === d;
@@ -937,14 +1096,14 @@ async function abrirSecaoTurma(turma, secao) {
 
           <p style={{ fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{disciplinaAtiva}</p>
 
-          <div className="turmas-grid">
+          <div className="turmas-grid" data-tour="turmas-card">
             {turmasFiltradas.map((t) => {
               const expandida = turmaExpandidaId === t.id;
-              
+
               return (
                 <div key={t.id} style={{ position: "relative" }}>
                   <div className={`turma-expand-card ${expandida ? "aberto" : ""}`}>
-                    
+
                     {/* Botão que ativa/fecha o Accordion */}
                     <button
                       className="turma-expand-trigger"
@@ -999,42 +1158,7 @@ async function abrirSecaoTurma(turma, secao) {
       {isCoordenador && modalNovaTurmaAberto && <ModalNovaTurmaUnificada uid={uid} professorLogado={professor} turmaParaEditar={turmaEditando} onClose={fecharModalNovaTurma} />}
 
       {/* ── Botão flutuante de ajuda/tutorial ── */}
-<button
-  type="button"
-  onClick={reiniciarTutorial}
-  title="Ver tutorial"
-  aria-label="Ver tutorial"
-  style={{
-    position: "fixed",
-    right: "24px",
-    bottom: "24px",
-    width: "52px",
-    height: "52px",
-    borderRadius: "50%",
-    border: "none",
-    background: "var(--roxo)",
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
-    zIndex: 9998,
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "scale(1.08)";
-    e.currentTarget.style.boxShadow =
-      "0 10px 28px rgba(0, 0, 0, 0.24)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.boxShadow =
-      "0 8px 24px rgba(0, 0, 0, 0.18)";
-  }}
->
-  <CircleHelp size={25} strokeWidth={2.2} />
-</button>
+      <BotaoTutorial onClick={reiniciarTutorial} />
     </div>
   );
 }

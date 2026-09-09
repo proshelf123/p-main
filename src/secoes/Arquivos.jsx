@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { X, AlertTriangle } from 'lucide-react'
+import { X, AlertTriangle, CircleHelp } from 'lucide-react'
+import { STATUS, Joyride } from 'react-joyride'
 import TurmaArquivos from './TurmaArquivos'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase'
@@ -23,6 +24,122 @@ const containerVariants = {
 const cardVariants = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: 'easeOut' } },
+}
+
+const PASSOS_TOUR_ARQUIVOS = [
+  {
+    target: '[data-tour="arquivos-header"]',
+    title: 'Arquivos da turma',
+    content: 'Aqui você organiza suas turmas por período e entra rapidamente em cada uma para visualizar e enviar arquivos.',
+    placement: 'bottom',
+    disableBeacon: true,
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="arquivos-periodos"]',
+    title: 'Categorias por período',
+    content: 'Cada bloco representa um período do turno, com o número de turmas e o acesso direto ao conteúdo das salas.',
+    placement: 'bottom',
+    disableBeacon: true,
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="arquivos-grid"]',
+    title: 'Turmas disponíveis',
+    content: 'Clique em uma turma para abrir a área de arquivos e gerenciar os materiais da sala.',
+    placement: 'top',
+    disableBeacon: true,
+    skipBeacon: true,
+  },
+]
+
+const ESTILOS_TOUR_ARQUIVOS = {
+  options: {
+    arrowColor: '#ffffff',
+    backgroundColor: '#ffffff',
+    primaryColor: '#6F3B9D',
+    textColor: '#1a1a1a',
+    overlayColor: 'rgba(0, 0, 0, 0.45)',
+    zIndex: 10000001,
+    width: 340,
+  },
+  tooltip: {
+    borderRadius: 16,
+    padding: 20,
+    fontFamily: "'Poppins', sans-serif",
+  },
+  tooltipTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    marginBottom: 4,
+  },
+  tooltipContent: {
+    fontSize: 14,
+    color: 'var(--texto-sec)',
+    padding: '8px 0 0',
+  },
+  buttonPrimary: {
+    backgroundColor: '#6F3B9D',
+    borderRadius: 8,
+    padding: '8px 16px',
+    fontSize: 14,
+    fontWeight: 600,
+    transition: 'background 0.2s',
+  },
+  buttonBack: {
+    color: 'var(--texto-sec)',
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: "'Poppins', sans-serif",
+    marginRight: 8,
+  },
+  buttonSkip: {
+    color: 'var(--texto-sec)',
+    fontSize: 13,
+    fontFamily: "'Poppins', sans-serif",
+  },
+  spotlight: {
+    borderRadius: 12,
+  },
+}
+
+function BotaoTutorial({ onClick }) {
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      title='Ver tutorial'
+      aria-label='Ver tutorial'
+      style={{
+        position: 'fixed',
+        right: '24px',
+        bottom: '24px',
+        width: '52px',
+        height: '52px',
+        borderRadius: '50%',
+        border: 'none',
+        background: 'var(--roxo)',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+        zIndex: 9998,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.08)'
+        e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.24)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)'
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.18)'
+      }}
+    >
+      <CircleHelp size={25} strokeWidth={2.2} />
+    </button>
+  )
 }
 
 // ─── Modal Confirmar Exclusão ────────────────────────────────────────────────
@@ -105,6 +222,7 @@ export default function Arquivos({ uid, professor }) {
   const [perfilCarregado, setPerfilCarregado] = useState(null)
   const [confirmarDelete, setConfirmarDelete] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [runTutorialArquivos, setRunTutorialArquivos] = useState(false)
 
   const [turmasPorPeriodo, setTurmasPorPeriodo] = useState({})
   const [turmaSelecionada, setTurmaSelecionada] = useState(null)
@@ -115,6 +233,12 @@ export default function Arquivos({ uid, professor }) {
     : perfilCarregado
   const isCoordenador = perfilAtual?.role === 'coordenador'
 
+  const handleJoyrideCallback = (data) => {
+    const { status } = data
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRunTutorialArquivos(false)
+    }
+  }
 
   useEffect(() => {
     if (professor) return
@@ -166,6 +290,21 @@ export default function Arquivos({ uid, professor }) {
 
   return (
     <div className='arquivos-container' style={{ minHeight: '50vh', background: 'var(--bg)', padding: '12px 10px' }}>
+      <Joyride
+        steps={PASSOS_TOUR_ARQUIVOS}
+        run={runTutorialArquivos}
+        continuous
+        onEvent={handleJoyrideCallback}
+        beaconComponent={() => null}
+        locale={{
+          back: 'Voltar',
+          close: 'Fechar',
+          last: 'Concluir',
+          next: 'Próximo',
+          skip: 'Pular tutorial',
+        }}
+        styles={ESTILOS_TOUR_ARQUIVOS}
+      />
 
       {confirmarDelete && (
         <ModalConfirmar
@@ -186,6 +325,7 @@ export default function Arquivos({ uid, professor }) {
       >
         {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
         <div
+          data-tour='arquivos-header'
           style={{
             width: "100%", /* <-- ESSA LINHA FORÇA O TRAÇO A IR DE PONTA A PONTA */
             marginBottom: "32px",
@@ -221,6 +361,7 @@ export default function Arquivos({ uid, professor }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: pi * 0.1 }}
             style={{ marginBottom: 40 }}
+            data-tour={pi === 0 ? 'arquivos-periodos' : undefined}
           >
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10,
@@ -303,6 +444,7 @@ export default function Arquivos({ uid, professor }) {
                           variants={containerVariants}
                           initial='hidden'
                           animate='show'
+                          data-tour='arquivos-grid'
                           style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
@@ -338,6 +480,8 @@ export default function Arquivos({ uid, professor }) {
           </MotionDiv>
         ))
       )}
+
+      <BotaoTutorial onClick={() => setRunTutorialArquivos(true)} />
     </div>
   )
 }

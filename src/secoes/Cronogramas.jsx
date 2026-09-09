@@ -21,13 +21,13 @@ import { Joyride } from 'react-joyride'
 import '../dashboard/dashboard.css'
 import './secoes.css'
 
-const DIAS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
+const DIAS = ['SEG', 'TER', 'QUA', 'QUI', 'SEX']
 const MENSAGEM_SEM_HORARIO = 'Nenhum cronograma encontrado. Aguarde o coordenador cadastrar as aulas.'
 const ANOS_CURSO = ['1', '2', '3']
 const ANOS_CURSO_LABEL = ANOS_CURSO.map((ano) => `${ano}° ano`)
 const PERIODOS_EDITOR = ['Matutino', 'Vespertino', 'Noturno']
 const FORM_CURSO_INICIAL = { curso: '', ano: '1', periodo: 'Matutino' }
-const DIAS_EDITOR_CHAVES = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
+const DIAS_EDITOR_CHAVES = ['SEG', 'TER', 'QUA', 'QUI', 'SEX']
 const DIAS_EDITOR = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 const CURSOS_CRONOGRAMA = {
@@ -42,14 +42,16 @@ const PASSOS_TOUR_CRONOGRAMAS = [
     content:
       'Aqui você encontra os cronogramas das turmas e pode consultar os horários das aulas.',
     placement: 'bottom',
-skipBeacon: true  },
+    skipBeacon: true
+  },
   {
     target: '[data-tour="cronogramas-cursos"]',
     title: 'Seus cronogramas',
     content:
       'Aqui ficam todos os cursos organizados por período e ano. Clique em um curso para visualizar o cronograma completo.',
     placement: 'top',
-skipBeacon: true  },
+    skipBeacon: true
+  },
 ]
 
 const PASSOS_TOUR_CRONOGRAMAS_COORDENADOR = [
@@ -59,7 +61,7 @@ const PASSOS_TOUR_CRONOGRAMAS_COORDENADOR = [
     content:
       'Aqui você encontra os cronogramas das turmas e pode consultar os horários das aulas.',
     placement: 'bottom',
-skipBeacon: true
+    skipBeacon: true
   },
   {
     target: '[data-tour="cronogramas-editor"]',
@@ -67,7 +69,7 @@ skipBeacon: true
     content:
       'Como coordenador, você pode criar e editar os cronogramas das turmas nesta área.',
     placement: 'bottom',
-skipBeacon: true
+    skipBeacon: true
   },
   {
     target: '[data-tour="cronogramas-cursos"]',
@@ -75,7 +77,7 @@ skipBeacon: true
     content:
       'Aqui ficam todos os cursos organizados por período e ano. Clique em um curso para visualizar o cronograma completo.',
     placement: 'top',
-skipBeacon: true
+    skipBeacon: true
   },
 ]
 
@@ -655,22 +657,22 @@ export default function Cronogramas({
   const [runTour, setRunTour] = useState(false)
   const [tourKey, setTourKey] = useState(0)
 
-const reiniciarTour = () => {
-  console.log('🔄 REINICIANDO TOUR')
+  const reiniciarTour = () => {
+    console.log('🔄 REINICIANDO TOUR')
 
-  setRunTour(false)
+    setRunTour(false)
 
-  setTimeout(() => {
-    console.log('🟢 ATIVANDO TOUR')
+    setTimeout(() => {
+      console.log('🟢 ATIVANDO TOUR')
 
-    setTourKey((prev) => {
-      console.log('🔑 NOVA TOUR KEY:', prev + 1)
-      return prev + 1
-    })
+      setTourKey((prev) => {
+        console.log('🔑 NOVA TOUR KEY:', prev + 1)
+        return prev + 1
+      })
 
-    setRunTour(true)
-  }, 500)
-}
+      setRunTour(true)
+    }, 500)
+  }
 
   const isCoordenador = professor?.role === 'coordenador'
 
@@ -679,26 +681,26 @@ const reiniciarTour = () => {
     : PASSOS_TOUR_CRONOGRAMAS
 
 
-useEffect(() => {
-  if (!uid) return
+  useEffect(() => {
+    if (!uid) return
 
-  const chaveTour = `proshelf:tour:cronogramas:${uid}`
+    const chaveTour = `proshelf:tour:cronogramas:${uid}`
 
-  const tourJaVisto = localStorage.getItem(chaveTour)
+    const tourJaVisto = localStorage.getItem(chaveTour)
 
-  if (tourJaVisto === 'true') {
-    return
-  }
+    if (tourJaVisto === 'true') {
+      return
+    }
 
-  const timer = setTimeout(() => {
-    // Marca como visto ANTES de abrir
-    localStorage.setItem(chaveTour, 'true')
+    const timer = setTimeout(() => {
+      // Marca como visto ANTES de abrir
+      localStorage.setItem(chaveTour, 'true')
 
-    setRunTour(true)
-  }, 500)
+      setRunTour(true)
+    }, 500)
 
-  return () => clearTimeout(timer)
-}, [uid])
+    return () => clearTimeout(timer)
+  }, [uid])
 
   useEffect(() => {
     if (!uid) return
@@ -1186,78 +1188,90 @@ useEffect(() => {
   return (
     <div>
 
-{runTour && (
-  <Joyride
-    steps={passosTour}
-    run={runTour}
-    continuous
-    showProgress
-    showSkipButton
-    scrollToFirstStep
-    disableOverlayClose
-callback={(data) => {
-  const { status, action } = data
+      {runTour && (
+        <Joyride
+          steps={passosTour}
+          run={runTour}
+          continuous
+          showProgress
+          showSkipButton
+          scrollToFirstStep
+          disableOverlayClose
+          callback={(data) => {
+            const { status, action } = data
 
-  if (status === 'finished' || status === 'skipped') {
-    setRunTour(false)
+            if (status === 'finished' || status === 'skipped') {
+              setRunTour(false)
 
-    if (uid) {
-      localStorage.setItem(
-        `proshelf:tour:cronogramas:${uid}`,
-        'true'
-      )
-    }
-  }
-}}
+              if (uid) {
+                localStorage.setItem(
+                  `proshelf:tour:cronogramas:${uid}`,
+                  'true'
+                )
+              }
+            }
+          }}
 
-      locale={{
-    back: 'Anterior',
-    close: 'Fechar',
-    last: 'Concluir',
-    next: 'Próximo',
-    skip: 'Pular tutorial',
-  }}
-  
-styles={{
-          tooltip: {
-            borderRadius: "12px",
-            padding: "20px",
-            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
-          },
-          tooltipTitle: {
-            fontSize: "16px",
-            fontWeight: "600",
-            color: "#1a1a1a",
-            marginBottom: "8px",
-          },
-          tooltipContent: {
-            fontSize: "14px",
-            color: "#666",
-            lineHeight: "1.5",
-          },
-          // Na V3, o botão "Próximo" chama buttonPrimary em vez de buttonNext
-          buttonPrimary: { 
-            backgroundColor: "#6F3B9D",
-            borderRadius: "8px",
-            padding: "8px 16px",
-            fontSize: "14px",
-            fontWeight: "600",
-            transition: "background 0.2s",
-          },
-          buttonBack: {
-            color: "#666",
-            marginRight: "14px",
-            fontSize: "14px",
-            fontWeight: "500",
-          },
-          buttonSkip: {
-            color: "#666",
-            fontSize: "14px",
-            fontWeight: "500",
-          }
-        }}
-  />
-)}
+          locale={{
+            back: 'Anterior',
+            close: 'Fechar',
+            last: 'Concluir',
+            next: 'Próximo',
+            skip: 'Pular tutorial',
+          }}
+
+          options={{
+            primaryColor: "#6F3B9D",
+            zIndex: 10000, // Agora sim o Joyride vai cobrir o cabeçalho
+            overlayColor: "rgba(0, 0, 0, 0.35)", // O mesmo fundo cinza transparente do seu site
+            showProgress: true,
+            backgroundColor: "#ffffff",
+            textColor: "#1a1a1a",
+            buttons: ["back", "close", "primary", "skip"]
+          }}
+
+          styles={{
+            tooltip: {
+              borderRadius: "12px",
+              zIndex: 99999999,
+              padding: "20px",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+            },
+            tooltipTitle: {
+              fontSize: "16px",
+              fontWeight: "600",
+              color: "#1a1a1a",
+              marginBottom: "8px",
+            },
+            tooltipContent: {
+              fontSize: "14px",
+              color: "#666",
+              lineHeight: "1.5",
+              zIndex: 99999999,
+            },
+            // Na V3, o botão "Próximo" chama buttonPrimary em vez de buttonNext
+            buttonPrimary: {
+              backgroundColor: "#6F3B9D",
+              borderRadius: "8px",
+              padding: "8px 16px",
+              fontSize: "14px",
+              fontWeight: "600",
+              transition: "background 0.2s",
+            },
+            buttonBack: {
+              color: "#666",
+              marginRight: "14px",
+              fontSize: "14px",
+              fontWeight: "500",
+            },
+            buttonSkip: {
+              color: "#666",
+              fontSize: "14px",
+              fontWeight: "500",
+            }
+          }}
+        />
+      )}
 
       <button
         type="button"
@@ -1326,26 +1340,7 @@ styles={{
         <section
           className='crono-editor'
           data-tour="cronogramas-editor"
-        >          <div className='crono-editor-tabs'>
-            <button
-              type='button'
-              className={`crono-editor-tab ${abaEditor === 'curso' ? 'ativo' : ''}`}
-              onClick={voltarParaCursos}
-            >
-              Curso
-            </button>
-
-            {(cursoSelecionado || abaEditor === 'grade') && (
-              <button
-                type='button'
-                className={`crono-editor-tab ${abaEditor === 'grade' ? 'ativo' : ''}`}
-                onClick={avancarParaGrade}
-                disabled={!formCurso.curso.trim()}
-              >
-                Aulas
-              </button>
-            )}
-          </div>
+        >
 
           <AnimatePresence mode='wait'>
             {abaEditor === 'curso' ? (
@@ -1412,19 +1407,37 @@ styles={{
                 {...ANIMACAO_PAINEL}
               >
                 <div className='crono-editor-grade-topo'>
-                  <div>
-                    <span className='crono-editor-kicker'>Turma</span>
-                    <strong>{nomeTurmaEditor() || cursoSelecionado?.titulo || 'Sem curso'}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <button
+                      type='button'
+                      onClick={voltarParaCursos}
+                      title='Voltar para cursos'
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#f0ebf8',
+                        color: 'var(--roxo)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '38px',
+                        height: '38px',
+                        cursor: 'pointer',
+                        transition: 'transform 0.15s ease, background 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#e2d9f3' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#f0ebf8' }}
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
+
+                    <div>
+                      <span className='crono-editor-kicker'>Turma</span>
+                      <strong>{nomeTurmaEditor() || cursoSelecionado?.titulo || 'Sem curso'}</strong>
+                    </div>
                   </div>
 
                   <div className='crono-editor-acoes'>
-                    <button
-                      className='crono-editor-btn secundario'
-                      onClick={voltarParaCursos}
-                    >
-                      <ArrowLeft size={16} />
-                      Curso
-                    </button>
                     <button className='crono-editor-btn' onClick={adicionarLinhaAula}>
                       <Plus size={16} />
                       Aula
@@ -1449,7 +1462,8 @@ styles={{
                       className={`crono-dia-btn ${DIA_LABEL[dia] === diaEditorAtivo ? 'ativo' : ''}`}
                       onClick={() => setDiaAtivo(dia)}
                     >
-                      {dia}
+                      <span className="dia-sigla">{dia}</span>
+                      <span className="dia-completo">{DIA_LABEL[dia]}</span>
                     </button>
                   ))}
                 </div>
@@ -1465,140 +1479,135 @@ styles={{
                     <span />
                   </div>
 
-                  {aulasEditorDoDia.map(({ aula, index }) => (
-                    <div
-                      key={aula.id}
-                      className={`crono-editor-row ${aula.dividida ? 'dividida' : ''}`}
-                    >
-                      <div className="crono-celula" data-label="Aula">
+                  {aulasEditorDoDia.map(({ aula, index }, pos) => (<div
+                    key={aula.id}
+                    className={`crono-editor-row ${aula.dividida ? 'dividida' : ''}`}
+                  >
+                    <div className="crono-celula" data-label="Aula">
+                      <span className="crono-pill-numero-fixo">
+                        {pos + 1}
+                      </span>
+                    </div>
+
+                    <div className="crono-celula" data-label="Horário">
+                      <input
+                        type='time'
+                        value={aula.horario}
+                        onChange={(e) => atualizarAulaEditor(index, 'horario', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="crono-celula" data-label="Turma Dividida (A/B)">
+                      <label className='crono-editor-toggle'>
                         <input
-                          type='number'
-                          min='1'
-                          max='9'
-                          value={aula.ordem}
-                          onChange={(e) => atualizarAulaEditor(index, 'ordem', e.target.value)}
+                          type='checkbox'
+                          checked={aula.dividida}
+                          onChange={(e) => atualizarAulaEditor(index, 'dividida', e.target.checked)}
                         />
-                      </div>
+                        <span>{aula.dividida ? 'Sim ' : 'Não'}</span>
+                      </label>
+                    </div>
 
-                      <div className="crono-celula" data-label="Horário">
-                        <input
-                          type='time'
-                          value={aula.horario}
-                          onChange={(e) => atualizarAulaEditor(index, 'horario', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="crono-celula" data-label="Turma Dividida (A/B)">
-                        <label className='crono-editor-toggle'>
-                          <input
-                            type='checkbox'
-                            checked={aula.dividida}
-                            onChange={(e) => atualizarAulaEditor(index, 'dividida', e.target.checked)}
-                          />
-                          <span>{aula.dividida ? 'Sim (A/B)' : 'Não'}</span>
-                        </label>
-                      </div>
-
-                      {aula.dividida ? (
-                        <>
-                          <div className="crono-celula" data-label="Disciplina">
-                            <div className='crono-editor-stack'>
-                              {['A', 'B'].map((grupo) => (
-                                <div key={grupo} className='crono-editor-grade-dropdown'>
-                                  <DropdownComPortal
-                                    opcoes={opcoesDisciplinasEditor(aula[grupo].disciplina)}
-                                    valor={aula[grupo].disciplina}
-                                    onChange={(valor) => atualizarDisciplinaDividida(index, grupo, valor)}
-                                    id={`crono-disc-${grupo}-${aula.id}`}
-                                    dropdownAberto={dropdownEditorAberto}
-                                    setDropdownAberto={setDropdownEditorAberto}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="crono-celula" data-label="Professor">
-                            <div className='crono-editor-stack'>
-                              {['A', 'B'].map((grupo) => (
-                                <div key={grupo} className='crono-editor-grade-dropdown'>
-                                  <DropdownComPortal
-                                    opcoes={opcoesProfessoresComValor(
-                                      aula[grupo].disciplina,
-                                      aula[grupo].professor,
-                                      `Sem professor ${grupo}`
-                                    )}
-                                    valor={aula[grupo].professor}
-                                    onChange={(valor) => atualizarAulaDividida(index, grupo, 'professor', valor)}
-                                    id={`crono-prof-${grupo}-${aula.id}`}
-                                    dropdownAberto={dropdownEditorAberto}
-                                    setDropdownAberto={setDropdownEditorAberto}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="crono-celula" data-label="Sala">
-                            <div className='crono-editor-stack'>
-                              {['A', 'B'].map((grupo) => (
-                                <input
-                                  key={grupo}
-                                  value={aula[grupo].sala}
-                                  onChange={(e) => atualizarAulaDividida(index, grupo, 'sala', e.target.value)}
-                                  placeholder={`Sala ${grupo}`}
+                    {aula.dividida ? (
+                      <>
+                        <div className="crono-celula" data-label="Disciplina">
+                          <div className='crono-editor-stack'>
+                            {['A', 'B'].map((grupo) => (
+                              <div key={grupo} className='crono-editor-grade-dropdown'>
+                                <DropdownComPortal
+                                  opcoes={opcoesDisciplinasEditor(aula[grupo].disciplina)}
+                                  valor={aula[grupo].disciplina}
+                                  onChange={(valor) => atualizarDisciplinaDividida(index, grupo, valor)}
+                                  id={`crono-disc-${grupo}-${aula.id}`}
+                                  dropdownAberto={dropdownEditorAberto}
+                                  setDropdownAberto={setDropdownEditorAberto}
                                 />
-                              ))}
-                            </div>
+                              </div>
+                            ))}
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="crono-celula" data-label="Disciplina">
-                            <div className='crono-editor-grade-dropdown'>
-                              <DropdownComPortal
-                                opcoes={opcoesDisciplinasEditor(aula.disciplina)}
-                                valor={aula.disciplina}
-                                onChange={(valor) => atualizarDisciplinaAula(index, valor)}
-                                id={`crono-disc-${aula.id}`}
-                                dropdownAberto={dropdownEditorAberto}
-                                setDropdownAberto={setDropdownEditorAberto}
-                              />
-                            </div>
-                          </div>
+                        </div>
 
-                          <div className="crono-celula" data-label="Professor">
-                            <div className='crono-editor-grade-dropdown'>
-                              <DropdownComPortal
-                                opcoes={opcoesProfessoresComValor(aula.disciplina, aula.professor)}
-                                valor={aula.professor}
-                                onChange={(valor) => atualizarAulaEditor(index, 'professor', valor)}
-                                id={`crono-prof-${aula.id}`}
-                                dropdownAberto={dropdownEditorAberto}
-                                setDropdownAberto={setDropdownEditorAberto}
-                              />
-                            </div>
+                        <div className="crono-celula" data-label="Professor">
+                          <div className='crono-editor-stack'>
+                            {['A', 'B'].map((grupo) => (
+                              <div key={grupo} className='crono-editor-grade-dropdown'>
+                                <DropdownComPortal
+                                  opcoes={opcoesProfessoresComValor(
+                                    aula[grupo].disciplina,
+                                    aula[grupo].professor,
+                                    `Sem professor ${grupo}`
+                                  )}
+                                  valor={aula[grupo].professor}
+                                  onChange={(valor) => atualizarAulaDividida(index, grupo, 'professor', valor)}
+                                  id={`crono-prof-${grupo}-${aula.id}`}
+                                  dropdownAberto={dropdownEditorAberto}
+                                  setDropdownAberto={setDropdownEditorAberto}
+                                />
+                              </div>
+                            ))}
                           </div>
+                        </div>
 
-                          <div className="crono-celula" data-label="Sala">
-                            <input
-                              value={aula.sala}
-                              onChange={(e) => atualizarAulaEditor(index, 'sala', e.target.value)}
-                              placeholder='Sala'
+                        <div className="crono-celula" data-label="Sala">
+                          <div className='crono-editor-stack'>
+                            {['A', 'B'].map((grupo) => (
+                              <input
+                                key={grupo}
+                                value={aula[grupo].sala}
+                                onChange={(e) => atualizarAulaDividida(index, grupo, 'sala', e.target.value)}
+                                placeholder={`Sala ${grupo}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="crono-celula" data-label="Disciplina">
+                          <div className='crono-editor-grade-dropdown'>
+                            <DropdownComPortal
+                              opcoes={opcoesDisciplinasEditor(aula.disciplina)}
+                              valor={aula.disciplina}
+                              onChange={(valor) => atualizarDisciplinaAula(index, valor)}
+                              id={`crono-disc-${aula.id}`}
+                              dropdownAberto={dropdownEditorAberto}
+                              setDropdownAberto={setDropdownEditorAberto}
                             />
                           </div>
-                        </>
-                      )}
+                        </div>
 
-                      {/* Botão da Lixeira que agora abre o novo modal */}
-                      <button
-                        className='crono-editor-remover'
-                        onClick={() => setConfirmarDeleteAulaIndex(index)}
-                        aria-label='Remover aula'
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                        <div className="crono-celula" data-label="Professor">
+                          <div className='crono-editor-grade-dropdown'>
+                            <DropdownComPortal
+                              opcoes={opcoesProfessoresComValor(aula.disciplina, aula.professor)}
+                              valor={aula.professor}
+                              onChange={(valor) => atualizarAulaEditor(index, 'professor', valor)}
+                              id={`crono-prof-${aula.id}`}
+                              dropdownAberto={dropdownEditorAberto}
+                              setDropdownAberto={setDropdownEditorAberto}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="crono-celula" data-label="Sala">
+                          <input
+                            value={aula.sala}
+                            onChange={(e) => atualizarAulaEditor(index, 'sala', e.target.value)}
+                            placeholder='Sala'
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Botão da Lixeira que agora abre o novo modal */}
+                    <button
+                      className='crono-editor-remover'
+                      onClick={() => setConfirmarDeleteAulaIndex(index)}
+                      aria-label='Remover aula'
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                   ))}
                 </div>
               </MotionDiv>
@@ -1725,20 +1734,23 @@ styles={{
               key={`curso-${cursoSelecionado.id}`}
               {...ANIMACAO_PAINEL}
             >
-              <div className='crono-dias'>
-                {DIAS.map((dia) => {
-                  const temAula = aulasVisiveis.some((a) => a.dia === DIA_LABEL[dia])
-                  return (
-                    <button
-                      key={dia}
-                      className={`crono-dia-btn ${diaAtivo === dia ? 'ativo' : ''} ${!temAula ? 'sem-aula' : ''}`}
-                      onClick={() => setDiaAtivo(dia)}
-                    >
-                      {dia}
-                    </button>
-                  )
-                })}
-              </div>
+{!isCoordenador && (
+  <div className='crono-dias'>
+    {DIAS.map((dia) => {
+      const temAula = aulasVisiveis.some((a) => a.dia === DIA_LABEL[dia])
+      return (
+        <button
+          key={dia}
+          className={`crono-dia-btn ${diaAtivo === dia ? 'ativo' : ''} ${!temAula ? 'sem-aula' : ''}`}
+          onClick={() => setDiaAtivo(dia)}
+        >
+          <span className="dia-sigla">{dia}</span>
+          <span className="dia-completo">{DIA_LABEL[dia]}</span>
+        </button>
+      )
+    })}
+  </div>
+)}
 
               <p className='crono-data'>{formatarData(diaAtivo)}</p>
 

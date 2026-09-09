@@ -3,7 +3,8 @@ import { buscarEventos, criarEvento, deletarEvento } from '../firebase/estrutura
 import DropdownComPortal from './DropwdownComPortal'
 import './secoes.css'
 import CustomDatePicker from './dropdown-calendario'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { Trash2, AlertTriangle, CircleHelp } from 'lucide-react'
+import { STATUS, Joyride } from 'react-joyride'
 import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
 import { auth } from "../firebase"
 import { motion, AnimatePresence } from "motion/react" // <-- ADICIONE ESTA LINHA
@@ -19,6 +20,122 @@ const COR_TIPO = {
 }
 
 const FORM_INICIAL = { titulo: '', data: '', tipo: 'reuniao', descricao: '' }
+
+const PASSOS_TOUR_CALENDARIO = [
+  {
+    target: '[data-tour="calendario-header"]',
+    title: 'Calendário escolar',
+    content: 'Veja os eventos do mês, selecione um dia e acompanhe tudo em um só lugar.',
+    placement: 'bottom',
+    disableBeacon: true,
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="calendario-mes"]',
+    title: 'Navegação do mês',
+    content: 'Use os botões de navegação para trocar de mês e visualizar eventos futuros ou passados.',
+    placement: 'bottom',
+    disableBeacon: true,
+    skipBeacon: true,
+  },
+  {
+    target: '[data-tour="calendario-eventos"]',
+    title: 'Eventos do mês',
+    content: 'Aqui ficam os registros do período selecionado. Clique em qualquer item para abrir detalhes e acompanhar a descrição.',
+    placement: 'left',
+    disableBeacon: true,
+    skipBeacon: true,
+  },
+]
+
+const ESTILOS_TOUR_CALENDARIO = {
+  options: {
+    arrowColor: '#ffffff',
+    backgroundColor: '#ffffff',
+    primaryColor: '#6F3B9D',
+    textColor: '#1a1a1a',
+    overlayColor: 'rgba(0, 0, 0, 0.45)',
+    zIndex: 10000001,
+    width: 340,
+  },
+  tooltip: {
+    borderRadius: 16,
+    padding: 20,
+    fontFamily: "'Poppins', sans-serif",
+  },
+  tooltipTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    marginBottom: 4,
+  },
+  tooltipContent: {
+    fontSize: 14,
+    color: 'var(--texto-sec)',
+    padding: '8px 0 0',
+  },
+  buttonPrimary: {
+    backgroundColor: '#6F3B9D',
+    borderRadius: 8,
+    padding: '8px 16px',
+    fontSize: 14,
+    fontWeight: 600,
+    transition: 'background 0.2s',
+  },
+  buttonBack: {
+    color: 'var(--texto-sec)',
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: "'Poppins', sans-serif",
+    marginRight: 8,
+  },
+  buttonSkip: {
+    color: 'var(--texto-sec)',
+    fontSize: 13,
+    fontFamily: "'Poppins', sans-serif",
+  },
+  spotlight: {
+    borderRadius: 12,
+  },
+}
+
+function BotaoTutorial({ onClick }) {
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      title='Ver tutorial'
+      aria-label='Ver tutorial'
+      style={{
+        position: 'fixed',
+        right: '24px',
+        bottom: '24px',
+        width: '52px',
+        height: '52px',
+        borderRadius: '50%',
+        border: 'none',
+        background: 'var(--roxo)',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+        zIndex: 9998,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.08)'
+        e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.24)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)'
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.18)'
+      }}
+    >
+      <CircleHelp size={25} strokeWidth={2.2} />
+    </button>
+  )
+}
 
 // ── Modal de confirmação customizado para Eventos ──────────────────────────
 function ModalConfirmarEvento({ evento, onConfirmar, onCancelar }) {
@@ -114,6 +231,14 @@ export default function Calendario({ uid, professor }) {
   const [dropdownAberto, setDropdownAberto] = useState(null)
   const [confirmarDelete, setConfirmarDelete] = useState(null)
   const [eventoExpandidoId, setEventoExpandidoId] = useState(null)
+  const [runTutorialCalendario, setRunTutorialCalendario] = useState(false)
+
+  const handleJoyrideCallback = (data) => {
+    const { status } = data
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRunTutorialCalendario(false)
+    }
+  }
 
   useEffect(() => {
     if (!uid) return
@@ -239,8 +364,24 @@ export default function Calendario({ uid, professor }) {
 
   return (
     <div>
+      <Joyride
+        steps={PASSOS_TOUR_CALENDARIO}
+        run={runTutorialCalendario}
+        continuous
+        onEvent={handleJoyrideCallback}
+        beaconComponent={() => null}
+        locale={{
+          back: 'Voltar',
+          close: 'Fechar',
+          last: 'Concluir',
+          next: 'Próximo',
+          skip: 'Pular tutorial',
+        }}
+        styles={ESTILOS_TOUR_CALENDARIO}
+      />
       {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
       <div 
+        data-tour='calendario-header'
         style={{ 
           width: "100%",
           marginBottom: "32px", 
@@ -268,15 +409,18 @@ export default function Calendario({ uid, professor }) {
       <div className='grid-2' style={{ alignItems: 'start' }}>
         {/* ── Calendário visual ── */}
         <div className='card'>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 12,
-            background: 'var(--roxo)',
-            borderRadius: 40,
-            padding: '8px 12px',
-          }}>
+          <div
+            data-tour='calendario-mes'
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 12,
+              background: 'var(--roxo)',
+              borderRadius: 40,
+              padding: '8px 12px',
+            }}
+          >
             <button
               className='cal-nav-header'
               onClick={() => { if (mes === 0) { setMes(11); setAno(a => a - 1) } else setMes(m => m - 1) }}
@@ -406,7 +550,7 @@ export default function Calendario({ uid, professor }) {
         </div>
 
         {/* ── Eventos do mês ── */}
-        <div className='card'>
+        <div className='card' data-tour='calendario-eventos'>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div className='card-titulo' style={{ marginBottom: 0 }}>Eventos em: {MESES[mes]}</div>
             {isCoordenador && (
@@ -556,6 +700,8 @@ export default function Calendario({ uid, professor }) {
           onCancelar={() => setConfirmarDelete(null)}
         />
       )}
+
+      <BotaoTutorial onClick={() => setRunTutorialCalendario(true)} />
     </div>
   )
 }
