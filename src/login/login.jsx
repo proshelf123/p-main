@@ -15,7 +15,7 @@ import {
 } from "firebase/auth"; // Importamos as regras de persistência
 import { httpsCallable } from "firebase/functions";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 function Login() {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ function Login() {
   const [senha, setSenha] = useState("");
   const [erroLogin, setErroLogin] = useState("");
   const [animacaoErro, setAnimacaoErro] = useState(0);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // 👇 NOVO ESTADO: Começa marcado como "true" (Lembrar de mim ativado por padrão)
   const [lembrar, setLembrar] = useState(true);
@@ -46,7 +47,7 @@ function Login() {
   };
 
   const dominiosEmail = [
-    'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 
+    'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com',
     'uol.com.br', 'bol.com.br', 'terra.com.br', 'ig.com.br'
   ];
 
@@ -150,52 +151,61 @@ function Login() {
           <div className={styles["form-wrapper"]}>
             <div className={styles.campo}>
               <label>E-mail</label>
-<Email
-            classNames={{
-              wrapper: styles["email-wrapper"],
-              input: erroLogin ? styles["input-login-erro"] : "",
-              dropdown: styles["email-dropdown"],
-              suggestion: styles["email-suggestion"],
-            }}
-            baseList={dominiosEmail}
-            type="email"
-            placeholder="Digite seu e-mail"
-            value={email}
-            aria-invalid={erroLogin ? "true" : "false"}
-            onChange={(valorAtualizado) => {
-              // A biblioteca retorna a string diretamente, então não precisa de "e.target.value"
-              setEmail(valorAtualizado);
-              setErroLogin("");
-            }}
-          />
-            </div>
-
-            <div className={styles.campo}>
-              <label>Senha</label>
-              <input
-                type="password"
-                placeholder="Digite sua senha"
-                value={senha}
-                className={erroLogin ? styles["input-login-erro"] : ""}
+              <Email
+                classNames={{
+                  wrapper: styles["email-wrapper"],
+                  input: erroLogin ? styles["input-login-erro"] : "",
+                  dropdown: styles["email-dropdown"],
+                  suggestion: styles["email-suggestion"],
+                }}
+                baseList={dominiosEmail}
+                type="email"
+                placeholder="Digite seu e-mail"
+                value={email}
                 aria-invalid={erroLogin ? "true" : "false"}
-                aria-describedby={erroLogin ? "erro-login" : undefined}
-                onChange={(e) => {
-                  setSenha(e.target.value);
+                onChange={(valorAtualizado) => {
+                  // A biblioteca retorna a string diretamente, então não precisa de "e.target.value"
+                  setEmail(valorAtualizado);
                   setErroLogin("");
                 }}
               />
-              {erroLogin && (
-                <div
-                  key={animacaoErro}
-                  id="erro-login"
-                  className={styles["mensagem-login-erro"]}
-                  role="alert"
-                >
-                  <span aria-hidden="true">!</span>
-                  {erroLogin}
-                </div>
-              )}
-
+            </div>
+<div className={styles.campo}> 
+<div className={styles["input-senha-wrapper"]}>
+    <input
+      type={mostrarSenha ? "text" : "password"}
+      placeholder="Digite sua senha"
+      value={senha}
+      className={erroLogin ? styles["input-login-erro"] : ""}
+      aria-invalid={erroLogin ? "true" : "false"}
+      aria-describedby={erroLogin ? "erro-login" : undefined}
+      onChange={(e) => {
+        setSenha(e.target.value);
+        setErroLogin("");
+      }}
+    />
+    {senha.length > 0 && (
+      <button
+        type="button"
+        className={styles["btn-mostrar-senha"]}
+        onClick={() => setMostrarSenha(!mostrarSenha)}
+        aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+      >
+        {mostrarSenha ? <Eye size={20} /> : <EyeOff size={20} />}
+      </button>
+    )}
+{erroLogin && (
+    <div
+      key={animacaoErro}
+      id="erro-login"
+      className={styles["mensagem-login-erro"]}
+      role="alert"
+    >
+      <span aria-hidden="true">!</span>
+      {erroLogin}
+    </div>
+  )}
+  </div>
               {/* 👇 ADICIONADO: Opções abaixo da senha (Checkbox e Esqueci Senha) */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
                 <label className={styles["toggle-lembrar"]}>

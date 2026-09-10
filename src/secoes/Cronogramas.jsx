@@ -1438,10 +1438,6 @@ export default function Cronogramas({
                   </div>
 
                   <div className='crono-editor-acoes'>
-                    <button className='crono-editor-btn' onClick={adicionarLinhaAula}>
-                      <Plus size={16} />
-                      Aula
-                    </button>
                     <button
                       className='crono-editor-btn salvar'
                       onClick={salvarEditorCronograma}
@@ -1450,7 +1446,6 @@ export default function Cronogramas({
                       <Save size={16} />
                       {salvandoEditor ? 'Salvando...' : 'Salvar'}
                     </button>
-
                   </div>
                 </div>
 
@@ -1609,6 +1604,18 @@ export default function Cronogramas({
                     </button>
                   </div>
                   ))}
+
+                  {/* NOVO: Botão + Aula posicionado abaixo das aulas do dia */}
+                  <div className="crono-editor-adicionar-area">
+                    <button
+                      type="button"
+                      className="crono-editor-btn-adicionar-aula"
+                      onClick={adicionarLinhaAula}
+                    >
+                      <Plus size={16} />
+                      Aula
+                    </button>
+                  </div>
                 </div>
               </MotionDiv>
             )}

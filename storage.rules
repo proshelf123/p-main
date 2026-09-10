@@ -18,6 +18,13 @@ service firebase.storage {
         && request.resource.size < 20 * 1024 * 1024; 
     }
 
+    match /perfis/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      // Garante que o usuário logado só altere a própria foto de perfil
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024; // Limite de 5MB para fotos
+    }
+
     // Bloqueia qualquer outra pasta que não esteja listada acima
     match /{allPaths=**} {
       allow read, write: if false;

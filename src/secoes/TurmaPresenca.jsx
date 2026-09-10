@@ -149,7 +149,7 @@ setAulasNoDia(qtdAulas);
     <div className="card" style={{ marginTop: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--texto)" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 500, margin: 0, color: "var(--texto)" }}>
             {isCoordenador ? "Visualizar presença" : "Registrar presença"}
           </h3>
           {aulasNoDia > 1 && !semAulaHoje && (

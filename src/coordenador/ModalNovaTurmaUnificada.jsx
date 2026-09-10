@@ -91,18 +91,29 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
 
   const coresDisciplinas = useCoresDisciplinas();
 
-  useEffect(() => {
-    buscarProfessores(uid).then(setProfessores);
-    const unsub = escutarProfessoresDisciplinas(uid, setProfessoresDisciplinas, (err) => console.error(err));
+useEffect(() => {
+    // 🛡️ Trava de segurança: impede chamadas se o UID não foi fornecido
+    if (!uid) return;
+
+    buscarProfessores(uid)
+      .then((profs) => setProfessores(profs || []))
+      .catch((err) => console.error("Erro ao buscar professores:", err));
+
+    const unsub = escutarProfessoresDisciplinas(
+      uid, 
+      (vinc) => setProfessoresDisciplinas(vinc || {}), 
+      (err) => console.error("Erro ao escutar vínculos:", err)
+    );
+
     return () => unsub();
   }, [uid]);
 
-  useEffect(() => {
-    if (modoEdicao) return;
+useEffect(() => {
+    if (modoEdicao || !uid) return; // 🛡️ Trava se não houver UID
 
     setCarregandoSalas(true);
     buscarTurmas(uid, professorLogado)
-      .then((dados) => setTurmasExistentes(dados))
+      .then((dados) => setTurmasExistentes(dados || []))
       .catch((err) => {
         console.error("Erro ao carregar salas existentes:", err);
         setTurmasExistentes([]);
@@ -174,7 +185,14 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
     ? professores 
     : professores.filter(p => String(p.nome || "").toLowerCase().includes(form.professor.toLowerCase()));
 
-  async function handleSalvar() {
+async function handleSalvar() {
+    // 🛡️ TRAVA 1: Garante que temos o UID do usuário/escola autenticado
+    const activeUid = uid || auth?.currentUser?.uid;
+    if (!activeUid) {
+      setErro("Usuário não identificado. Recarregue a página.");
+      return;
+    }
+
     if (!modoEdicao) {
       if (modoCriacao === "novo" && !form.curso.trim()) {
         setErro("Informe o nome do curso.");
@@ -202,10 +220,10 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
 
     try {
       if (modoEdicao) {
-        await atualizarTurma(uid, turmaParaEditar.id, {
+        await atualizarTurma(activeUid, turmaParaEditar.id, {
           disciplina: form.disciplina,
           professor: form.professor,
-          professorId: form.professorId
+          professorId: form.professorId || "" // 🛡️ Evita undefined
         });
 
         if (form.professorId && form.professorId !== turmaParaEditar.professorId) {
@@ -216,7 +234,7 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
             link: "/turmas",
             destinatarioUids: [form.professorId],
             criadoPorNome: "Coordenação",
-          });
+          }).catch(err => console.warn("Erro ao enviar notificação:", err));
         }
       } else {
         const usandoSalaExistente = modoCriacao === "existente" && salaSelecionada;
@@ -227,14 +245,14 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
         const periodoFinal = usandoSalaExistente ? salaSelecionada.periodo : form.periodo;
         const nomePeriodoFormatado = `Período ${periodoFinal}`;
 
-        await buscarOuCriarTurmaPeriodo(nomeTurmaFinal, nomePeriodoFormatado, uid);
+        await buscarOuCriarTurmaPeriodo(nomeTurmaFinal, nomePeriodoFormatado, activeUid);
 
-        await criarTurma(uid, {
+        await criarTurma(activeUid, {
           nome: nomeTurmaFinal,
           disciplina: form.disciplina,
           periodo: periodoFinal,
-          professor: form.professor,
-          professorId: form.professorId
+          professor: form.professor || "",
+          professorId: form.professorId || "" // 🛡️ Evita undefined
         });
 
         await criarNotificacaoPorRole({
@@ -245,9 +263,9 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
             : `A turma ${nomeTurmaFinal} (${periodoFinal}) foi adicionada com a disciplina ${form.disciplina}.`,
           tipo: "turma",
           link: "/arquivos",
-          criadoPorUid: uid,
+          criadoPorUid: activeUid,
           criadoPorNome: professorLogado?.nome || "Coordenação"
-        });
+        }).catch(err => console.warn("Erro ao enviar notificação global:", err));
 
         if (form.professorId) {
           await criarNotificacao({
@@ -257,14 +275,14 @@ export default function ModalNovaTurmaUnificada({ uid, professorLogado, turmaPar
             link: "/turmas",
             destinatarioUids: [form.professorId],
             criadoPorNome: "Coordenação",
-          });
+          }).catch(err => console.warn("Erro ao enviar notificação individual:", err));
         }
       }
 
       onClose();
     } catch (err) {
       console.error(err);
-      setErro(modoEdicao ? "Ocorreu um erro ao atualizar a turma. Tente novamente." : "Ocorreu um erro ao criar a turma. Tente novamente.");
+      setErro(err.message || (modoEdicao ? "Erro ao atualizar a turma." : "Erro ao criar a turma."));
     } finally {
       setSalvando(false);
     }

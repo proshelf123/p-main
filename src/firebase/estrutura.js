@@ -668,11 +668,20 @@ export async function salvarNotaAluno(ownerUid, turmaId, alunoId, notas, atualiz
   }, { merge: true });
 }
 
+// Corrigido: Garante o retorno do objeto completo de notas do aluno
 export async function buscarNotasDaTurma(ownerUid, turmaId) {
   const ref = collection(db, "turmas", ownerUid, "lista", turmaId, "notas");
   const snap = await getDocs(ref);
   const mapa = {};
-  snap.docs.forEach((d) => { mapa[d.id] = d.data(); });
+  
+  snap.docs.forEach((d) => { 
+    const data = d.data();
+    mapa[d.id] = {
+      alunoId: d.id,
+      notas: data.notas || data // Suporta ambos os formatos de gravação
+    }; 
+  });
+  
   return mapa;
 }
 
@@ -695,13 +704,31 @@ export async function salvarConfiguracoesEscola(uid, dados) {
   }, { merge: true });
 }
 
+// Corrigido: Busca pelo campo 'sala' e mapeia o 'ownerUid' e 'disciplina' corretamente
 export async function buscarTurmasDaSala(uid, nomeSala) {
   const escolaId = await getEscolaId(uid);
-  const q = query(collectionGroup(db, "lista"), where("escolaId", "==", escolaId), where("nome", "==", nomeSala));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({
-    id: d.id, ownerUid: d.ref.parent.parent.id, ...d.data()
-  }));
+  
+  // 1. Busca global de turmas vinculadas à sala selecionada
+  const qGroup = query(
+    collectionGroup(db, "lista"), 
+    where("escolaId", "==", escolaId), 
+    where("sala", "==", nomeSala)
+  );
+  
+  const snapGroup = await getDocs(qGroup);
+  
+  return snapGroup.docs.map(d => {
+    // Extrai o UID do dono da turma através do caminho do documento no Firestore
+    const parentDoc = d.ref.parent.parent;
+    const ownerUid = parentDoc ? parentDoc.id : uid;
+
+    return {
+      id: d.id,
+      ownerUid: ownerUid,
+      disciplina: d.data().disciplina || d.data().nome || "Geral",
+      ...d.data()
+    };
+  });
 }
 
 // Lista as avaliações cadastradas numa turma, ordenadas por período e data de criação

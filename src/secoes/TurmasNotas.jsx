@@ -76,7 +76,7 @@ async function carregar() {
 
   return (
     <div className="card" style={{ marginTop: 24 }}>
-      <h3 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 16px", color: "var(--texto)" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 500, margin: "0 0 16px", color: "var(--texto)" }}>
         Visualizar notas
       </h3>
 

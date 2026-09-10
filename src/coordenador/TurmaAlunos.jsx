@@ -265,15 +265,32 @@ export default function AlunosTurmas({ uid }) {
   if (salas.length === 0) return <p className="secao-vazia">Nenhuma pasta/sala criada ainda.</p>;
 
   return (
-    <div>
-      <div style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)", marginBottom: 24 }}>
-                  <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
-
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--texto)", margin: 0 }}>Alunos</h2>
-        <p style={{ fontSize: 14, color: "var(--texto-sec)", margin: "3px 0 0" }}>
-          Gerencie a lista global de alunos por sala.
-        </p>
+<div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
+      {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
+      <div 
+        style={{ 
+          width: "100%",
+          marginBottom: "32px", 
+          paddingBottom: "24px", 
+          borderBottom: "1px solid var(--borda)" 
+        }}
+      >
+        <div 
+          style={{ 
+            paddingLeft: "15px",
+            borderLeft: "3px solid var(--roxo)" 
+          }}
+        >
+          <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
+          <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
+            Cadastro de Alunos
+          </h2>
+          <p style={{ fontSize: "15px", color: "var(--texto-sec)", margin: "3px 0 0" }}>
+            Cadastre seus alunos para que os professores possam adicionar notas e registrar a presença.
+          </p>
+        </div>
       </div>
+      {/* --- FIM DO HEADER --- */}
 
       <div style={{ maxWidth: 320, marginBottom: 20 }}>
         <DropdownComPortal

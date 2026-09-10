@@ -1177,6 +1177,53 @@ select.perfil-input option:checked {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
+/* Área para o botão de adicionar aula abaixo da grade */
+.crono-editor-adicionar-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+  padding-top: 8px;
+}
+
+/* Botão estilo Outline para adicionar nova aula */
+.crono-editor-btn-adicionar-aula {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 24px;
+  background: transparent;
+  border: 1.5px dashed var(--roxo, #6F3B9D);
+  border-radius: 999px;
+  color: var(--roxo, #6F3B9D);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crono-editor-btn-adicionar-aula:hover {
+  background: rgba(111, 59, 157, 0.08);
+  border-style: solid;
+  transform: translateY(-1px);
+}
+
+.crono-editor-btn-adicionar-aula:active {
+  transform: scale(0.98);
+}
+
+/* Dark Mode para o botão + Aula */
+:root.dark-mode .crono-editor-btn-adicionar-aula {
+  border-color: #a87bd0;
+  color: #d9c4ff;
+}
+
+:root.dark-mode .crono-editor-btn-adicionar-aula:hover {
+  background: rgba(168, 123, 208, 0.15);
+}
+
 /* Sem grade */
 .crono-pill-sem-grade {
   font-style: italic;

@@ -607,7 +607,7 @@ export default function Turmas({ uid, professor }) {
               </button>
               <div className="registro-info" style={{ flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 16, color: "var(--texto)", fontWeight: 600 }}>{turmaAberta.disciplina}</div>
+                  <div style={{ fontSize: 21, color: "var(--texto)", fontWeight: 600 }}>{turmaAberta.disciplina}</div>
                   {turmaAberta.professor && (
                     <div style={{ fontSize: 12, color: "var(--roxo)", fontWeight: 500 }}>Prof(a): {turmaAberta.professor}</div>
                   )}
@@ -737,7 +737,7 @@ export default function Turmas({ uid, professor }) {
               {/* 2. NOVO CARD DOS LEMBRETES (Agenda) */}
               <div className="card" style={{ minHeight: 150 }}>
                 <div style={{ marginBottom: "20px" }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 500 , color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
                   <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "4px 0 0" }}>Provas, trabalhos e atividades futuras.</p>
                 </div>
 
@@ -1155,8 +1155,14 @@ export default function Turmas({ uid, professor }) {
       )}
 
       {confirmarDelete && <ModalConfirmar turma={confirmarDelete} onConfirmar={executarDelete} onCancelar={() => setConfirmarDelete(null)} />}
-      {isCoordenador && modalNovaTurmaAberto && <ModalNovaTurmaUnificada uid={uid} professorLogado={professor} turmaParaEditar={turmaEditando} onClose={fecharModalNovaTurma} />}
-
+{isCoordenador && modalNovaTurmaAberto && (
+  <ModalNovaTurmaUnificada 
+    uid={uid || professor?.uid || auth?.currentUser?.uid} 
+    professorLogado={professor || {}} 
+    turmaParaEditar={turmaEditando} 
+    onClose={fecharModalNovaTurma} 
+  />
+)}
       {/* ── Botão flutuante de ajuda/tutorial ── */}
       <BotaoTutorial onClick={reiniciarTutorial} />
     </div>
