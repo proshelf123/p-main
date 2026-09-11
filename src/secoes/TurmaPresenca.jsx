@@ -7,6 +7,7 @@ import {
   buscarCronograma 
 } from "../firebase/estrutura";
 import CustomDatePicker from "./dropdown-calendario";
+import { SkeletonList } from "./Skeleton";
 
 const STATUS = {
   presente: { label: "Presente", cor: "#0BDB23", icon: Check },
@@ -143,7 +144,15 @@ setAulasNoDia(qtdAulas);
     }
   }
 
-  if (loading) return <p className="secao-vazia">Carregando lista de presença...</p>;
+  if (loading)
+    return (
+      <div className="card" style={{ marginTop: 24 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 500, margin: "0 0 20px", color: "var(--texto)" }}>
+          {professor?.role === "coordenador" ? "Visualizar presença" : "Registrar presença"}
+        </h3>
+        <SkeletonList linhas={4} alturaCard={72} />
+      </div>
+    );
 
   return (
     <div className="card" style={{ marginTop: 24 }}>

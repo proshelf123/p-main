@@ -12,6 +12,7 @@ import {
   deletarLembrete
 } from "../firebase/estrutura";
 import "./secoes.css";
+import { SkeletonList } from "./Skeleton";
 import { Trash2, AlertTriangle, X, Pencil, CircleHelp } from "lucide-react";
 import CustomDatePicker from "./dropdown-calendario";
 import {
@@ -1067,7 +1068,7 @@ export default function Turmas({ uid, professor }) {
       {erroTurma && <p style={{ color: "#c0392b", fontSize: 12, margin: "0 0 16px" }}>{erroTurma}</p>}
 
       {loading ? (
-        <p className="secao-vazia">Carregando...</p>
+        <SkeletonList linhas={4} alturaCard={60} variant="pill" />
       ) : turmas.length === 0 ? (
         <p className="secao-vazia">Nenhuma turma cadastrada.</p>
       ) : (

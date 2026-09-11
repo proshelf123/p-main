@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { buscarEventos, criarEvento, deletarEvento } from '../firebase/estrutura'
 import DropdownComPortal from './DropwdownComPortal'
+import { SkeletonList } from './Skeleton'
 import './secoes.css'
 import CustomDatePicker from './dropdown-calendario'
 import { Trash2, AlertTriangle, CircleHelp } from 'lucide-react'
@@ -561,7 +562,7 @@ export default function Calendario({ uid, professor }) {
           </div>
 
           {loading ? (
-            <p className='secao-vazia'>Carregando...</p>
+            <SkeletonList linhas={3} alturaCard={56} />
           ) : eventosDoMes().length === 0 ? (
             <p className='secao-vazia'>Nenhum evento neste mês.</p>
           ) : (

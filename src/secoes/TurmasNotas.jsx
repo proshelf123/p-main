@@ -6,6 +6,7 @@ import {
   buscarConfiguracoesEscola,
 } from "../firebase/estrutura";
 import { calcularTotalPeriodo } from "../professor/notas";
+import { SkeletonTable } from "./Skeleton";
 
 const obterPeriodos = (sistema) => {
   switch (sistema) {
@@ -69,7 +70,15 @@ async function carregar() {
   }
 }
 
-  if (loading) return <p className="secao-vazia">Carregando notas...</p>;
+  if (loading)
+    return (
+      <div className="card" style={{ marginTop: 24 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 500, margin: "0 0 16px", color: "var(--texto)" }}>
+          Visualizar notas
+        </h3>
+        <SkeletonTable linhas={5} colunas={4} />
+      </div>
+    );
 
   const tipoNota = config?.tipoNota || "numerica";
   const periodos = obterPeriodos(config?.sistemaAvaliacao || "bimestral");

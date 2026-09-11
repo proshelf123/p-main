@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { X, AlertTriangle, CircleHelp } from 'lucide-react'
+import { SkeletonList } from './Skeleton'
 import { STATUS, Joyride } from 'react-joyride'
 import TurmaArquivos from './TurmaArquivos'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -352,7 +353,7 @@ export default function Arquivos({ uid, professor }) {
       </MotionDiv>
 
       {carregando ? (
-        <p style={{ color: 'var(--texto-sec)', fontSize: 14 }}>Carregando turmas...</p>
+        <SkeletonList linhas={4} alturaCard={60} />
       ) : (
         listaPeriodos.map((periodo, pi) => (
           <MotionDiv

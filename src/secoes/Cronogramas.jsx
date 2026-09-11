@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Plus, Save, Trash2, PencilLine, AlertTriangle, CheckCircle, CircleHelp } from 'lucide-react'
+import { SkeletonList } from './Skeleton'
 import {
   buscarCronograma,
   buscarProfessores,
@@ -1630,7 +1631,7 @@ export default function Cronogramas({
       )}
 
       {loading ? (
-        <p className='crono-vazia'>Carregando horário...</p>
+        <SkeletonList linhas={5} alturaCard={48} />
       ) : status ? (
         <div className='crono-vazia'>
           <p>{status}</p>

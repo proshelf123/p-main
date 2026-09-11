@@ -12,6 +12,7 @@ import {
 } from "../firebase/estrutura";
 import { NOTAS_ETEC, NOTAS_LETRAS } from "../professor/notas";
 import DropdownComPortal from "../secoes/DropwdownComPortal"; // ajuste o caminho
+import { SkeletonTable } from "./Skeleton";
 
 const obterPeriodos = (sistema) => {
   switch (sistema) {
@@ -185,7 +186,15 @@ export default function TurmaAvaliacoes({ turma, uid, professor }) {
     }
   }
 
-  if (loading) return <p className="secao-vazia">Carregando avaliações...</p>;
+  if (loading)
+    return (
+      <div className="card" style={{ marginTop: 24 }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 16px", color: "var(--texto)" }}>
+          Lançar avaliações
+        </h3>
+        <SkeletonTable linhas={5} colunas={3} />
+      </div>
+    );
   if (isCoordenador)
     return <p className="secao-vazia">Somente professores lançam avaliações.</p>;
 

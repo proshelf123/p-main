@@ -5,7 +5,7 @@ import {
   ArrowLeft, ExternalLink, FileText, FileSpreadsheet, File, FolderOpen,
   Trash2, Upload, AlertTriangle, Plus, Link2
 } from "lucide-react";
-// 1. IMPORTAÇÕES DO STORAGE ADICIONADAS AQUI:
+import { SkeletonArquivoCard } from "./Skeleton";
 import { getStorage, ref, deleteObject } from "firebase/storage"; 
 import {
   escutarArquivosDaTurma,
@@ -91,16 +91,19 @@ function ModalConfirmarArquivo({ arquivo, onConfirmar, onCancelar }) {
   );
 }
 
-// --- BLOCO DE LISTAGEM DE ARQUIVOS ---
-function BlocoArquivos({ titulo, corTitulo, arquivos, podeDeletarArquivo, onDeletar, vazioTexto, destaque }) {
+// --- BLOCO DE LISTAGEM DE ARQUIVOS (COM SKELETON INTEGRADO) ---
+function BlocoArquivos({ titulo, corTitulo, arquivos, carregando, podeDeletarArquivo, onDeletar, vazioTexto, destaque }) {
   return (
-    <div
-      className={destaque ? "grid-wrapper bloco-arquivos-destaque" : "grid-wrapper"}
-    >
+    <div className={destaque ? "grid-wrapper bloco-arquivos-destaque" : "grid-wrapper"}>
       <h3 style={{ fontSize: 14, fontWeight: 700, color: corTitulo, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-        {titulo} ({arquivos.length})
+        {titulo} ({carregando ? "..." : arquivos.length})
       </h3>
-      {arquivos.length === 0 ? (
+
+      {carregando ? (
+        <div style={{ display: "grid", gap: 10, width: "100%" }}>
+          <SkeletonArquivoCard />
+        </div>
+      ) : arquivos.length === 0 ? (
         <div style={{ border: "2px dashed var(--borda)", borderRadius: 12, padding: "32px 16px", textAlign: "center", color: "var(--texto-sec)" }}>
           <FolderOpen size={32} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
           <p style={{ fontSize: 13, margin: 0 }}>{vazioTexto}</p>
@@ -188,6 +191,7 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
   };
 
   const [arquivos, setArquivos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
 
   const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
   const [novoArquivo, setNovoArquivo] = useState(NOVO_ARQUIVO_INICIAL);
@@ -198,9 +202,13 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
 
   useEffect(() => {
     if (!idTurma) return;
-    const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => setArquivos(dados));
+    setCarregando(true);
+    const unsubArquivos = escutarArquivosDaTurma(uid, idTurma, (dados) => {
+      setArquivos(dados || []);
+      setCarregando(false);
+    });
     return () => unsubArquivos();
-  }, [idTurma]);
+  }, [idTurma, uid]);
 
   function getMensagemErroEnvio(err) {
     if (err?.code === "storage/unauthorized") return "O Firebase Storage bloqueou o envio. Publique as regras de Storage.";
@@ -262,29 +270,22 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
     setNovoArquivo((prev) => ({ ...prev, arquivo, nome: prev.nome || arquivo?.name || "" }));
   }
 
-  // 2. FUNÇÃO ATUALIZADA PARA DELETAR DO STORAGE E DEPOIS DO FIRESTORE
   async function handleConfirmarDeleteArquivo() {
     if (!arquivoParaDeletar) return;
     
     try {
-      // Se não for um link do Google Drive e tiver uma URL, tenta apagar o arquivo físico no Storage
       if (arquivoParaDeletar.tipo !== "link" && arquivoParaDeletar.url) {
         const storage = getStorage();
-        // Cria a referência direta usando a URL de download que está salva no banco
         const arquivoRef = ref(storage, arquivoParaDeletar.url);
         
         try {
           await deleteObject(arquivoRef);
-          console.log("Arquivo físico deletado do Storage com sucesso.");
         } catch (storageErr) {
-          // Apenas loga o erro, pois o arquivo pode já ter sido apagado antes
           console.warn("Aviso: Arquivo não encontrado no Storage ou já deletado:", storageErr);
         }
       }
 
-      // Após garantir a deleção física, apaga o registro no banco de dados (Firestore)
       await deletarArquivoAprovado(arquivoParaDeletar.id);
-      
     } catch (err) {
       console.error("Erro ao deletar arquivo:", err);
     } finally {
@@ -388,6 +389,7 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
           titulo="Arquivos da Coordenação"
           corTitulo="#6F3B9D"
           arquivos={arquivosCoordenacao}
+          carregando={carregando}
           podeDeletarArquivo={podeDeletarArquivo}
           onDeletar={setArquivoParaDeletar}
           vazioTexto="A coordenação ainda não adicionou nenhum documento nesta turma."
@@ -398,6 +400,7 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
           titulo="Arquivos da Turma"
           corTitulo="#4f46e5"
           arquivos={arquivosProfessores}
+          carregando={carregando}
           podeDeletarArquivo={podeDeletarArquivo}
           onDeletar={setArquivoParaDeletar}
           vazioTexto="Nenhum documento enviado pelos professores ainda."

@@ -47,10 +47,11 @@ import AlunosTurmas from '../coordenador/TurmaAlunos'
 import ConfiguracoesEscola from '../coordenador/ConfiguracoesEscola'
 import Boletins from '../coordenador/Boletins'
 import GerenciarCoordenadores from '../coordenador/GerenciarCoordenadores.jsx'
+import PTD from '../secoes/PTD.jsx'
 
 const MotionDiv = motion.div
 
-const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
+const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário', 'PTD']
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -170,7 +171,7 @@ function Dashboard() {
     ? proximasAulasProfessor // Agora já é uma array com várias aulas!
     : cronogramas
 
-  function renderSecao() {
+function renderSecao() {
     switch (secaoAtiva) {
       case 'Início':
         return (
@@ -181,7 +182,6 @@ function Dashboard() {
             eventos={eventos}
             onIrCronogramas={() => setSecaoAtiva('Cronogramas')}
             onIrCalendario={() => setSecaoAtiva('Calendário')}
-            onAtalhoClick={(secao) => setSecaoAtiva(secao)}
           />
         )
       case 'Cronogramas':
@@ -198,6 +198,7 @@ function Dashboard() {
       case 'Alunos': return <AlunosTurmas uid={uid} professor={professor} />
       case 'Arquivos': return <Arquivos uid={uid} professor={professor} />
       case 'Calendário': return <Calendario uid={uid} professor={professor} />
+      case 'PTD': return <PTD uid={uid} professor={professor} /> // <-- ADICIONE AQUI
       case 'Configurações': return <Configuracoes uid={uid} professor={professor} />
       case 'Professores': return <CadastroProfessores />
       case 'Cores': return <CoresDisciplinas uid={uid} professor={professor} cronogramas={cronogramas} />

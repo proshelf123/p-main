@@ -1,23 +1,30 @@
 import { useEffect, useState } from "react";
 import { Printer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  escutarTurmasPeriodo, 
-  buscarAlunos, 
-  buscarConfiguracoesEscola, 
-  buscarTurmasDaSala, 
-  buscarNotasDaTurma 
+import {
+  escutarTurmasPeriodo,
+  buscarAlunos,
+  buscarConfiguracoesEscola,
+  buscarTurmasDaSala,
+  buscarAvaliacoes,
+  buscarNotasDetalhadasDaTurma,
+  buscarNotasDaTurma
 } from "../firebase/estrutura";
+import { calcularTotalPeriodo } from "../professor/notas";
 import DropdownComPortal from "../secoes/DropwdownComPortal";
 
 // Helper de períodos[cite: 7]
 const obterPeriodos = (sistema) => {
   switch (sistema) {
-    case "trimestral": return [{ key: "1", label: "1º Tri" }, { key: "2", label: "2º Tri" }, { key: "3", label: "3º Tri" }];
-    case "semestral": return [{ key: "1", label: "1º Sem" }, { key: "2", label: "2º Sem" }];
-    case "livre": return [{ key: "1", label: "Nota Final" }];
+    case "trimestral":
+      return [{ key: "periodo_1", label: "1º Tri" }, { key: "periodo_2", label: "2º Tri" }, { key: "periodo_3", label: "3º Tri" }];
+    case "semestral":
+      return [{ key: "periodo_1", label: "1º Sem" }, { key: "periodo_2", label: "2º Sem" }];
+    case "livre":
+      return [{ key: "periodo_1", label: "Nota Final" }];
     case "bimestral":
-    default: return [{ key: "1", label: "1º Bim" }, { key: "2", label: "2º Bim" }, { key: "3", label: "3º Bim" }, { key: "4", label: "4º Bim" }];
+    default:
+      return [{ key: "periodo_1", label: "1º Bim" }, { key: "periodo_2", label: "2º Bim" }, { key: "periodo_3", label: "3º Bim" }, { key: "periodo_4", label: "4º Bim" }];
   }
 };
 
@@ -31,12 +38,12 @@ const PESO_CONCEITO = {
 export default function Boletins({ uid }) {
   const [salas, setSalas] = useState([]);
   const [salaSel, setSalaSel] = useState("");
-  
+
   const [alunos, setAlunos] = useState([]);
   const [disciplinasUnicas, setDisciplinasUnicas] = useState([]);
   const [notasGerais, setNotasGerais] = useState({});
   const [config, setConfig] = useState(null);
-  
+
   const [loading, setLoading] = useState(true);
   const [carregandoDados, setCarregandoDados] = useState(false);
   const [alunoExpandido, setAlunoExpandido] = useState(null);
@@ -59,12 +66,13 @@ export default function Boletins({ uid }) {
     if (salaSel) carregarBoletins();
   }, [salaSel]);
 
-  // Função auxiliar flexível que busca a nota independente do nome da chave no Firestore
-  function extrairNotaFlexivel(notasObj, indexPeriodo) {
+  // Busca flexível tolerante a variações de chaves no objeto
+  function extrairNotaFlexivel(notasObj, indexPeriodo, chavePeriodo) {
     if (!notasObj) return "-";
     const pNum = indexPeriodo + 1;
 
     const chavesPossiveis = [
+      chavePeriodo,
       `periodo_${pNum}`,
       `${pNum}`,
       `${pNum}º Bim`,
@@ -76,7 +84,7 @@ export default function Boletins({ uid }) {
     ];
 
     for (const chave of chavesPossiveis) {
-      if (notasObj[chave] !== undefined && notasObj[chave] !== null && notasObj[chave] !== "") {
+      if (chave && notasObj[chave] !== undefined && notasObj[chave] !== null && notasObj[chave] !== "") {
         return notasObj[chave];
       }
     }
@@ -94,28 +102,57 @@ export default function Boletins({ uid }) {
 
       setConfig(conf);
       setAlunos(listaAlunos);
-      
+
       const nomesDisciplinas = Array.from(
         new Set(listaTurmas.map(t => t.disciplina))
       ).filter(Boolean).sort((a, b) => a.localeCompare(b));
-      
+
       setDisciplinasUnicas(nomesDisciplinas);
 
-      const notasAgrupadas = {}; 
-      
+      const periodosList = obterPeriodos(conf?.sistemaAvaliacao || "bimestral");
+      const tipoNota = conf?.tipoNota || "etec";
+      const notasAgrupadas = {};
+
       const promessasDeNotas = listaTurmas.map(async (turma) => {
-        const notasDaTurma = await buscarNotasDaTurma(turma.ownerUid || uid, turma.id);
-        
+        const ownerUid = turma.ownerUid || uid;
+
+        // Busca simultaneamente as avaliações, notas detalhadas e notas diretas da matéria
+        const [avaliacoesTurma, notasDetalhadas, notasDiretas] = await Promise.all([
+          buscarAvaliacoes(ownerUid, turma.id).catch(() => []),
+          buscarNotasDetalhadasDaTurma(ownerUid, turma.id).catch(() => ({})),
+          buscarNotasDaTurma(ownerUid, turma.id).catch(() => ({}))
+        ]);
+
         listaAlunos.forEach(aluno => {
           if (!notasAgrupadas[aluno.id]) notasAgrupadas[aluno.id] = {};
           if (!notasAgrupadas[aluno.id][turma.disciplina]) {
-             notasAgrupadas[aluno.id][turma.disciplina] = {};
+            notasAgrupadas[aluno.id][turma.disciplina] = {};
           }
-          
+
           const notasAtuais = notasAgrupadas[aluno.id][turma.disciplina];
-          const notasNovas = notasDaTurma[aluno.id]?.notas || {};
-          
-          Object.assign(notasAtuais, notasNovas);
+
+          // 1. Suporte a notas já consolidadas manualmente
+          const notasSalvas = notasDiretas[aluno.id]?.notas || {};
+          Object.assign(notasAtuais, notasSalvas);
+
+          // 2. Consolidação dinâmica igual à tela do professor
+          const notasDoAluno = notasDetalhadas[aluno.id] || {};
+          periodosList.forEach((p) => {
+            const avaliacoesDoPeriodo = avaliacoesTurma.filter((av) => av.periodo === p.key);
+            if (avaliacoesDoPeriodo.length > 0) {
+              const notasDoPeriodo = {};
+              avaliacoesDoPeriodo.forEach((av) => {
+                if (notasDoAluno[av.id] != null && notasDoAluno[av.id] !== "") {
+                  notasDoPeriodo[av.id] = notasDoAluno[av.id];
+                }
+              });
+
+              const total = calcularTotalPeriodo(notasDoPeriodo, tipoNota);
+              if (total != null && total !== "") {
+                notasAtuais[p.key] = total;
+              }
+            }
+          });
         });
       });
 
@@ -226,7 +263,7 @@ export default function Boletins({ uid }) {
 
               return (
                 <div key={aluno.id} style={{ border: "1px solid var(--borda)", borderRadius: 12, overflow: "hidden", background: "white" }}>
-                  <button 
+                  <button
                     className="nao-imprimir"
                     onClick={() => setAlunoExpandido(expandido ? null : aluno.id)}
                     style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "transparent", border: "none", cursor: "pointer" }}
@@ -270,16 +307,16 @@ export default function Boletins({ uid }) {
                             return (
                               <tr key={disciplina} style={{ borderBottom: "1px solid var(--borda)" }}>
                                 <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--texto)" }}>{disciplina}</td>
-                                
+
                                 {periodos.map((p, idx) => {
-                                  const valNota = extrairNotaFlexivel(notasDoAluno, idx);
+                                  const valNota = extrairNotaFlexivel(notasDoAluno, idx, p.key);
                                   return (
                                     <td key={p.key} style={{ padding: "10px 12px", textAlign: "center", fontWeight: 600, color: "var(--texto)" }}>
                                       {valNota}
                                     </td>
                                   );
                                 })}
-                                
+
                                 <td style={{ padding: "10px 12px", textAlign: "center", fontWeight: 700, background: "#fafafa" }}>
                                   {media}
                                 </td>

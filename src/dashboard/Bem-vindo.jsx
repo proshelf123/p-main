@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Joyride, STATUS } from "react-joyride"; // v3: named export, não é mais default
 import { doc, updateDoc } from "firebase/firestore";
 import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell, CircleHelp } from "lucide-react";
+import { SkeletonCard } from "../secoes/Skeleton";
 import { db } from "../firebase"; // ajuste o caminho conforme seu projeto
 import "./Bem-vindo.css";
 import { buscarTurmas, buscarLembretes } from "../firebase/estrutura";
@@ -280,7 +281,6 @@ function ProximosEventos({ eventos = [] }) {
  * @param {array}    eventos     – lista de eventos do calendário
  * @param {function} onIrCronogramas – callback para navegar até a seção Cronogramas
  * @param {function} onIrCalendario  – callback para navegar até a seção Calendário
- * @param {function} onAtalhoClick  – callback genérico para navegar para qualquer seção via atalho rápido
  */
 export default function Bemvindo({
   professor,
@@ -289,7 +289,6 @@ export default function Bemvindo({
   eventos = [],
   onIrCronogramas,
   onIrCalendario,
-  onAtalhoClick,
 }) {
   const eCoordenador = professor?.role === "coordenador";
   const nome = professor?.nome ?? "";
@@ -582,7 +581,11 @@ export default function Bemvindo({
           </div>
 
           {carregandoLems ? (
-            <p className="bv-vazio">Buscando agendamentos...</p>
+            <div className="bv-lembretes-grid">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <SkeletonCard key={i} height={40} />
+              ))}
+            </div>
           ) : lembretesExibicao.length === 0 ? (
             <p className="bv-vazio">
               {filtroTempo === "todos" 

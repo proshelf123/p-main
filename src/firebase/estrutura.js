@@ -704,29 +704,42 @@ export async function salvarConfiguracoesEscola(uid, dados) {
   }, { merge: true });
 }
 
-// Corrigido: Busca pelo campo 'sala' e mapeia o 'ownerUid' e 'disciplina' corretamente
 export async function buscarTurmasDaSala(uid, nomeSala) {
   const escolaId = await getEscolaId(uid);
   
-  // 1. Busca global de turmas vinculadas à sala selecionada
+  // Consulta aproveitando o índice já ativo de escolaId
   const qGroup = query(
     collectionGroup(db, "lista"), 
-    where("escolaId", "==", escolaId), 
-    where("sala", "==", nomeSala)
+    where("escolaId", "==", escolaId)
   );
   
   const snapGroup = await getDocs(qGroup);
-  
-  return snapGroup.docs.map(d => {
-    // Extrai o UID do dono da turma através do caminho do documento no Firestore
-    const parentDoc = d.ref.parent.parent;
-    const ownerUid = parentDoc ? parentDoc.id : uid;
+
+  const normalizar = (txt) =>
+    String(txt || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[º°\.]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const salaBuscada = normalizar(nomeSala);
+
+  // Filtra comparando com data.nome (onde está a sala)
+  const docsFiltrados = snapGroup.docs.filter((d) => {
+    return normalizar(d.data().nome) === salaBuscada;
+  });
+
+  return docsFiltrados.map((d) => {
+    const data = d.data();
+    const parentDoc = d.ref.parent?.parent;
+    const ownerUid = data.criadoPorUid || (parentDoc ? parentDoc.id : uid);
 
     return {
       id: d.id,
       ownerUid: ownerUid,
-      disciplina: d.data().disciplina || d.data().nome || "Geral",
-      ...d.data()
+      disciplina: data.disciplina || "Geral",
+      ...data
     };
   });
 }

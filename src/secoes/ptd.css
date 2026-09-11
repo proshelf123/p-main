@@ -1,0 +1,534 @@
+/* ══════════════════════════════════════════════════════════════
+   ESTILOS DO GERADOR DE PTD (PROSHELF)
+   ══════════════════════════════════════════════════════════════ */
+
+.ptd-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-family: "Poppins", sans-serif;
+}
+
+/* ── Cabeçalho Padrão ProShelf ── */
+.ptd-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--borda);
+  margin-bottom: 28px;
+}
+
+@media (min-width: 768px) {
+  .ptd-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.ptd-titulo-bloco {
+  border-left: 4px solid var(--roxo);
+  padding-left: 16px;
+}
+
+.ptd-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ptd-tag {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.ptd-tag-roxo {
+  background: var(--roxo-claro);
+  color: var(--roxo);
+}
+
+.ptd-tag-laranja {
+  background: #fff4e5;
+  color: #d97706;
+}
+
+.ptd-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--texto);
+  margin: 0;
+}
+
+.ptd-subtitulo {
+  font-size: 13px;
+  color: var(--texto-sec);
+  margin-top: 2px;
+}
+
+/* ── Estilo para os campos automáticos bloqueados ── */
+.ptd-input-bloqueado {
+  background-color: var(--bg) !important;
+  color: var(--texto-sec) !important;
+  cursor: not-allowed !important;
+  border-color: var(--borda) !important;
+  user-select: none;
+}
+
+.flex-label-locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icone-bloqueio {
+  color: var(--texto-sec);
+  opacity: 0.6;
+}
+
+select.ptd-input {
+  cursor: pointer;
+}
+
+/* Sincroniza o botão do dropdown com a altura dos inputs do PTD */
+.ptd-campo .dropdown-trigger {
+  min-height: 41px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+}
+
+/* ── Barra de Ações / Botões ── */
+.ptd-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-ptd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-ptd-outline {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+}
+.btn-ptd-outline:hover {
+  background: var(--bg);
+}
+
+.btn-ptd-laranja {
+  background: var(--laranja);
+  color: #ffffff;
+}
+.btn-ptd-laranja:hover {
+  filter: brightness(0.92);
+}
+
+.btn-ptd-roxo {
+  background: var(--roxo);
+  color: #ffffff;
+}
+.btn-ptd-roxo:hover {
+  filter: brightness(0.9);
+}
+
+/* ── Correções de estouro de texto e quebra de colunas na folha A4 ── */
+
+/* 1. Força qualquer palavra gigante ou link longo a quebrar em vez de alargar a coluna */
+.ptd-folha-a4,
+.ptd-folha-a4 * {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* 2. Grid blindado: minmax(0, 1fr) impede que um lado esmague o outro */
+.ptd-folha-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* 3. Justifica o texto com espaçamento harmonioso */
+.ptd-folha-bloco p {
+  text-align: justify;
+  text-justify: inter-word;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 4. Evita que blocos ou assinaturas sejam cortados ao meio entre páginas na impressão */
+.ptd-folha-bloco,
+.ptd-folha-assinaturas,
+.ptd-folha-tabela-conteudo tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.btn-ptd-texto {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-ptd-texto:hover {
+  text-decoration: underline;
+}
+
+/* ── Cards e Formulários ── */
+.ptd-card {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 10px rgba(111, 59, 157, 0.03);
+}
+
+.ptd-card-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.ptd-secao-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--texto);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ptd-bolinha {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--roxo);
+  display: inline-block;
+}
+
+/* ── Inputs e Campos ── */
+.ptd-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.ptd-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.ptd-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.ptd-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-sec);
+}
+
+.ptd-input,
+.ptd-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--texto);
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  resize: none !important;
+}
+
+.ptd-input:focus,
+.ptd-textarea:focus {
+  outline: none;
+  border-color: var(--roxo);
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
+}
+
+.ptd-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ── Auto-expansão e quebra de texto ── */
+.ptd-auto-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--texto);
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none !important;
+  overflow: hidden !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  display: block;
+}
+
+.ptd-auto-textarea:focus {
+  outline: none;
+  border-color: var(--roxo);
+  box-shadow: 0 0 0 3px rgba(111, 59, 157, 0.12);
+}
+
+/* Alinha o número #1 e a lixeira no topo quando a caixa crescer */
+.ptd-item-linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ptd-item-linha .ptd-item-index {
+  margin-top: 10px;
+}
+
+.ptd-item-linha .ptd-btn-icone {
+  margin-top: 6px;
+}
+
+/* Alinha o período no topo quando o detalhamento do conteúdo crescer */
+.ptd-cronograma-item {
+  align-items: flex-start !important;
+}
+
+/* ── Linhas Dinâmicas (Competências e Cronograma) ── */
+.ptd-item-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ptd-item-index {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-sec);
+  width: 24px;
+  text-align: center;
+}
+
+.ptd-btn-icone {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.ptd-btn-icone:hover {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.ptd-cronograma-item {
+  background: var(--bg);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .ptd-cronograma-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VISUALIZAÇÃO EM FOLHA IMPRESSA (A4 OFICIAL)
+   ══════════════════════════════════════════════════════════════ */
+.ptd-folha-a4 {
+  background: #ffffff;
+  color: #111111;
+  max-width: 820px;
+  margin: 0 auto 40px;
+  padding: 48px;
+  border-radius: 12px;
+  border: 1px solid #dcdcdc;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ptd-folha-topo {
+  border-bottom: 2px solid #111;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ptd-folha-topo h2 {
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #111;
+  margin: 0;
+}
+
+.ptd-folha-tabela-info {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #999;
+  margin-bottom: 24px;
+}
+
+.ptd-folha-tabela-info td {
+  border: 1px solid #999;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.ptd-folha-bloco {
+  margin-bottom: 20px;
+}
+
+.ptd-folha-subtitulo {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  color: #222;
+}
+
+.ptd-folha-tabela-conteudo {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #bbb;
+  margin-top: 8px;
+}
+
+.ptd-folha-tabela-conteudo th,
+.ptd-folha-tabela-conteudo td {
+  border: 1px solid #bbb;
+  padding: 7px 10px;
+  text-align: left;
+}
+
+.ptd-folha-tabela-conteudo th {
+  background: #f4f4f4;
+  font-weight: 700;
+}
+
+.ptd-folha-assinaturas {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  text-align: center;
+}
+
+.ptd-folha-linha-assinatura {
+  border-top: 1px solid #666;
+  padding-top: 6px;
+  font-size: 11px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════════ */
+:root.dark-mode .ptd-card {
+  background: var(--branco);
+  border-color: var(--borda);
+}
+
+:root.dark-mode .ptd-input,
+:root.dark-mode .ptd-textarea {
+  background: var(--bg);
+  border-color: var(--borda);
+  color: var(--texto);
+}
+
+:root.dark-mode .ptd-cronograma-item {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+:root.dark-mode .ptd-tag-laranja {
+  background: #3a2c18;
+  color: #ffc56f;
+}
+
+/* Mantém a folha de impressão sempre em modo claro legível */
+:root.dark-mode .ptd-folha-a4 {
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   IMPRESSÃO REAL (window.print)
+   ══════════════════════════════════════════════════════════════ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .cabecalho-dashboard,
+  .nav-mobile-drawer,
+  .nav-mobile-overlay,
+  .btn-adicionar,
+  .ptd-header {
+    display: none !important;
+  }
+  #ptd-impressao,
+  #ptd-impressao * {
+    visibility: visible;
+  }
+  #ptd-impressao {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 20px !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
