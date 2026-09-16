@@ -292,7 +292,7 @@ export default function GerenciarCoordenadores() {
   )
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
+    <div>
       
       {/* HEADER */}
       <div style={{ width: "100%", marginBottom: "24px", paddingBottom: "24px", borderBottom: "1px solid var(--borda)" }}>

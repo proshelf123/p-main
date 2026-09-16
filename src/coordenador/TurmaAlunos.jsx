@@ -265,7 +265,7 @@ export default function AlunosTurmas({ uid }) {
   if (salas.length === 0) return <p className="secao-vazia">Nenhuma pasta/sala criada ainda.</p>;
 
   return (
-<div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
+<div>
       {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
       <div 
         style={{ 

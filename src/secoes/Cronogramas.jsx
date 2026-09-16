@@ -1,7 +1,7 @@
 // src/secoes/Cronogramas.jsx
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Plus, Save, Trash2, PencilLine, AlertTriangle, CheckCircle, CircleHelp } from 'lucide-react'
+import { ArrowLeft, Plus, Save, X, Trash2, PencilLine, AlertTriangle, CheckCircle, CircleHelp } from 'lucide-react'
 import { SkeletonList } from './Skeleton'
 import {
   buscarCronograma,
@@ -1411,6 +1411,7 @@ export default function Cronogramas({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <button
                       type='button'
+                      className='voltar-para-cursos'
                       onClick={voltarParaCursos}
                       title='Voltar para cursos'
                       style={{
@@ -1680,14 +1681,6 @@ export default function Cronogramas({
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                         {anosOrdenados.map(ano => (
                           <div key={ano}>
-                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', fontWeight: 700, color: 'var(--texto)', margin: '0 0 16px 0' }}>
-                              {ano === 'Outros' ? <span>Outros cursos:</span> : (
-                                <>
-                                  <span style={{ fontSize: '22px', fontWeight: 800, color: periodo.cor, lineHeight: 1 }}>{ano}</span>
-                                  <span style={{ fontSize: '18px', fontWeight: 600, color: 'var(--texto)' }}>anos:</span>
-                                </>
-                              )}
-                            </h3>
 
                             <div className='crono-cursos-grid'>
                               {turmasPorAno[ano].map((curso, index) => (
@@ -1696,35 +1689,62 @@ export default function Cronogramas({
                                   className={`crono-curso-card ${deletandoCursoId === curso.id ? 'deletando' : ''}`}
                                   onClick={() => abrirCurso(curso)}
                                   onKeyDown={(event) => abrirCursoPeloTeclado(event, curso)}
-                                  role='button'
+                                  role="button"
                                   tabIndex={0}
                                   {...ANIMACAO_CARD_CURSO}
                                   transition={{ ...TRANSICAO_CRONOGRAMA, delay: Math.min(index * 0.035, 0.18) }}
                                   whileHover={{ y: -2 }}
                                   whileTap={{ scale: 0.98 }}
+                                  style={{ minHeight: 'auto', padding: '16px', minHeight: '100px' }} // Remove a altura mínima para sumir o espaço em branco
                                 >
-                                  {isCoordenador && (
-                                    <button
-                                      type='button'
-                                      className='crono-curso-deletar'
-                                      onClick={(event) => solicitarDeleteCurso(curso, event)}
-                                      disabled={Boolean(deletandoCursoId)}
-                                      title='Deletar curso'
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  )}
-                                  <span className='crono-curso-ano' style={{ color: periodo.cor }}>
-                                    {curso.ano ? `${curso.ano}º ano` : 'Curso'}
-                                  </span>
-                                  <strong>{curso.cursoNome}</strong>
-                                  <span className='crono-curso-sigla'>{curso.id}</span>
-                                  <span className='crono-curso-meta'>
-                                    {curso.aulas.length} aula{curso.aulas.length !== 1 ? 's' : ''} • {curso.dias.size} dia{curso.dias.size !== 1 ? 's' : ''}
-                                  </span>
-                                  <span className='crono-curso-meta'>
-                                    {curso.professores.size} professor{curso.professores.size !== 1 ? 'es' : ''}
-                                  </span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+                                    {/* Cabeçalho: Ano + Nome do Curso + Botão Deletar */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span style={{ fontSize: 20, fontWeight: 800, color: periodo.cor, lineHeight: 1, flexShrink: 0 }}>
+                                        {curso.ano ? `${curso.ano}º` : '•'}
+                                      </span>
+
+                                      <strong style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--texto)' }}>
+                                        {curso.cursoNome?.toLocaleUpperCase('pt-BR')}
+                                      </strong>
+
+                                      {isCoordenador && (
+                                        <button
+                                          type="button"
+                                          title="Deletar curso"
+                                          disabled={Boolean(deletandoCursoId)}
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            solicitarDeleteCurso(curso, event);
+                                          }}
+                                          style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: deletandoCursoId ? 'not-allowed' : 'pointer',
+                                            color: '#EF4444',
+                                            padding: 2,
+                                            marginLeft: 4,
+                                            borderRadius: '50%',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'background 0.2s ease',
+                                            opacity: deletandoCursoId ? 0.5 : 1,
+                                            flexShrink: 0
+                                          }}
+                                          onMouseEnter={(e) => !deletandoCursoId && (e.currentTarget.style.backgroundColor = '#FEE2E2')}
+                                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                        >
+                                          <X size={16} />
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Metadados unificados na mesma linha */}
+                                    <span className="crono-curso-meta">
+                                      {curso.aulas.length} aula{curso.aulas.length !== 1 ? 's' : ''} • {curso.dias.size} dia{curso.dias.size !== 1 ? 's' : ''} • {curso.professores.size} professor{curso.professores.size !== 1 ? 'es' : ''}
+                                    </span>
+                                  </div>
                                 </MotionDiv>
                               ))}
                             </div>
@@ -1742,23 +1762,23 @@ export default function Cronogramas({
               key={`curso-${cursoSelecionado.id}`}
               {...ANIMACAO_PAINEL}
             >
-{!isCoordenador && (
-  <div className='crono-dias'>
-    {DIAS.map((dia) => {
-      const temAula = aulasVisiveis.some((a) => a.dia === DIA_LABEL[dia])
-      return (
-        <button
-          key={dia}
-          className={`crono-dia-btn ${diaAtivo === dia ? 'ativo' : ''} ${!temAula ? 'sem-aula' : ''}`}
-          onClick={() => setDiaAtivo(dia)}
-        >
-          <span className="dia-sigla">{dia}</span>
-          <span className="dia-completo">{DIA_LABEL[dia]}</span>
-        </button>
-      )
-    })}
-  </div>
-)}
+              {!isCoordenador && (
+                <div className='crono-dias'>
+                  {DIAS.map((dia) => {
+                    const temAula = aulasVisiveis.some((a) => a.dia === DIA_LABEL[dia])
+                    return (
+                      <button
+                        key={dia}
+                        className={`crono-dia-btn ${diaAtivo === dia ? 'ativo' : ''} ${!temAula ? 'sem-aula' : ''}`}
+                        onClick={() => setDiaAtivo(dia)}
+                      >
+                        <span className="dia-sigla">{dia}</span>
+                        <span className="dia-completo">{DIA_LABEL[dia]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               <p className='crono-data'>{formatarData(diaAtivo)}</p>
 

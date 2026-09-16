@@ -8,7 +8,7 @@ import { collection, getDocs, doc, getDoc, setDoc, serverTimestamp, query, where
 import { httpsCallable } from 'firebase/functions'
 import { auth, functions, db } from '../firebase'
 import './coordenador.css'
-import { Trash2, TriangleAlert, CircleCheckBig, AlertTriangle } from 'lucide-react'
+import { Trash2, TriangleAlert, CircleCheckBig, AlertTriangle, Eye, EyeOff  } from 'lucide-react'
 import { criarNotificacao } from '../notificacoes/notificacoes'
 
 const FORM_INICIAL = { nome: '', email: '', senha: ''}
@@ -419,7 +419,7 @@ export default function CadastroProfessores() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
+    <div>
       {/* --- HEADER MINIMALISTA COM LINHA INFERIOR --- */}
       <div 
         style={{ 
@@ -480,13 +480,19 @@ export default function CadastroProfessores() {
               placeholder='Mínimo 6 caracteres'
               style={{ paddingRight: 80 }}
             />
-            <button type='button' onClick={() => setMostrarSenha(v => !v)} style={{
-              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 11, color: 'var(--texto-sec)', fontFamily: 'Poppins, sans-serif',
-            }}>
-              {mostrarSenha ? 'Ocultar' : 'Mostrar'}
-            </button>
+<button
+                type='button'
+                onClick={() => setMostrarSenha(!mostrarSenha)}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--texto-sec)', display: 'flex', alignItems: 'center', padding: 4,
+                }}
+              >
+                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
           </div>
           <span style={{ fontSize: 11, color: 'var(--texto-sec)', marginTop: 3 }}>
             O professor pode trocar a senha depois em Configurações

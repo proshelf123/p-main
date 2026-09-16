@@ -178,7 +178,7 @@ export default function ConfiguracoesEscola({ uid }) {
     const periodosAtuais = obterPeriodosDefault(config.sistemaAvaliacao);
 
     return (
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+        <div>
 
             <div style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)", marginBottom: 32 }}>
                 <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>

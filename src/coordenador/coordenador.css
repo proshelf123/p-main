@@ -20,9 +20,6 @@ main, .pagina-conteudo {
 }
 
 .cores-disc-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   animation: fadeIn 0.25s ease-out;
 }
 
@@ -794,6 +791,33 @@ main, .pagina-conteudo {
 :root.dark-mode .upload-nome { color: #e1c8f5; }
 :root.dark-mode .upload-tamanho { color: #c7a6e2; }
 :root.dark-mode .upload-btn:disabled { background: #4a505c; color: #c2c7cf; }
+:root.dark-mode .nao-imprimir {
+  background: #1a1e27 !important;
+}
+:root.dark-mode .area-boletim {
+  background: #1a1e27;
+}
+
+:root.dark-mode .area-boletim h3 {
+  color: white !important;
+}
+
+:root.dark-mode .area-boletim p {
+  color: rgb(161, 159, 159) !important;
+}
+
+:root.dark-mode .area-boletim th {
+  background: #1a1e27 !important;
+}
+
+:root.dark-mode .area-boletim td {
+  background: #1a1e27 !important;
+}
+
+:root.dark-mode .upload-badge {
+  background: #d9aeffa2;
+  color: #5b02f7;
+}
 
 .professor-remover-btn {
   align-items: center;

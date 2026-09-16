@@ -912,15 +912,19 @@ select.perfil-input option:checked {
 
 .crono-cursos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  /* Aumentado o minmax para dar mais espaço às palavras longas */
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
 }
 
 .crono-curso-card {
   position: relative;
   border: 1px solid #ece5f5;
   border-radius: 14px;
-  padding: 18px 52px 18px 18px;
+  width: fit-content; /* Faz o card ter o tamanho exato do texto */
+  max-width: 100%;
+  /* Reduzido o padding direito excessivo de 52px para 18px */
+  padding: 18px;
   min-height: 156px;
   background: #fff;
   color: #1a1a2e;
@@ -929,6 +933,11 @@ select.perfil-input option:checked {
   cursor: pointer;
   box-shadow: 0 8px 22px rgba(111, 59, 157, 0.08);
   transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  
+  /* Impede quebras no meio de palavras e trata desbordamentos */
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .crono-curso-card.deletando {
@@ -976,12 +985,15 @@ select.perfil-input option:checked {
   margin: 8px 0 4px;
   font-size: 1.05rem;
   color: #1a1a2e;
+  /* Força a quebra apenas entre palavras inteiras */
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .crono-curso-ano,
 .crono-curso-sigla,
 .crono-curso-meta {
-  display: block;
+  display: flex;
 }
 
 .crono-curso-ano {
@@ -1001,6 +1013,7 @@ select.perfil-input option:checked {
 .crono-curso-meta {
   color: #6f6877;
   font-size: 0.78rem;
+  margin-top: 20px;
   line-height: 1.55;
 }
 
@@ -1112,6 +1125,10 @@ select.perfil-input option:checked {
   padding-left: 10px;
 }
 
+:root.dark-mode .crono-pill-label {
+  color: #d9c4ff !important;
+}
+
 /* Base compartilhada de todas as pílulas */
 .crono-pill-disc,
 .crono-pill-turma,
@@ -1157,15 +1174,15 @@ select.perfil-input option:checked {
 
 /* Turma */
 .crono-pill-turma {
-  background: #f0ebf8;
+  background: #ffffff;
   color: #6F3B9D;
   box-shadow: 0 2px 6px rgba(111, 59, 157, 0.08);
 }
 
 /* Professor */
 .crono-pill-professor {
-  background: #eef6fb;
-  color: #2E5F7A;
+  background: #ffffff;
+  color: #6F3B9D;
   box-shadow: 0 2px 6px rgba(46, 95, 122, 0.08);
 }
 
@@ -1190,9 +1207,10 @@ select.perfil-input option:checked {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  text-align: center;
   min-height: 38px;
-  padding: 8px 24px;
+  padding: 8px 404px;
+  margin-left: 15px;
   background: transparent;
   border: 1.5px dashed var(--roxo, #6F3B9D);
   border-radius: 999px;
@@ -1282,6 +1300,8 @@ select.perfil-input option:checked {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 38px;
+  height: 100%;
 }
 
 .crono-editor-dropdown .perfil-grupo {
@@ -1456,6 +1476,10 @@ select.perfil-input option:checked {
   margin-bottom: 12px;
 }
 
+:root.dark-mode .voltar-para-cursos {
+  background: #1f1a2b !important;
+}
+
 .crono-editor-row>.crono-celula,
 .crono-editor-row>.crono-editor-remover {
   background-color: transparent;
@@ -1532,6 +1556,16 @@ select.perfil-input option:checked {
   text-align: center;
 }
 
+:root.dark-mode .crono-editor-row>.crono-celula[data-label="Horário"] input {  
+background: #1a1e27 !important;
+color: #af8bec !important;
+}
+
+:root.dark-mode .crono-pill-numero-fixo{
+  background: transparent !important;
+  color: white !important;
+}
+
 /* Botão Sim/Não (Turma A/B) */
 .crono-editor-toggle {
   display: flex;
@@ -1547,6 +1581,15 @@ select.perfil-input option:checked {
   min-height: 42px;
   height: 100%;
   box-shadow: 0 2px 6px rgba(111, 59, 157, 0.08) !important;
+}
+
+:root.dark-mode .crono-editor-toggle  {
+  background-color: #1f1a2b !important;
+}
+
+:root.dark-mode .crono-editor-toggle span {
+color: #af8bec !important;
+
 }
 
 /* Restaura o tamanho do checkbox que acabou herdando o formato de pílula */
@@ -1652,11 +1695,10 @@ select.perfil-input option:checked {
   justify-content: center !important;
 }
 
-/* Suporte ao Modo Escuro */
-:root.dark-mode .crono-pill-numero-fixo {
-  background-color: #242936 !important;
-  color: #ccc !important;
+:root.dark-mode .crono-editor-row>.crono-celula[data-label="Sala"] input {
+  background-color: #1f1a2b !important;
 }
+
 
 .crono-editor-feedback {
   margin: 12px 0 0;
@@ -1750,7 +1792,7 @@ select.perfil-input option:checked {
 }
 
 :root.dark-mode .crono-pill-ordem {
-  color: #666;
+  color: #d9c4ff;
 }
 
 :root.dark-mode .crono-pill-disc {
@@ -1771,7 +1813,7 @@ select.perfil-input option:checked {
 
 :root.dark-mode .crono-pill-sala {
   background: #1e1a2a;
-  color: #666;
+  color: #ffffff;
   box-shadow: none;
 }
 
@@ -2183,7 +2225,6 @@ select.perfil-input option:checked {
 }
 
 :root.dark-mode .crono-editor {
-  background: #171321;
   border-color: var(--borda);
 }
 
@@ -2208,7 +2249,7 @@ select.perfil-input option:checked {
 
 :root.dark-mode .crono-editor input,
 :root.dark-mode .crono-editor select {
-  background: #1f1a2b;
+  background: #1A1E27;
   border-color: var(--borda);
   color: var(--texto);
 }
@@ -2223,25 +2264,16 @@ select.perfil-input option:checked {
   color: var(--texto);
 }
 
-:root.dark-mode .crono-editor-planilha,
-:root.dark-mode .crono-editor-head,
-:root.dark-mode .crono-editor-row {
-  background: #30273d;
-  border-color: var(--borda);
-}
-
 :root.dark-mode .crono-editor-head span {
-  background: #2d2738;
   color: #d9c4ff;
-}
-
-:root.dark-mode .crono-editor-row>.crono-celula,
-:root.dark-mode .crono-editor-row>.crono-editor-remover {
-  background-color: #1f1a2b;
 }
 
 :root.dark-mode .crono-editor-grade-dropdown .dropdown-trigger {
   background: #1f1a2b !important;
+}
+
+:root.dark-mode .crono-editor-grade-dropdown .dropdown-trigger span {
+  color: #af8bec !important;
 }
 
 :root.dark-mode .crono-editor-row.dividida {
@@ -2249,7 +2281,7 @@ select.perfil-input option:checked {
 }
 
 :root.dark-mode .crono-editor-toggle {
-  color: #d9c4ff;
+  color: #070707;
 }
 
 :root.dark-mode .crono-editor-remover {
@@ -2784,6 +2816,10 @@ select.perfil-input option:checked {
     border-color: #3b2f4a;
   }
 
+:root.dark-mode .crono-celula {
+  background: transparent !important;
+}
+
   :root.dark-mode .crono-celula::before {
     color: #a395b3;
   }
@@ -2831,7 +2867,7 @@ select.perfil-input option:checked {
 /* Quebra palavras monstruosas (sem espaço) em qualquer caractere */
 .turma-card-pill span {
   white-space: normal;
-  word-break: break-all;
+  word-break: normal;
   overflow-wrap: break-word;
   margin-left: 15px;
 }
@@ -2913,7 +2949,7 @@ select.perfil-input option:checked {
   border-radius: 30px;
   padding: 9px 8px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: 'Poppins', sans-serif;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;

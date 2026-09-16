@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ptd.css';
-import { Printer, RotateCcw, Eye, Plus, Trash2, Lock } from 'lucide-react';
+import { Printer, Eye, Plus, Trash2, Lock } from 'lucide-react';
 import { 
   buscarTurmas, 
   escutarProfessoresDisciplinas, 
@@ -8,7 +8,6 @@ import {
 } from '../firebase/estrutura';
 import DropdownComPortal from './DropwdownComPortal';
 
-// Componente que quebra linha e estica a caixa automaticamente
 function AutoTextarea({ value, onChange, placeholder, minRows = 1, readOnly = false, className = "" }) {
   const textareaRef = useRef(null);
 
@@ -36,48 +35,6 @@ function AutoTextarea({ value, onChange, placeholder, minRows = 1, readOnly = fa
     />
   );
 }
-
-function gerarConteudoPorSistema(sistema = "bimestral") {
-  switch (sistema) {
-    case "trimestral":
-      return [
-        { periodo: "1º Trimestre", temas: "Arquitetura REST, Ciclo de Vida em React, Hooks e Gerenciamento de Estado." },
-        { periodo: "2º Trimestre", temas: "Consumo de APIs assíncronas, Axios/Fetch, Autenticação JWT e Rotas Protegidas." },
-        { periodo: "3º Trimestre", temas: "Testes automatizados, Estilização com Design System e Projeto Integrador Final." },
-      ];
-    case "semestral":
-      return [
-        { periodo: "1º Semestre", temas: "Fundamentos avançados de desenvolvimento cliente-servidor, componentes e autenticação." },
-        { periodo: "2º Semestre", temas: "Consumo e construção de APIs REST, testes contínuos e Projeto Integrador Final." },
-      ];
-    case "livre":
-      return [
-        { periodo: "Avaliação Única/Final", temas: "Desenvolvimento prático e contínuo de projetos integradores ao longo do módulo." },
-      ];
-    case "bimestral":
-    default:
-      return [
-        { periodo: "1º Bimestre", temas: "Arquitetura REST, Ciclo de Vida em React, Hooks e Gerenciamento de Estado." },
-        { periodo: "2º Bimestre", temas: "Consumo de APIs assíncronas, Axios/Fetch, Autenticação JWT e Rotas Protegidas." },
-        { periodo: "3º Bimestre", temas: "Estilização avançada, Design System e Acessibilidade (WCAG)." },
-        { periodo: "4º Bimestre", temas: "Testes automatizados, Deploy contínuo e Projeto Integrador Final." },
-      ];
-  }
-}
-
-const MODELO_PADRAO_PEDAGOGICO = {
-  ementa: "Construção de ecossistemas web com arquitetura cliente-servidor; consumo e criação de APIs REST; persistência de dados em ambiente cloud; autenticação segura e componentização de interfaces com foco em usabilidade.",
-  objetivos: "Capacitar o estudante a planejar, projetar e codificar sistemas web escaláveis, aplicando boas práticas de arquitetura front-end e integração de microsserviços.",
-  competencias: [
-    "Modelar e integrar bancos de dados relacionais e não-relacionais com front-end reativo.",
-    "Implementar autenticação, controle de permissões e boas práticas de segurança (OWASP).",
-    "Desenvolver interfaces componentizadas com foco em acessibilidade e responsividade."
-  ],
-  metodologia: "Aulas práticas em laboratório com metodologia de Aprendizagem Baseada em Projetos (PBL). Estudos de caso e code reviews colaborativos.",
-  avaliacao: "Projetos práticos integradores em equipe (peso 50%), desafios práticos individuais (peso 30%) e engajamento contínuo em sala (peso 20%).",
-  recursos: "Laboratório de computadores com acesso à internet, Node.js, VS Code, Git/GitHub e plataforma ProShelf.",
-  bibliografia: "FREEMAN, Adam. Pro React 16. Apress, 2020.\nSILVA, Maurício. Construindo Aplicações Web Modernas. Editora Novatec, 2022."
-};
 
 function extrairAnoECurso(nomeTurma = "") {
   const match = nomeTurma.match(/^(\d+[º°ªa]?\s*(?:ano|módulo|modulo)?)\s*[-:]?\s*(.*)$/i);
@@ -112,8 +69,19 @@ export default function PTDGenerator({ uid, professor }) {
     cargaHoraria: "80h",
     professor: "",
     anoLetivo: `${new Date().getFullYear()} - 2º Semestre`,
-    conteudo: gerarConteudoPorSistema("bimestral"),
-    ...MODELO_PADRAO_PEDAGOGICO
+    ementa: "",
+    objetivos: "",
+    competencias: [""],
+    conteudo: [
+      { periodo: "1º Bimestre", temas: "" },
+      { periodo: "2º Bimestre", temas: "" },
+      { periodo: "3º Bimestre", temas: "" },
+      { periodo: "4º Bimestre", temas: "" },
+    ],  
+    metodologia: "",
+    avaliacao: "",
+    recursos: "",
+    bibliografia: "",
   });
 
   const [visualizacaoDocumento, setVisualizacaoDocumento] = useState(false);
@@ -144,7 +112,6 @@ export default function PTDGenerator({ uid, professor }) {
         instituicao: nomeEscola,
         professor: professor?.nome || professor?.nomeUsuario || "Professor",
         anoLetivo: `${anoConfig} - 2º Semestre`,
-        conteudo: gerarConteudoPorSistema(sistema)
       }));
 
       try {
@@ -236,13 +203,118 @@ export default function PTDGenerator({ uid, professor }) {
     setDados(prev => ({ ...prev, conteudo: novos }));
   };
 
-  const restaurarModeloPadrao = () => {
-    setDados(prev => ({
-      ...prev,
-      ...MODELO_PADRAO_PEDAGOGICO,
-      conteudo: gerarConteudoPorSistema(sistemaEscola)
-    }));
+  // ✅ Função de Impressão Corrigida
+  const handleImprimir = () => {
+    setVisualizacaoDocumento(true);
+    setTimeout(() => {
+      window.print();
+    }, 200);
   };
+
+  // Renderização da Folha A4 para Reuso
+  const renderFolhaA4 = () => (
+    <div id="ptd-impressao" className="ptd-folha-a4">
+      <div className="ptd-folha-topo">
+        <div>
+          <h2>Plano de Trabalho Docente (PTD)</h2>
+          <p style={{ color: "#666", fontSize: "11px", fontWeight: "600", textTransform: "uppercase" }}>
+            {dados.instituicao}
+          </p>
+        </div>
+        <span style={{ fontSize: "11px", fontWeight: "700", border: "1px solid #ccc", padding: "4px 8px", borderRadius: "4px" }}>
+          {dados.anoLetivo}
+        </span>
+      </div>
+
+      <table className="ptd-folha-tabela-info">
+        <tbody>
+          <tr>
+            <td><strong>Curso:</strong> {dados.curso}</td>
+            <td><strong>Módulo/Série:</strong> {dados.modulo}</td>
+          </tr>
+          <tr>
+            <td><strong>Componente:</strong> {dados.componente}</td>
+            <td><strong>Carga Horária:</strong> {dados.cargaHoraria}</td>
+          </tr>
+          <tr>
+            <td colSpan="2"><strong>Docente Responsável:</strong> {dados.professor}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="ptd-folha-bloco">
+        <div className="ptd-folha-subtitulo">1. Ementa</div>
+        <p>{dados.ementa || "Não informado."}</p>
+      </div>
+
+      <div className="ptd-folha-bloco">
+        <div className="ptd-folha-subtitulo">2. Objetivos Gerais</div>
+        <p>{dados.objetivos || "Não informado."}</p>
+      </div>
+
+      <div className="ptd-folha-bloco">
+        <div className="ptd-folha-subtitulo">3. Competências e Habilidades</div>
+        <ul style={{ paddingLeft: "18px", margin: "4px 0" }}>
+          {dados.competencias?.map((c, i) => (
+            <li key={i}>{c || "—"}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="ptd-folha-bloco">
+        <div className="ptd-folha-subtitulo">4. Conteúdo Programático</div>
+        <table className="ptd-folha-tabela-conteudo">
+          <thead>
+            <tr>
+              <th style={{ width: "25%" }}>Período ({sistemaEscola.toUpperCase()})</th>
+              <th>Conteúdo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dados.conteudo?.map((item, i) => (
+              <tr key={i}>
+                <td><strong>{item.periodo}</strong></td>
+                <td>{item.temas || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="ptd-folha-grid-2">
+        <div className="ptd-folha-bloco">
+          <div className="ptd-folha-subtitulo">5. Metodologia</div>
+          <p>{dados.metodologia || "Não informado."}</p>
+        </div>
+        <div className="ptd-folha-bloco">
+          <div className="ptd-folha-subtitulo">6. Avaliação</div>
+          <p>{dados.avaliacao || "Não informado."}</p>
+        </div>
+      </div>
+
+      <div className="ptd-folha-grid-2">
+        <div className="ptd-folha-bloco">
+          <div className="ptd-folha-subtitulo">7. Recursos Didáticos</div>
+          <p>{dados.recursos || "Não informado."}</p>
+        </div>
+        <div className="ptd-folha-bloco">
+          <div className="ptd-folha-subtitulo">8. Bibliografia</div>
+          <p style={{ whiteSpace: "pre-line" }}>{dados.bibliografia || "Não informado."}</p>
+        </div>
+      </div>
+
+      <div className="ptd-folha-assinaturas">
+        <div className="ptd-folha-linha-assinatura">
+          <strong>{dados.professor}</strong>
+          <div style={{ fontSize: "10px", color: "#666" }}>Docente Responsável</div>
+        </div>
+        <div className="ptd-folha-linha-assinatura">
+          <strong>Coordenação Pedagógica</strong>
+          <div style={{ fontSize: "10px", color: "#666" }}>{dados.instituicao}</div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="ptd-container">
@@ -265,16 +337,7 @@ export default function PTDGenerator({ uid, professor }) {
 
           <button
             type="button"
-            onClick={restaurarModeloPadrao}
-            className="btn-ptd btn-ptd-laranja"
-          >
-            <RotateCcw size={16} />
-            Restaurar Ementa Base
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.print()}
+            onClick={handleImprimir}
             className="btn-ptd btn-ptd-roxo"
           >
             <Printer size={16} />
@@ -283,7 +346,7 @@ export default function PTDGenerator({ uid, professor }) {
         </div>
       </div>
 
-      {/* CONTEÚDO */}
+      {/* CONTEÚDO DE EDIÇÃO */}
       {!visualizacaoDocumento ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* 1. DADOS DE IDENTIFICAÇÃO */}
@@ -383,6 +446,7 @@ export default function PTDGenerator({ uid, professor }) {
                 <AutoTextarea
                   minRows={3}
                   value={dados.ementa}
+                  placeholder={"Detalhamento da ementa..."}
                   onChange={e => handleChange("ementa", e.target.value)}
                 />
               </div>
@@ -391,6 +455,7 @@ export default function PTDGenerator({ uid, professor }) {
                 <AutoTextarea
                   minRows={3}
                   value={dados.objetivos}
+                  placeholder={"Detalhamento dos objetivos gerais..."}
                   onChange={e => handleChange("objetivos", e.target.value)}
                 />
               </div>
@@ -414,7 +479,7 @@ export default function PTDGenerator({ uid, professor }) {
               </button>
             </div>
 
-            {dados.competencias.map((comp, idx) => (
+            {dados.competencias?.map((comp, idx) => (
               <div key={idx} className="ptd-item-linha">
                 <span className="ptd-item-index">#{idx + 1}</span>
                 <AutoTextarea
@@ -444,7 +509,7 @@ export default function PTDGenerator({ uid, professor }) {
               </span>
             </div>
 
-            {dados.conteudo.map((item, idx) => (
+            {dados.conteudo?.map((item, idx) => (
               <div
                 key={idx}
                 className="ptd-cronograma-item"
@@ -519,109 +584,14 @@ export default function PTDGenerator({ uid, professor }) {
           </div>
         </div>
       ) : (
-        /* FOLHA DE IMPRESSÃO A4 */
-        <div id="ptd-impressao" className="ptd-folha-a4">
-          <div className="ptd-folha-topo">
-            <div>
-              <h2>Plano de Trabalho Docente (PTD)</h2>
-              <p style={{ color: "#666", fontSize: "11px", fontWeight: "600", textTransform: "uppercase" }}>
-                {dados.instituicao}
-              </p>
-            </div>
-            <span style={{ fontSize: "11px", fontWeight: "700", border: "1px solid #ccc", padding: "4px 8px", borderRadius: "4px" }}>
-              {dados.anoLetivo}
-            </span>
-          </div>
-
-          <table className="ptd-folha-tabela-info">
-            <tbody>
-              <tr>
-                <td><strong>Curso:</strong> {dados.curso}</td>
-                <td><strong>Módulo/Série:</strong> {dados.modulo}</td>
-              </tr>
-              <tr>
-                <td><strong>Componente:</strong> {dados.componente}</td>
-                <td><strong>Carga Horária:</strong> {dados.cargaHoraria}</td>
-              </tr>
-              <tr>
-                <td colSpan="2"><strong>Docente Responsável:</strong> {dados.professor}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="ptd-folha-bloco">
-            <div className="ptd-folha-subtitulo">1. Ementa</div>
-            <p>{dados.ementa}</p>
-          </div>
-
-          <div className="ptd-folha-bloco">
-            <div className="ptd-folha-subtitulo">2. Objetivos Gerais</div>
-            <p>{dados.objetivos}</p>
-          </div>
-
-          <div className="ptd-folha-bloco">
-            <div className="ptd-folha-subtitulo">3. Competências e Habilidades</div>
-            <ul style={{ paddingLeft: "18px", margin: "4px 0" }}>
-              {dados.competencias.map((c, i) => (
-                <li key={i}>{c}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="ptd-folha-bloco">
-            <div className="ptd-folha-subtitulo">4. Conteúdo Programático</div>
-            <table className="ptd-folha-tabela-conteudo">
-              <thead>
-                <tr>
-                  <th style={{ width: "25%" }}>Período ({sistemaEscola.toUpperCase()})</th>
-                  <th>Conteúdo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dados.conteudo.map((item, i) => (
-                  <tr key={i}>
-                    <td><strong>{item.periodo}</strong></td>
-                    <td>{item.temas}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="ptd-folha-grid-2">
-            <div className="ptd-folha-bloco">
-              <div className="ptd-folha-subtitulo">5. Metodologia</div>
-              <p>{dados.metodologia}</p>
-            </div>
-            <div className="ptd-folha-bloco">
-              <div className="ptd-folha-subtitulo">6. Avaliação</div>
-              <p>{dados.avaliacao}</p>
-            </div>
-          </div>
-
-          <div className="ptd-folha-grid-2">
-            <div className="ptd-folha-bloco">
-              <div className="ptd-folha-subtitulo">7. Recursos Didáticos</div>
-              <p>{dados.recursos}</p>
-            </div>
-            <div className="ptd-folha-bloco">
-              <div className="ptd-folha-subtitulo">8. Bibliografia</div>
-              <p style={{ whiteSpace: "pre-line" }}>{dados.bibliografia}</p>
-            </div>
-          </div>
-
-          <div className="ptd-folha-assinaturas">
-            <div className="ptd-folha-linha-assinatura">
-              <strong>{dados.professor}</strong>
-              <div style={{ fontSize: "10px", color: "#666" }}>Docente Responsável</div>
-            </div>
-            <div className="ptd-folha-linha-assinatura">
-              <strong>Coordenação Pedagógica</strong>
-              <div style={{ fontSize: "10px", color: "#666" }}>{dados.instituicao}</div>
-            </div>
-          </div>
-        </div>
+        /* FOLHA DE IMPRESSÃO VISÍVEL NA TELA */
+        renderFolhaA4()
       )}
+
+      {/* ELEMENTO OCULTO PARA IMPRESSÃO EM SEGUNDO PLANO */}
+      <div className="ptd-apenas-impressao">
+        {renderFolhaA4()}
+      </div>
     </div>
   );
 }

@@ -255,7 +255,7 @@ function Configuracoes({ uid, professor }) {
 
       {/* ── FOOTER ── */}
       <div className='cfg-footer'>
-        <p>ProShelf - a sua editora inteligente</p>
+        <p>ProShelf - a sua estante inteligente</p>
         <span>Versão 1.0</span>
       </div>
 

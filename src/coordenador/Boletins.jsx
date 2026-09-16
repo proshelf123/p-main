@@ -211,7 +211,7 @@ export default function Boletins({ uid }) {
   const mediaCorte = config?.mediaAprovacao || 6.0;
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <div>
       <style>{`
         @media print {
           body * { visibility: hidden; }
@@ -221,7 +221,7 @@ export default function Boletins({ uid }) {
         }
       `}</style>
 
-      <div className="nao-imprimir" style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)", marginBottom: 24 }}>
+      <div className="header" style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)", marginBottom: 24 }}>
         <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--texto)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
           Boletins por Turmas
@@ -231,7 +231,7 @@ export default function Boletins({ uid }) {
         </p>
       </div>
 
-      <div className="nao-imprimir" style={{ maxWidth: 320, marginBottom: 24 }}>
+      <div className="header" style={{ maxWidth: 320, marginBottom: 24 }}>
         <DropdownComPortal
           id="sala-boletim"
           label="Selecione a Sala"

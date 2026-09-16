@@ -416,30 +416,7 @@ export default function Arquivos({ uid, professor }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     {anosOrdenados.map(ano => (
                       <div key={ano}>
-                        {/* Título (Ex: 1º anos:) */}
-                        <h3 style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '20px',
-                          fontWeight: 700,
-                          color: 'var(--texto)',
-                          margin: '0 0 16px 0'
-                        }}>
-                          {ano === 'Outros' ? (
-                            <span>Outras turmas:</span>
-                          ) : (
-                            <>
-                              <span style={{ fontSize: '22px', fontWeight: 800, color: periodo.cor, lineHeight: 1 }}>
-                                {ano}
-                              </span>
-                              <span style={{ fontSize: '18px', fontWeight: 600, color: 'var(--texto)' }}>
-                                anos:
-                              </span>
-                            </>
-                          )}
-                        </h3>
-
+                        
                         {/* O Grid idêntico ao original, sem alterar o formato das caixas */}
                         <MotionDiv
                           variants={containerVariants}
@@ -561,7 +538,7 @@ function TurmaCard({ turma, periodo, onClick, isCoordenador, onExcluir }) {
           width: '100%', padding: '7px 0', borderRadius: 8, border: 'none',
           background: hover ? periodo.cor : periodo.cor + '15',
           color: hover ? '#fff' : periodo.cor,
-          fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          fontSize: 14, fontWeight: "normal", cursor: 'pointer',
           transition: 'all 0.2s ease', letterSpacing: '0.02em',
         }}
       >

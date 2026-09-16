@@ -356,13 +356,29 @@ export default function TurmaArquivos({ turmaId: turmaIdProp, titulo: tituloProp
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
           {handleVoltar && (
-            <button
-              className="btn-voltar"
-              onClick={handleVoltar}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px" }}
-            >
-              <ArrowLeft size={14} /> Voltar
-            </button>
+                    <button
+                      type='button'
+                      className='voltar-para-cursos'
+                      onClick={handleVoltar}
+                      title='Voltar para cursos'
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#f0ebf8',
+                        color: 'var(--roxo)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '38px',
+                        height: '38px',
+                        cursor: 'pointer',
+                        transition: 'transform 0.15s ease, background 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#e2d9f3' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#f0ebf8' }}
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
           )}
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--texto)", margin: 0 }}>{tituloTurma}</h2>

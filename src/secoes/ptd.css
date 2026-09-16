@@ -197,12 +197,8 @@ select.ptd-input {
 
 /* ── Cards e Formulários ── */
 .ptd-card {
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 10px rgba(111, 59, 157, 0.03);
 }
 
 .ptd-card-topo {
@@ -213,7 +209,7 @@ select.ptd-input {
 }
 
 .ptd-secao-titulo {
-  font-size: 15px;
+  font-size: 20px !important;
   font-weight: 600;
   color: var(--texto);
   display: flex;
@@ -473,13 +469,45 @@ select.ptd-input {
   font-size: 11px;
 }
 
+/* Oculta o contêiner de impressão no navegador normalmente */
+.ptd-apenas-impressao {
+  display: none;
+}
+
+/* Regras aplicadas somente ao gerar o PDF/Imprimir */
+@media print {
+  /* Oculta navegação e layout padrão do app */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Exibe exclusivamente o elemento da folha PTD */
+  #ptd-impressao,
+  #ptd-impressao * {
+    visibility: visible !important;
+  }
+
+  /* Posiciona a folha no topo da folha impressa */
+  #ptd-impressao {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Oculta os botões do PTD */
+  .ptd-header,
+  .ptd-acoes {
+    display: none !important;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════
    DARK MODE
    ══════════════════════════════════════════════════════════════ */
-:root.dark-mode .ptd-card {
-  background: var(--branco);
-  border-color: var(--borda);
-}
 
 :root.dark-mode .ptd-input,
 :root.dark-mode .ptd-textarea {

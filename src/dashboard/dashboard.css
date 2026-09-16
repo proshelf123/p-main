@@ -301,13 +301,29 @@ body > *:not(.dash-wrapper) {
   white-space: nowrap;
   transition: background 0.12s, color 0.12s;
 }
+
+:root.dark-mode .nav-coord-item { 
+  color: #b86dca !important;
+}
+
 .nav-coord-item:hover {
   background: #faeeda;
   color: #F38100;
 }
+
+:root.dark-mode .nav-coord-item:hover {
+  background: #846e8a !important;
+  color: #8516a1 !important;
+}
+
 .nav-coord-item.ativo {
   background: #F38100;
   color: #fff;
+}
+
+:root.dark-mode .nav-coord-item.ativo {
+  background: #8516a1 !important;
+  color: #ffffff !important;
 }
 
 /* Dark mode */
@@ -775,12 +791,16 @@ body:has(.dash-wrapper) {
 }
 
 :root.dark-mode .nav-link-coord {
-  color: #ffc56f !important;
+  color: #ffffff !important;
+}
+
+:root.dark-mode .nav-link-coord.ativo  {
+  background: #8516a1 !important;
 }
 
 :root.dark-mode .nav-link-coord:hover {
-  background: #3a2c18 !important;
-  color: #ffd28f !important;
+  background: #662e74 !important;
+  color: #9566a1 !important;
 }
 
 .nav-mobile-drawer .nav-link {
