@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { X, AlertTriangle, CircleHelp, Info } from 'lucide-react'
+import { X, AlertTriangle, CircleHelp, Info, Accessibility } from 'lucide-react'
 import { SkeletonList } from './Skeleton'
 import { STATUS, Joyride } from 'react-joyride'
 import TurmaArquivos from './TurmaArquivos'
@@ -178,7 +178,7 @@ function BotaoTutorial({ onClick }) {
         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.18)'
       }}
     >
-      <Info size={25} strokeWidth={2.2} />
+      <CircleHelp size={25} strokeWidth={2.2} />
     </button>
   )
 }
@@ -581,6 +581,7 @@ useEffect(() => {
         </div>
       )}
 
+      {/* ── Botão Flutuante de Acessibilidade (Acima do ?) ── */}
       <button
         type="button"
         onClick={() => setMenuAcessibilidadeAberto(!menuAcessibilidadeAberto)}
@@ -614,8 +615,8 @@ useEffect(() => {
           e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
         }}
       >
-        <span style={{ fontSize: "24px", lineHeight: 1 }}><CircleHelp /> </span>
-      </button>      
+        <span style={{ fontSize: "24px", lineHeight: 1 }}><Accessibility  /> </span>
+      </button>
 
       <BotaoTutorial onClick={() => setRunTutorialArquivos(true)} />
     </div>

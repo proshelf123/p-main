@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Joyride, STATUS } from "react-joyride"; // v3: named export, não é mais default
 import { doc, updateDoc } from "firebase/firestore";
-import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell, CircleHelp, Eye, Info } from "lucide-react";
+import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell, Accessibility , Eye, CircleHelp } from "lucide-react";
 import { SkeletonCard } from "../secoes/Skeleton";
 import { db } from "../firebase"; // ajuste o caminho conforme seu projeto
 import "./Bem-vindo.css";
@@ -752,7 +752,7 @@ useEffect(() => {
           e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
         }}
       >
-        <span style={{ fontSize: "24px", lineHeight: 1 }}><CircleHelp /> </span>
+        <span style={{ fontSize: "24px", lineHeight: 1 }}><Accessibility  /> </span>
       </button>
 
       {/* ── Botão flutuante de ajuda/tutorial (?) ── */}
@@ -790,7 +790,7 @@ useEffect(() => {
             "0 8px 24px rgba(0, 0, 0, 0.18)";
         }}
       >
-        <Info size={25} strokeWidth={2.2} />
+        <CircleHelp size={25} strokeWidth={2.2} />
       </button>
 
     </div>
