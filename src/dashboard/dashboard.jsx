@@ -2,7 +2,7 @@
 // ═ VERSÃO ATUALIZADA COM CONFIGURAÇÕES ═
 
 import './dashboard.css'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
@@ -82,6 +82,42 @@ function Dashboard() {
   const [modalNovaTurmaAberto, setModalNovaTurmaAberto] = useState(false)
   const eCoordenador = professor?.role === 'coordenador'
   const SECOES_COORDENADOR = ['Professores', 'Alunos', 'Cores', 'Disciplinas', 'Config. da Escola', 'Boletins', 'Gerenciar Coord.']
+
+  // ── PREVENÇÃO DE FLASH BRANCO (FOUC) ANTES DA TELA PINTAR ──
+  useLayoutEffect(() => {
+    if (!uid) {
+      let temTemaEscuroSalvo = false;
+      
+      // 1. Verifica se há tema legado
+      if (localStorage.getItem('darkMode') === 'true') {
+        temTemaEscuroSalvo = true;
+      } else {
+        // 2. Procura nas chaves dos usuários salvos
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('proshelf:dark-mode:')) {
+            if (localStorage.getItem(key) === 'true') {
+              temTemaEscuroSalvo = true;
+              break;
+            }
+          }
+        }
+      }
+
+      // Aplica a classe ANTES do Dashboard renderizar os esqueletos
+      if (temTemaEscuroSalvo) {
+        document.documentElement.classList.add('dark-mode');
+      }
+    } else {
+      // Quando o Firebase confirmar o usuário, aplica a preferência exata dele
+      const prefereEscuro = buscarTemaLocal(uid);
+      if (prefereEscuro === true) {
+        aplicarTemaEscuro(true);
+      } else if (prefereEscuro === false) {
+        removerTemaVisual();
+      }
+    }
+  }, [uid]);
 
   // ── Listener único: alimenta o sino e dispara os toasts em tempo real ──
   const { notificacoes } = useNotificacoes(uid)

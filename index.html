@@ -35,6 +35,43 @@
     position: 'L' // 'L' para Esquerda (Left) ou 'R' para Direita (Right)
   }); -->
   </script>
+
+  <script>
+  (function() {
+    try {
+      var temaAtivo = false;
+      var encontrouPreferencias = false;
+
+      // 1. Verifica se existe o tema legado primeiro
+      var legado = localStorage.getItem('darkMode');
+      if (legado !== null) {
+        temaAtivo = (legado === 'true');
+        encontrouPreferencias = true;
+      } else {
+        // 2. Procura pela preferência de algum usuário salvo (já que não temos o UID ainda)
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.indexOf('proshelf:dark-mode:') === 0) {
+            temaAtivo = (localStorage.getItem(key) === 'true');
+            encontrouPreferencias = true;
+            break; // Aplica a preferência do primeiro usuário que encontrar
+          }
+        }
+      }
+
+      // 3. Se o usuário nunca configurou nada, segue a cor do sistema operacional
+      if (!encontrouPreferencias) {
+        temaAtivo = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+
+      // Aplica a classe imediatamente, bloqueando o "flash branco"
+      if (temaAtivo) {
+        document.documentElement.classList.add('dark-mode');
+      }
+    } catch (e) {}
+  })();
+</script>
+
 </body>
 
 </html>
