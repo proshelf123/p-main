@@ -4,13 +4,11 @@ import { motion } from "framer-motion"; //[cite: 1]
 import { Link, useNavigate } from 'react-router-dom'; //[cite: 1]
 import { UserRoundPlus, School } from 'lucide-react';
 
-// IMPORTANTE: Atualize os caminhos abaixo com as imagens reais do seu projeto
 import Logo from '../assets/Group 32 (2).webp';
 import ImagemProfessores from '../assets/image-21.webp';
 import ImagemAlunos from '../assets/image 20.webp';
 import IconeEscola from '../assets/Union.webp';
 
-// Variáveis de animação mantidas do protótipo original[cite: 1]
 const container = {
   hidden: {},
   visible: {
@@ -29,7 +27,6 @@ const letter = {
 function Inicio() {
   const navigate = useNavigate(); //[cite: 1]
 
-  // Função auxiliar para renderizar texto animado
   const renderAnimatedText = (text) => (
     text.split("").map((char, index) => (
       <motion.span key={index} variants={letter}>
@@ -40,7 +37,6 @@ function Inicio() {
 
   return (
     <div className={styles.paginaContainer}>
-      {/* CABEÇALHO */}
       <header className={styles.cabecalho}>
         <div className={styles.logoContainer}>
           <Link to="/">

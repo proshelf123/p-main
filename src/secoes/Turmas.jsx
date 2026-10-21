@@ -13,7 +13,7 @@ import {
 } from "../firebase/estrutura";
 import "./secoes.css";
 import { SkeletonList } from "./Skeleton";
-import { Trash2, AlertTriangle, X, Pencil, CircleHelp, ArrowLeft } from "lucide-react";
+import { Trash2, AlertTriangle, X, Pencil, CircleHelp, ArrowLeft, FileText } from "lucide-react";
 import CustomDatePicker from "./dropdown-calendario";
 import {
   criarNotificacao,
@@ -31,7 +31,8 @@ import { STATUS, Joyride } from "react-joyride";
 // IMPORTANDO OS COMPONENTES DAS ABAS
 import TurmasNotas from "./TurmasNotas";
 import TurmaAvaliacoes from "./TurmaAvaliacoes"
-import TurmaPresenca from "./TurmaPresenca"; // Certifique-se de que este arquivo existe!
+import TurmaPresenca from "./TurmaPresenca";
+import PTD from './PTD'
 
 const COR_TIPO = {
   teorica: { bg: "#0BDB23", cor: "#fff", label: "Aula teórica" },
@@ -65,7 +66,7 @@ const PASSOS_TOUR_TURMAS = [
     target: '[data-tour="turmas-card"]',
     title: "Suas turmas",
     content:
-      "Clique em uma turma para expandir o card. Depois você poderá escolher entre Registros, Notas e Presença.",
+      "Clique em uma turma para expandir o card. Depois você poderá escolher entre Registros, Notas, Presença e PTD.",
     placement: "bottom",
     skipBeacon: true,
     disableBeacon: true,
@@ -278,7 +279,7 @@ function ModalConfirmar({ turma, onConfirmar, onCancelar }) {
   );
 }
 
-export default function Turmas({ uid, professor }) {
+export default function Turmas({ uid, professor, onAbrirPTD }) {
   const isCoordenador = professor?.role === "coordenador";
   const coresDisciplinas = useCoresDisciplinas();
 
@@ -603,29 +604,29 @@ export default function Turmas({ uid, professor }) {
         <div className="card" data-tour="turma-aberta-header">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
-                    <button
-                      type='button'
-                      className='voltar-para-cursos'
-                      onClick={fecharTurmaAberta}
-                      title='Voltar para cursos'
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: '#f0ebf8',
-                        color: 'var(--roxo)',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '38px',
-                        height: '38px',
-                        cursor: 'pointer',
-                        transition: 'transform 0.15s ease, background 0.15s ease'
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#e2d9f3' }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#f0ebf8' }}
-                    >
-                      <ArrowLeft size={20} />
-                    </button>
+              <button
+                type='button'
+                className='voltar-para-cursos'
+                onClick={fecharTurmaAberta}
+                title='Voltar para cursos'
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#f0ebf8',
+                  color: 'var(--roxo)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '38px',
+                  height: '38px',
+                  cursor: 'pointer',
+                  transition: 'transform 0.15s ease, background 0.15s ease'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#e2d9f3' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#f0ebf8' }}
+              >
+                <ArrowLeft size={20} />
+              </button>
               <div className="registro-info" style={{ flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                   <div style={{ fontSize: 21, color: "var(--texto)", fontWeight: 600 }}>{turmaAberta.disciplina}</div>
@@ -640,15 +641,15 @@ export default function Turmas({ uid, professor }) {
             </div>
 
             {/* SELETOR DE ABAS COM DESLIZAMENTO (Sliding Pill) */}
-            <div
+            <div className="turma-aberta-aba"
               data-tour="turma-aberta-abas"
               style={{
                 position: "relative",
                 display: "flex",
-                background: "var(--bg)",
+                background: "#f4f0f9",
                 padding: "6px",
                 borderRadius: "30px",
-                width: "320px", // Define uma largura fixa para os 3 caberem certinho
+                width: "360px", // Aumentado levemente para acomodar as 4 abas com respiro
               }}
             >
               {/* --- A PÍLULA ROXA QUE DESLIZA AO FUNDO --- */}
@@ -658,31 +659,37 @@ export default function Turmas({ uid, professor }) {
                   top: "6px",
                   bottom: "6px",
                   left: "6px",
-                  width: "calc((100% - 12px) / 3)", // Exatamente 1/3 do espaço interno
+                  width: "calc((100% - 12px) / 4)", // 1/4 exato para cada uma das 4 abas
                   background: "var(--roxo)",
                   borderRadius: "24px",
                   zIndex: 1,
-                  // A mágica acontece aqui: uma transição suave baseada na aba ativa
-                  transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  transform: `translateX(${secaoAtiva === "registros" ? "0%" :
-                      secaoAtiva === "notas" ? "100%" : "200%"
+                  transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  transform: `translateX(${secaoAtiva === "registros"
+                    ? "0%"
+                    : secaoAtiva === "notas"
+                      ? "100%"
+                      : secaoAtiva === "presenca"
+                        ? "200%"
+                        : "300%" // <--- ADICIONADO AQUI PARA O PTD IR ATÉ O FIM
                     })`,
                 }}
               />
 
-              {/* --- OS 3 BOTÕES TRANSPARENTES POR CIMA --- */}
+              {/* --- OS 4 BOTÕES TRANSPARENTES POR CIMA --- */}
               {[
                 { id: "registros", label: "Registros" },
                 { id: "notas", label: "Notas" },
-                { id: "presenca", label: "Presença" }
+                { id: "presenca", label: "Presença" },
+                { id: "ptd", label: "PTD" },
               ].map((aba) => (
                 <button
                   key={aba.id}
+                  type="button"
                   onClick={() => setSecaoAtiva(aba.id)}
                   style={{
                     flex: 1,
                     position: "relative",
-                    zIndex: 2, // Fica acima da pílula roxa
+                    zIndex: 2,
                     border: "none",
                     background: "transparent",
                     padding: "8px 0",
@@ -690,10 +697,9 @@ export default function Turmas({ uid, professor }) {
                     fontSize: "13px",
                     fontWeight: 600,
                     fontFamily: "'Poppins', sans-serif",
-                    // Se for a aba ativa, a fonte fica branca; senão, cinza
-                    color: secaoAtiva === aba.id ? "#fff" : "var(--texto-sec)",
+                    color: secaoAtiva === aba.id ? "#ffffff" : "var(--texto-sec)",
                     cursor: "pointer",
-                    transition: "color 0.3s ease", // Transição suave na troca de cor da letra
+                    transition: "color 0.25s ease",
                   }}
                 >
                   {aba.label}
@@ -758,7 +764,7 @@ export default function Turmas({ uid, professor }) {
               {/* 2. NOVO CARD DOS LEMBRETES (Agenda) */}
               <div className="card" style={{ minHeight: 150 }}>
                 <div style={{ marginBottom: "20px" }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 500 , color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 500, color: "var(--texto)", margin: 0 }}>Lembretes e Agendamentos</h3>
                   <p style={{ fontSize: 13, color: "var(--texto-sec)", margin: "4px 0 0" }}>Provas, trabalhos e atividades futuras.</p>
                 </div>
 
@@ -890,6 +896,10 @@ export default function Turmas({ uid, professor }) {
 
           {secaoAtiva === "presenca" && (
             <TurmaPresenca turma={turmaAberta} uid={uid} professor={professor} />
+          )}
+
+          {secaoAtiva === "ptd" && (
+            <PTD turma={turmaAberta} uid={uid} professor={professor} />
           )}
 
         </div>
@@ -1140,18 +1150,20 @@ export default function Turmas({ uid, professor }) {
                     </button>
 
                     {/* Botões de Ação do Coordenador (Editar/Remover) */}
+                    {/* Botões de Ação do Coordenador (Editar/Remover) */}
                     {isCoordenador && (
                       <div style={{ position: "absolute", top: 14, right: 38, display: "flex", gap: 6, zIndex: 2 }}>
-                        <button onClick={(e) => handleEditarTurma(t, e)} style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.8 }} title="Editar turma">
+                        <button className="turma-icone-acao" onClick={(e) => handleEditarTurma(t, e)} title="Editar turma">
                           <Pencil size={14} color="#ffffff" />
                         </button>
-                        <button onClick={(e) => handleDeletarTurma(t, e)} style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.8 }} title="Remover turma">
+                        <button className="turma-icone-acao" onClick={(e) => handleDeletarTurma(t, e)} title="Remover turma">
                           <Trash2 size={14} color="#ffffff" />
                         </button>
                       </div>
                     )}
 
-                    {/* Área Expandida com as 3 opções */}
+                    {/* Área Expandida com as opções (Registros, Notas, Presença e PTD) */}
+                    {/* Área Expandida com as opções */}
                     <div className={`turma-expand-corpo ${expandida ? "visivel" : ""}`}>
                       <div className="turma-expand-inner">
                         <div className="turma-acoes-grid">
@@ -1163,6 +1175,15 @@ export default function Turmas({ uid, professor }) {
                           </button>
                           <button className="turma-btn-acao" onClick={() => abrirSecaoTurma(t, "presenca")}>
                             Presença
+                          </button>
+
+                          {/* Botão PTD ocupando todas as 3 colunas */}
+                          <button
+                            className="turma-btn-acao turma-btn-ptd-full"
+                            onClick={() => abrirSecaoTurma(t, "ptd")}
+                            title="Abrir o Plano de Trabalho Docente desta turma"
+                          >
+                            PTD - Plano de Trabalho Docente
                           </button>
                         </div>
                       </div>
@@ -1176,14 +1197,14 @@ export default function Turmas({ uid, professor }) {
       )}
 
       {confirmarDelete && <ModalConfirmar turma={confirmarDelete} onConfirmar={executarDelete} onCancelar={() => setConfirmarDelete(null)} />}
-{isCoordenador && modalNovaTurmaAberto && (
-  <ModalNovaTurmaUnificada 
-    uid={uid || professor?.uid || auth?.currentUser?.uid} 
-    professorLogado={professor || {}} 
-    turmaParaEditar={turmaEditando} 
-    onClose={fecharModalNovaTurma} 
-  />
-)}
+      {isCoordenador && modalNovaTurmaAberto && (
+        <ModalNovaTurmaUnificada
+          uid={uid || professor?.uid || auth?.currentUser?.uid}
+          professorLogado={professor || {}}
+          turmaParaEditar={turmaEditando}
+          onClose={fecharModalNovaTurma}
+        />
+      )}
       {/* ── Botão flutuante de ajuda/tutorial ── */}
       <BotaoTutorial onClick={reiniciarTutorial} />
     </div>

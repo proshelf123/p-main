@@ -1,0 +1,46 @@
+/* Botão fixo */
+.accessibility-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.accessibility-trigger {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #6F3B9D; /* Sua cor personalizada */
+  color: white;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Janela/Painel */
+.accessibility-panel {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+}
+
+/* Modos visuais aplicados ao <html> */
+html.modo-alto-contraste {
+  filter: contrast(150%);
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+html.fonte-dislexia * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.05em;
+}

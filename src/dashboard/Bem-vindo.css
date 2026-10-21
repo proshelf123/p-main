@@ -221,6 +221,115 @@
   flex-shrink: 0;
 }
 
+/* ── Modal Flutuante de Acessibilidade ── */
+.bv-acessibilidade-modal {
+  position: fixed;
+  right: 24px;
+  bottom: 148px; /* Abre logo acima dos dois botões flutuantes */
+  width: 250px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  z-index: 9999;
+  border: 1px solid #e8e0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bv-acessibilidade-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bv-acessibilidade-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #2d1b4e;
+  font-weight: 700;
+}
+
+.bv-acessibilidade-fechar {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #8a7aa0;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.bv-acessibilidade-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bv-acessibilidade-botoes button {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd0f5;
+  background: #fbf9fe;
+  color: #2d1b4e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bv-acessibilidade-botoes button:hover {
+  background: #f3effe;
+  border-color: #6F3B9D;
+}
+
+.bv-acessibilidade-botoes button.ativo {
+  background: #6F3B9D;
+  color: #ffffff;
+  border-color: #6F3B9D;
+}
+
+.bv-acessibilidade-dupla {
+  display: flex;
+  gap: 8px;
+}
+
+.bv-acessibilidade-reset {
+  background: transparent !important;
+  border: none !important;
+  color: #8a7aa0 !important;
+  text-decoration: underline;
+  padding: 4px !important;
+  font-size: 0.75rem !important;
+}
+
+/* ── Estilos aplicados no documento ── */
+html.modo-alto-contraste {
+  filter: contrast(140%);
+}
+
+html.fonte-legivel * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Suporte ao Modo Escuro para o menu */
+:root.dark-mode .bv-acessibilidade-modal {
+  background: #1f162b;
+  border-color: #3b2552;
+}
+
+:root.dark-mode .bv-acessibilidade-header h4 {
+  color: #f3effe;
+}
+
+:root.dark-mode .bv-acessibilidade-botoes button {
+  background: #2a1d3b;
+  border-color: #4a3366;
+  color: #e2d9f3;
+}
+
 /* ── Aside ── */
 .bv-aside {
   display: flex;

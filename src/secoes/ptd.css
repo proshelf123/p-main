@@ -2,12 +2,6 @@
    ESTILOS DO GERADOR DE PTD (PROSHELF)
    ══════════════════════════════════════════════════════════════ */
 
-.ptd-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  font-family: "Poppins", sans-serif;
-}
-
 /* ── Cabeçalho Padrão ProShelf ── */
 .ptd-header {
   display: flex;
@@ -77,6 +71,10 @@
   cursor: not-allowed !important;
   border-color: var(--borda) !important;
   user-select: none;
+}
+
+:root.dark-mode .ptd-input-bloqueado {
+  background-color: #222 !important;
 }
 
 .flex-label-locked {

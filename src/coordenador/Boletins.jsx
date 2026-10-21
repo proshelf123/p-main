@@ -201,9 +201,36 @@ export default function Boletins({ uid }) {
     return (soma / qtd).toFixed(1);
   }
 
-  function imprimirBoletim() {
-    window.print();
-  }
+function imprimirBoletim() {
+  const conteudo = document.querySelector('.area-boletim')?.innerHTML;
+  if (!conteudo) return;
+
+  const janela = window.open('', '', 'width=900,height=700');
+  janela.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Imprimir Boletim</title>
+        <style>
+          body { font-family: 'Poppins', Arial, sans-serif; padding: 20px; color: #000; background: #fff; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+          th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
+          th { background: #f8f9fb; }
+          .nao-imprimir { display: none !important; }
+          h3 { margin: 0 0 4px; font-size: 18px; color: #111; }
+          p { margin: 0 0 16px; font-size: 14px; color: #444; }
+        </style>
+      </head>
+      <body>${conteudo}</body>
+    </html>
+  `);
+  janela.document.close();
+  janela.focus();
+  setTimeout(() => {
+    janela.print();
+    janela.close();
+  }, 250);
+}
 
   if (loading) return <p className="secao-vazia">Carregando...</p>;
 
@@ -212,14 +239,29 @@ export default function Boletins({ uid }) {
 
   return (
     <div>
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          .area-boletim, .area-boletim * { visibility: visible; }
-          .area-boletim { position: absolute; left: 0; top: 0; width: 100%; }
-          .nao-imprimir { display: none !important; }
-        }
-      `}</style>
+<style>{`
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .area-boletim, .area-boletim * {
+      visibility: visible;
+    }
+    .area-boletim {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    /* Garante que o contentor pai não corta o boletim */
+    div {
+      overflow: visible !important;
+    }
+    .nao-imprimir {
+      display: none !important;
+    }
+  }
+`}</style>
 
       <div className="header" style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)", marginBottom: 24 }}>
         <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-block' }}>Coordenador</span>
@@ -262,7 +304,7 @@ export default function Boletins({ uid }) {
               const expandido = alunoExpandido === aluno.id;
 
               return (
-                <div key={aluno.id} style={{ border: "1px solid var(--borda)", borderRadius: 12, overflow: "hidden", background: "white" }}>
+                <div key={aluno.id} style={{ border: "1px solid var(--borda)", borderRadius: 12, background: "white" }}>
                   <button
                     className="nao-imprimir"
                     onClick={() => setAlunoExpandido(expandido ? null : aluno.id)}

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
-const ALTURA_ITEM = 44 // aprox. altura de cada .dropdown-item (padding 12px + fonte 13px)
+const ALTURA_ITEM = 44 
 const ALTURA_BORDA = 2
 
 export default function DropdownComPortal({ label, opcoes, valor, onChange, id, dropdownAberto, setDropdownAberto }) {
@@ -23,14 +23,11 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
       const rect = buttonRef.current.getBoundingClientRect()
       const margem = 12
 
-      // Altura que o menu realmente vai ocupar (não um valor fixo arbitrário)
       const alturaNecessaria = opcoesNormalizadas.length * ALTURA_ITEM + ALTURA_BORDA
 
       const espacoAbaixo = window.innerHeight - rect.bottom - margem
       const espacoAcima = rect.top - margem
 
-      // Só abre para cima se realmente não couber embaixo (comparando com a
-      // altura real do menu, não com um número fixo tipo 220)
       const abrirAcima = espacoAbaixo < alturaNecessaria && espacoAcima > espacoAbaixo
       const espacoDisponivel = abrirAcima ? espacoAcima : espacoAbaixo
       const maxHeight = Math.max(140, Math.min(alturaNecessaria, espacoDisponivel))
@@ -112,7 +109,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
         <span className='arrow' style={{ fontSize: '16px', color: 'var(--roxo)', transition: 'transform 0.3s ease', transform: dropdownAberto === id ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
       </button>
 
-      {/* Portal - renderiza FORA do modal, no body */}
+      {/* Portal */}
       {dropdownAberto === id && posicao && ReactDOM.createPortal(
         <div
           className='dropdown-menu'
@@ -127,7 +124,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
             border: '1px solid var(--roxo)',
             borderRadius: '8px',
             zIndex: 999999,
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 8px 24px var(--sombra)',
             maxHeight: `${posicao.maxHeight}px`,
             overflowY: 'auto',
             animation: 'slideDown 0.15s ease-out',
@@ -144,7 +141,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
                 padding: '12px 14px',
                 border: 'none',
                 background: valor === opt.valor ? 'var(--roxo)' : 'var(--branco)',
-                color: valor === opt.valor ? 'white' : 'var(--texto)',
+                color: valor === opt.valor ? '#ffffff' : 'var(--texto)',
                 fontSize: '13px',
                 fontFamily: "'Poppins', sans-serif",
                 cursor: 'pointer',
@@ -155,7 +152,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
                 borderRadius: index === 0 ? '7px 7px 0 0' : index === opcoesNormalizadas.length - 1 ? '0 0 7px 7px' : '0',
               }}
               onMouseEnter={(e) => {
-                if (valor !== opt.valor) e.target.style.backgroundColor = '#F1EDF4'
+                if (valor !== opt.valor) e.target.style.backgroundColor = 'var(--hover-item)'
               }}
               onMouseLeave={(e) => {
                 if (valor !== opt.valor) e.target.style.backgroundColor = 'var(--branco)'
@@ -166,7 +163,7 @@ export default function DropdownComPortal({ label, opcoes, valor, onChange, id, 
             </button>
           ))}
         </div>,
-        document.body  // ← Renderiza no body, FORA do modal
+        document.body
       )}
     </div>
   )

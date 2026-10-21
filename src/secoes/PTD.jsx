@@ -54,7 +54,8 @@ function extrairAnoECurso(nomeTurma = "") {
   };
 }
 
-export default function PTDGenerator({ uid, professor }) {
+// 1. ADICIONADO: 'turma' nas props do PTDGenerator
+export default function PTDGenerator({ uid, professor, turma }) {
   const [turmasDisponiveis, setTurmasDisponiveis] = useState([]);
   const [disciplinasDisponiveis, setDisciplinasDisponiveis] = useState([]);
   const [turmaSelecionadaRaw, setTurmaSelecionadaRaw] = useState("");
@@ -107,24 +108,27 @@ export default function PTDGenerator({ uid, professor }) {
 
       setSistemaEscola(sistema);
 
+      // Extrai dados da turma selecionada vinda da prop
+      const nomeTurmaAtual = turma?.nome || "";
+      const disciplinaAtual = turma?.disciplina || "";
+      const { modulo, curso } = extrairAnoECurso(nomeTurmaAtual);
+
+      setTurmaSelecionadaRaw(nomeTurmaAtual);
+
       setDados(prev => ({
         ...prev,
         instituicao: nomeEscola,
-        professor: professor?.nome || professor?.nomeUsuario || "Professor",
+        professor: turma?.professor || professor?.nome || professor?.nomeUsuario || "Professor",
         anoLetivo: `${anoConfig} - 2º Semestre`,
+        curso: curso || prev.curso,
+        modulo: modulo || prev.modulo,
+        componente: disciplinaAtual || prev.componente
       }));
 
       try {
         const turmas = await buscarTurmas(uid, professor);
         const nomesUnicos = [...new Set(turmas.map(t => t.nome).filter(Boolean))];
         setTurmasDisponiveis(nomesUnicos);
-
-        if (nomesUnicos.length > 0) {
-          const primeira = nomesUnicos[0];
-          setTurmaSelecionadaRaw(primeira);
-          const { modulo, curso } = extrairAnoECurso(primeira);
-          setDados(prev => ({ ...prev, curso, modulo }));
-        }
       } catch (err) {
         console.error("Erro ao carregar turmas para o PTD:", err);
       }
@@ -159,13 +163,14 @@ export default function PTDGenerator({ uid, professor }) {
       const listaMaterias = [...materias];
       setDisciplinasDisponiveis(listaMaterias);
 
-      if (listaMaterias.length > 0) {
+      // Se a turma ativa já não tiver definido a disciplina, usa a primeira disponível
+      if (!turma?.disciplina && listaMaterias.length > 0) {
         setDados(prev => ({ ...prev, componente: prev.componente || listaMaterias[0] }));
       }
     });
 
     return () => unsub();
-  }, [uid, professor]);
+  }, [uid, professor, turma]); // 2. RECARREGA QUANDO A TURMA ALTERAR
 
   const handleSelecionarTurma = (valorTurma) => {
     setTurmaSelecionadaRaw(valorTurma);
@@ -203,7 +208,6 @@ export default function PTDGenerator({ uid, professor }) {
     setDados(prev => ({ ...prev, conteudo: novos }));
   };
 
-  // ✅ Função de Impressão Corrigida
   const handleImprimir = () => {
     setVisualizacaoDocumento(true);
     setTimeout(() => {
@@ -211,7 +215,6 @@ export default function PTDGenerator({ uid, professor }) {
     }, 200);
   };
 
-  // Renderização da Folha A4 para Reuso
   const renderFolhaA4 = () => (
     <div id="ptd-impressao" className="ptd-folha-a4">
       <div className="ptd-folha-topo">
@@ -320,11 +323,6 @@ export default function PTDGenerator({ uid, professor }) {
     <div className="ptd-container">
       {/* CABEÇALHO */}
       <div className="ptd-header">
-        <div className="ptd-titulo-bloco">
-          <h1 className="ptd-titulo">Plano de Trabalho Docente (PTD)</h1>
-          <p className="ptd-subtitulo">Preencha o modelo e gere o documento final para impressão acadêmica.</p>
-        </div>
-
         <div className="ptd-acoes">
           <button
             type="button"

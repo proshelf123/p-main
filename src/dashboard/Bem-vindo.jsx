@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Joyride, STATUS } from "react-joyride"; // v3: named export, não é mais default
 import { doc, updateDoc } from "firebase/firestore";
-import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell, CircleHelp } from "lucide-react";
+import { BookOpen, Clock, Calendar, ChevronRight, Layers, PlayCircle, Bell, CircleHelp, Eye, Info } from "lucide-react";
 import { SkeletonCard } from "../secoes/Skeleton";
 import { db } from "../firebase"; // ajuste o caminho conforme seu projeto
 import "./Bem-vindo.css";
@@ -304,9 +304,23 @@ export default function Bemvindo({
     avaliacao: { bg: "#188AF5", badgeBg: "#E8F3FE", text: "#1060AA", label: "Avaliação" },
   };
 
+  // Estado do menu de acessibilidade
+const [menuAcessibilidadeAberto, setMenuAcessibilidadeAberto] = useState(false);
+const [altoContraste, setAltoContraste] = useState(false);
+const [fonteLegivel, setFonteLegivel] = useState(false);
+const [zoomTexto, setZoomTexto] = useState(0);
+
   const [lembretesGerais, setLembretesGerais] = useState([]);
   const [filtroTempo, setFiltroTempo] = useState("7dias"); // "7dias", "15dias", "todos"
   const [carregandoLems, setCarregandoLems] = useState(true);
+
+  // Aplica as classes no <html>
+useEffect(() => {
+  const root = document.documentElement;
+  root.classList.toggle("modo-alto-contraste", altoContraste);
+  root.classList.toggle("fonte-legivel", fonteLegivel);
+  root.style.fontSize = `${100 + zoomTexto * 10}%`;
+}, [altoContraste, fonteLegivel, zoomTexto]);
 
   // --- BUSCA DOS LEMBRETES ---
   useEffect(() => {
@@ -643,44 +657,142 @@ export default function Bemvindo({
         </aside>
       </div>
 
-      {/* ── Botão flutuante de ajuda/tutorial ── */}
-<button
-  type="button"
-  onClick={reiniciarTutorial}
-  title="Ver tutorial"
-  aria-label="Ver tutorial"
-  style={{
-    position: "fixed",
-    right: "24px",
-    bottom: "24px",
-    width: "52px",
-    height: "52px",
-    borderRadius: "50%",
-    border: "none",
-    background: "var(--roxo)",
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
-    zIndex: 9998,
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "scale(1.08)";
-    e.currentTarget.style.boxShadow =
-      "0 10px 28px rgba(0, 0, 0, 0.24)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.boxShadow =
-      "0 8px 24px rgba(0, 0, 0, 0.18)";
-  }}
->
-  <CircleHelp size={25} strokeWidth={2.2} />
-</button>
+      {/* ── Painel Flutuante de Acessibilidade ── */}
+      {menuAcessibilidadeAberto && (
+        <div className="bv-acessibilidade-modal" role="dialog" aria-label="Menu de Acessibilidade">
+          <div className="bv-acessibilidade-header">
+            <h4>Acessibilidade</h4>
+            <button 
+              type="button" 
+              className="bv-acessibilidade-fechar"
+              onClick={() => setMenuAcessibilidadeAberto(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="bv-acessibilidade-botoes">
+            <div className="bv-acessibilidade-dupla">
+              <button 
+                type="button"
+                onClick={() => setZoomTexto((prev) => Math.min(prev + 1, 3))}
+              >
+                Texto A+
+              </button>
+              <button 
+                type="button"
+                onClick={() => setZoomTexto((prev) => Math.max(prev - 1, -1))}
+              >
+                Texto A-
+              </button>
+            </div>
+
+            <button 
+              type="button" 
+              className={altoContraste ? "ativo" : ""}
+              onClick={() => setAltoContraste(!altoContraste)}
+            >
+              {altoContraste ? "Desativar Alto Contraste" : "Alto Contraste"}
+            </button>
+
+            <button 
+              type="button" 
+              className={fonteLegivel ? "ativo" : ""}
+              onClick={() => setFonteLegivel(!fonteLegivel)}
+            >
+              {fonteLegivel ? "Fonte Padrão" : "Fonte para Dislexia"}
+            </button>
+
+            <button 
+              type="button"
+              className="bv-acessibilidade-reset"
+              onClick={() => {
+                setZoomTexto(0);
+                setAltoContraste(false);
+                setFonteLegivel(false);
+              }}
+            >
+              Redefinir Opções
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Botão Flutuante de Acessibilidade (Acima do ?) ── */}
+      <button
+        type="button"
+        onClick={() => setMenuAcessibilidadeAberto(!menuAcessibilidadeAberto)}
+        title="Acessibilidade"
+        aria-label="Opções de acessibilidade"
+        aria-expanded={menuAcessibilidadeAberto}
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "86px", /* Fica 10px acima do botão ? */
+          width: "52px",
+          height: "52px",
+          borderRadius: "50%",
+          border: "none",
+          background: "#6F3B9D", 
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+          zIndex: 9999999,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.boxShadow = "0 10px 28px rgba(0, 0, 0, 0.24)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
+        }}
+      >
+        <span style={{ fontSize: "24px", lineHeight: 1 }}><CircleHelp /> </span>
+      </button>
+
+      {/* ── Botão flutuante de ajuda/tutorial (?) ── */}
+      <button
+        type="button"
+        onClick={reiniciarTutorial}
+        title="Ver tutorial"
+        aria-label="Ver tutorial"
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "24px",
+          width: "52px",
+          height: "52px",
+          borderRadius: "50%",
+          border: "none",
+          background: "var(--roxo)",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+          zIndex: 9998,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.boxShadow =
+            "0 10px 28px rgba(0, 0, 0, 0.24)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow =
+            "0 8px 24px rgba(0, 0, 0, 0.18)";
+        }}
+      >
+        <Info size={25} strokeWidth={2.2} />
+      </button>
 
     </div>
   );
-}
+};

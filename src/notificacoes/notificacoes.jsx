@@ -13,10 +13,10 @@ import {
 import "./notificacoes.css"
 
 const ICONES_TIPO = {
-  turma: <School />,
-  horario: <CalendarClock />,
-  calendario: <CalendarClock />,
-  aviso: <Megaphone />,
+  turma: <School color="#2d1b4e"/>,
+  horario: <CalendarClock color="#2d1b4e"/>,
+  calendario: <CalendarClock color="#2d1b4e"/>,
+  aviso: <Megaphone color="#2d1b4e"/>,
 }
 
 export default function NotificationBell({ uid, notificacoes = [] }) {

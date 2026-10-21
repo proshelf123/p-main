@@ -91,6 +91,27 @@
   color: #6F3B9D;
 }
 
+/* ── Ícones Lápis/Lixeira (Cabeçalho do Card Turma) ── */
+.turma-icone-acao {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.8;
+  width: 30px;
+  height: 23px;
+  border-radius: 50%; /* Garante o formato de círculo perfeito */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  padding: 0;
+}
+
+.turma-icone-acao:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2); /* Círculo branco translúcido discreto */
+}
+
 .turma-item {
   display: flex;
   align-items: center;
@@ -311,18 +332,25 @@
   text-decoration: none;
 }
 
+/* ── Atualização: Ícones Lápis/Lixeira (Registros e Lembretes) ── */
 .arquivo-acao {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  opacity: 0.5;
-  transition: opacity .15s;
-  padding: 2px 4px;
+  opacity: 0.6;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  padding: 0;
 }
 
 .arquivo-acao:hover {
   opacity: 1;
+  background: rgba(0, 0, 0, 0.06); /* Círculo escuro bem sutil para fundos claros */
 }
 
 .btn-upload {
@@ -911,9 +939,8 @@ select.perfil-input option:checked {
 }
 
 .crono-cursos-grid {
-  display: grid;
-  /* Aumentado o minmax para dar mais espaço às palavras longas */
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
@@ -921,9 +948,12 @@ select.perfil-input option:checked {
   position: relative;
   border: 1px solid #ece5f5;
   border-radius: 14px;
-  width: fit-content; /* Faz o card ter o tamanho exato do texto */
-  max-width: 100%;
-  /* Reduzido o padding direito excessivo de 52px para 18px */
+  
+  /* Substitua o width: fit-content; e max-width: 100%; por estas 3 linhas: */
+  flex: 1 1 320px; /* Faz as caixas dividirem o espaço igualmente */
+  min-width: 320px; /* Impede que fiquem muito finas */
+  max-width: 400px; /* Impede que estiquem demais se houver apenas uma */
+  
   padding: 18px;
   min-height: 156px;
   background: #fff;
@@ -1359,11 +1389,11 @@ select.perfil-input option:checked {
   min-height: 38px;
   border: none;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   background: #6F3B9D;
   color: #fff;
   font-family: 'Poppins', sans-serif;
-  font-weight: 800;
+  font-weight: 500;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
 }
@@ -1946,6 +1976,10 @@ color: #af8bec !important;
   border-color: var(--borda) !important;
 }
 
+:root.dark-mode .turma-aberta-aba {
+  background: #2e2542 !important;
+}
+
 :root.dark-mode .turma-arquivos-modal input,
 :root.dark-mode .turma-arquivos-modal textarea {
   background: #12151c;
@@ -2189,7 +2223,9 @@ color: #af8bec !important;
     grid-template-columns: 1fr;
   }
 
-  .crono-curso-card {
+.crono-curso-card {
+    min-width: 100%; /* Força a ocupar a tela toda no celular */
+    max-width: 100%;
     min-height: 136px;
   }
 
@@ -2909,13 +2945,17 @@ color: #af8bec !important;
 }
 
 .turma-expand-seta {
-  font-size: 18px;
+  font-size: 24px; /* Tamanho base um pouco maior */
   font-weight: 400;
+  display: inline-block; /* Necessário para que o scale funcione perfeitamente num span */
+  transform: scale(1.5); /* Força o aumento visual em 50% */
+  transform-origin: center;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .turma-expand-seta.girada {
-  transform: rotate(90deg);
+  /* É crucial manter o scale(1.5) aqui para não encolher quando a caixa abrir */
+  transform: scale(1.5) rotate(90deg);
 }
 
 /* Container retrátil dos 3 botões */
@@ -2927,7 +2967,7 @@ color: #af8bec !important;
 
 .turma-expand-corpo.visivel {
   grid-template-rows: 1fr;
-  padding: 0 14px 14px;
+  padding: 0 16px 18px; /* <-- ALTERADO: aumentou o padding horizontal e inferior */
 }
 
 .turma-expand-inner {
@@ -2937,9 +2977,18 @@ color: #af8bec !important;
 .turma-acoes-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: 6px;
+  gap: 12px; /* <-- ALTERADO: aumentou o espaço entre as pílulas brancas */
+  padding-top: 12px; /* <-- ALTERADO: distanciou mais os botões da linha divisória */
   border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Ocupa a largura inteira das 3 colunas */
+.turma-btn-ptd-full {
+  grid-column: 1 / -1; 
+  padding: 13px 10px; /* <-- ALTERADO: padding maior para deixá-lo mais cheinho */
+  font-weight: 600;
+  font-size: 14px; /* <-- ALTERADO: fonte 1px maior */
+  background: #ffffff;
 }
 
 .turma-btn-acao {
@@ -2947,8 +2996,8 @@ color: #af8bec !important;
   color: #6F3B9D;
   border: none;
   border-radius: 30px;
-  padding: 9px 8px;
-  font-size: 12px;
+  padding: 11px 10px; /* <-- ALTERADO: as caixinhas ficam mais altas e largas */
+  font-size: 13px; /* <-- ALTERADO: fonte maior, de 12px para 13px */
   font-weight: 500;
   font-family: 'Poppins', sans-serif;
   cursor: pointer;
@@ -3004,4 +3053,17 @@ color: #af8bec !important;
     padding: 8px 20px !important;
     font-size: 0.85rem !important;
   }
+}
+
+/* Alto contraste */
+.bv-alto-contraste {
+  filter: contrast(1.4) brightness(1.05);
+}
+
+/* Fonte para dislexia (usa fonte com boa legibilidade) */
+.bv-fonte-legivel,
+.bv-fonte-legivel * {
+  font-family: 'Comic Sans MS', 'Verdana', sans-serif !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1.6 !important;
 }

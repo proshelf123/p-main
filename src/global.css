@@ -6,6 +6,13 @@
     --cor-laranja-normal: #FF9D00;
     --cor-cheddar: ##F38100;
     --cor-laranja-clara: #FFCC79;
+      --branco: #ffffff;
+  --texto: #1f2937;
+  --borda: #e5e7eb;
+  --roxo: #7c3aed;
+  --hover-item: #f1edf4;
+  --sombra: rgba(0, 0, 0, 0.15);
+  --texto-label: #374151;
 }
 
 * {
@@ -21,4 +28,52 @@ html, body {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+}
+
+/* Modo Escuro */
+.dark, [data-theme='dark'] {
+  --branco: #1e1e24;      /* Fundo do dropdown e do menu */
+  --texto: #f3f4f6;       /* Cor do texto principal */
+  --borda: #374151;       /* Borda do botão no estado normal */
+  --roxo: #a78bfa;       /* Roxo mais claro para dar contraste no escuro */
+  --hover-item: #2d2d38;  /* Fundo do item ao passar o mouse */
+  --sombra: rgba(0, 0, 0, 0.5);
+  --texto-label: #e5e7eb;
+}
+
+/* Ajuste opcional para a classe perfil-label se estiver em arquivo CSS */
+.perfil-label {
+  color: var(--texto-label);
+}
+
+/* Scrollbar personalizada - ProShelf */
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(111, 59, 157, 0.08);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6F3B9D, #FF9D00);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8A4FC0, #FFB84D);
+  background-clip: padding-box;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6F3B9D rgba(111, 59, 157, 0.08);
 }

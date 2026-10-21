@@ -4,7 +4,7 @@ import DropdownComPortal from './DropwdownComPortal'
 import { SkeletonList } from './Skeleton'
 import './secoes.css'
 import CustomDatePicker from './dropdown-calendario'
-import { Trash2, AlertTriangle, CircleHelp } from 'lucide-react'
+import { Trash2, AlertTriangle, CircleHelp, Info } from 'lucide-react'
 import { STATUS, Joyride } from 'react-joyride'
 import { criarNotificacaoPorRole } from "../notificacoes/notificacoes"
 import { auth } from "../firebase"
@@ -133,7 +133,7 @@ function BotaoTutorial({ onClick }) {
         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.18)'
       }}
     >
-      <CircleHelp size={25} strokeWidth={2.2} />
+      <Info size={25} strokeWidth={2.2} />
     </button>
   )
 }
@@ -233,6 +233,8 @@ export default function Calendario({ uid, professor }) {
   const [confirmarDelete, setConfirmarDelete] = useState(null)
   const [eventoExpandidoId, setEventoExpandidoId] = useState(null)
   const [runTutorialCalendario, setRunTutorialCalendario] = useState(false)
+  const [menuAcessibilidadeAberto, setMenuAcessibilidadeAberto] = useState(false)
+  
 
   const handleJoyrideCallback = (data) => {
     const { status } = data
@@ -628,6 +630,8 @@ export default function Calendario({ uid, professor }) {
               )
             })
           )}
+          
+
         </div>
       </div>
 
@@ -692,6 +696,42 @@ export default function Calendario({ uid, professor }) {
           </div>
         </div>
       )}
+
+            <button
+        type="button"
+        onClick={() => setMenuAcessibilidadeAberto(!menuAcessibilidadeAberto)}
+        title="Acessibilidade"
+        aria-label="Opções de acessibilidade"
+        aria-expanded={menuAcessibilidadeAberto}
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "86px", /* Fica 10px acima do botão ? */
+          width: "52px",
+          height: "52px",
+          borderRadius: "50%",
+          border: "none",
+          background: "#6F3B9D", 
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+          zIndex: 9999999,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.boxShadow = "0 10px 28px rgba(0, 0, 0, 0.24)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
+        }}
+      >
+        <span style={{ fontSize: "24px", lineHeight: 1 }}><CircleHelp /> </span>
+      </button>      
 
       {/* ── Modal de confirmação de delete ── */}
       {confirmarDelete && (

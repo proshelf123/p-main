@@ -1,13 +1,14 @@
-
 /* ══════════════════════════════════════════
    INICIO MOBILE — layout exclusivo mobile
+   Design de referência: largura < 768px
    ══════════════════════════════════════════ */
 
 :root {
-  --im-roxo:        #6F3B9D;
+  --im-roxo:        #8F6FAA;
   --im-roxo-escuro: #331C48;
   --im-laranja:     #FF9D00;
   --im-cheddar:     #F38100;
+  --im-texto-escuro:#1a1a1a;
 }
 
 * {
@@ -17,84 +18,74 @@
   font-family: 'Poppins', sans-serif;
 }
 
-/* ── Wrapper principal ── */
 .im-wrapper {
-  position: relative;     /* troca fixed por relative */
-  inset: 0;
   width: 100%;
-  height: 100dvh;         /* mantém altura total da tela */
+  min-height: 100dvh;
   background-color: #fff;
-  overflow: hidden;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* ── Fundo com padrão de ícones educacionais (SVG inline via CSS) ── */
-.im-bg-pattern {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-size: cover;        /* ou 'contain' dependendo da imagem */
-  background-position: center;
-  background-repeat: no-repeat;
-  pointer-events: none;
+/* Este layout é destinado apenas a telas menores que 768px */
+@media screen and (min-width: 769px) {
+  .im-wrapper { display: none; }
 }
 
-
-/* ── Círculos laranjas (canto inferior esquerdo, igual ao design) ── */
-.im-circulo-laranja {
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  background-color: var(--im-cheddar);
-  border-radius: 50%;
-  bottom: 100px;
-  left: -60px;
-  z-index: 1;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.2);
-}
-
-.im-circulo-amarelo {
-  position: absolute;
-  width: 160px;
-  height: 160px;
-  background-color: var(--im-laranja);
-  border-radius: 50%;
-  bottom: 60px;
-  left: 60px;
-  z-index: 1;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.2);
-}
-
-/* ── Conteúdo principal ── */
-.im-main {
-  position: relative;
-  z-index: 10;
-  flex: 1;
+/* ── Header ── */
+.im-header {
+  width: 100%;
+  padding: 14px 20px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 60px 32px 160px;
-  gap: 40px;
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
 }
 
-/* ── Título ── */
-.im-titulo {
-  font-size: 38px;
-  font-weight: 700;
-  color: #1a1a1a;
-  text-align: center;
-  line-height: 1.25;
+.im-logo-header {
+  height: 28px;
+  width: auto;
   user-select: none;
 }
 
-/* ── "inteligente" roxo com barras animadas ── */
+/* ── Hero ── */
+.im-hero {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.im-hero-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: #ddd;
+  background-image: url('../assets/image-21.webp');
+  background-size: cover;
+  background-position: center;
+}
+
+.im-hero-texto {
+  background-color: var(--im-roxo);
+  padding: 28px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.im-titulo {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.35;
+  user-select: none;
+}
+
 .im-inteligente {
-  color: var(--im-roxo);
-  display: inline-block;    /* troca de inline para inline-block */
+  display: inline-block;
   position: relative;
-  white-space: nowrap;      /* adiciona isso */
+  white-space: nowrap;
 }
 
 .im-com-barra {
@@ -110,121 +101,149 @@
 .im-barra-animada {
   position: absolute;
   left: 0;
-  bottom: 4px;
+  bottom: 2px;
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: var(--im-laranja);
   transform-origin: left;
   border-radius: 2px;
   display: block;
 }
 
+.im-hero-desc {
+  font-size: 14px;
+  color: #f0eaf7;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+/* ── Seção branca ── */
+.im-secao-branca {
+  position: relative;
+  width: 100%;
+  padding: 36px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+}
+
+.im-secao-branca-conteudo {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.im-subtitulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--im-roxo-escuro);
+  line-height: 1.35;
+}
+
+.im-impacto {
+  position: relative;
+  display: inline-block;
+  color: var(--im-roxo-escuro);
+}
+
+.im-barra-fixa {
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 100%;
+  height: 3px;
+  background: var(--im-laranja);
+  border-radius: 2px;
+}
+
+.im-texto-corpo {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.im-cta-linha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.im-cta-label {
+  position: relative;
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--im-roxo-escuro);
+}
+
 /* ── Botão ── */
 .im-botao {
   background-color: var(--im-roxo);
   color: #fff;
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   border: none;
   border-radius: 999px;
-  padding: 18px 56px;
+  padding: 14px 32px;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   box-shadow: 0 4px 16px rgba(111, 59, 157, 0.35);
+  align-self: flex-start;
 }
 
-/* ── Footer ── */
-.im-footer {
-  position: relative;
-  z-index: 2;
-  background-color: var(--im-roxo-escuro);
+/* ── Seção laranja ── */
+.im-secao-laranja {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 0;
+  flex-direction: column;
   width: 100%;
+  background-color: var(--im-laranja);
 }
 
-.im-logo-footer {
-  height: 36px;
-  width: auto;
-  user-select: none;
-  filter: brightness(0) invert(1); /* garante logo branca no fundo escuro */
+.im-secao-laranja-texto {
+  padding: 32px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* ── 768px: tablet — só o que muda no tablet ── */
-@media screen and (max-width: 768px) {
-      body {
-    overflow: hidden;
-    height: 100dvh;
-  }
-  
-
-  .im-circulo-laranja,
-  .im-circulo-amarelo {
-    display: none;
-  }
-
-  .im-titulo {
-    font-size: 38px;
-    line-height: 1.5;
-    white-space: normal;    /* remove o nowrap */
-    text-align: center;
-    width: 100%;
-  }
-
-  .im-botao {
-    font-size: 22px;
-    padding: 8px 66px;
-  }
+.im-titulo-laranja {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.35;
 }
-/* ── 425px: mobile médio — reativa os círculos e reposiciona ── */
-@media screen and (max-width: 425px) {
-  .im-circulo-laranja {
-    display: block;
-    bottom: 320px;
-    left: -60px;
-  }
 
-  .im-circulo-amarelo {
-    display: block;
-    bottom: 280px;
-    left: 60px;
-  }
+.im-texto-laranja {
+  font-size: 14px;
+  color: #fff8ee;
+  line-height: 1.6;
+}
+
+.im-secao-laranja-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #ccc;
+  background-image: url('../assets/image\ 20.webp');
+  background-size: cover;
+  background-position: center;
 }
 
 /* ── 375px: iPhone SE/padrão ── */
 @media screen and (max-width: 375px) {
-  .im-circulo-laranja {
-    bottom: 320px;
-    left: -60px;
-  }
-
-  .im-circulo-amarelo {
-    bottom: 280px;
-    left: 60px;
-  }
+  .im-titulo { font-size: 24px; }
+  .im-subtitulo { font-size: 20px; }
+  .im-titulo-laranja { font-size: 22px; }
 }
 
 /* ── 359px: telas muito pequenas ── */
 @media screen and (max-width: 359px) {
-  .im-titulo {
-    font-size: 30px;
-  }
-
-  .im-botao {
-    font-size: 18px;
-    padding: 14px 40px;
-  }
-
-  .im-circulo-laranja {
-    bottom: 320px;
-    left: -60px;
-  }
-
-  .im-circulo-amarelo {
-    bottom: 300px;
-    left: 60px;
-  }
+  .im-titulo { font-size: 22px; }
+  .im-botao { font-size: 15px; padding: 12px 28px; }
+  .im-subtitulo { font-size: 18px; }
+  .im-titulo-laranja { font-size: 20px; }
 }

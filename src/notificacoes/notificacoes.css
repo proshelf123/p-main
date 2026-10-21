@@ -102,6 +102,10 @@
   will-change: transform, opacity; /* Otimização de performance para animações */
 }
 
+.notif-item strong {
+  color: #2d1b4e;
+}
+
 .notif-item:hover {
   background: rgba(0, 0, 0, 0.04);
 }

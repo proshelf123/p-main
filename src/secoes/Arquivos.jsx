@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { X, AlertTriangle, CircleHelp } from 'lucide-react'
+import { X, AlertTriangle, CircleHelp, Info } from 'lucide-react'
 import { SkeletonList } from './Skeleton'
 import { STATUS, Joyride } from 'react-joyride'
 import TurmaArquivos from './TurmaArquivos'
@@ -104,6 +104,46 @@ const ESTILOS_TOUR_ARQUIVOS = {
   },
 }
 
+function BotaoAcessibilidade({ onClick }) {
+  return (
+          <button
+        type="button"
+        onClick={() => setMenuAcessibilidadeAberto(!menuAcessibilidadeAberto)}
+        title="Acessibilidade"
+        aria-label="Opções de acessibilidade"
+        aria-expanded={menuAcessibilidadeAberto}
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "86px", /* Fica 10px acima do botão ? */
+          width: "52px",
+          height: "52px",
+          borderRadius: "50%",
+          border: "none",
+          background: "#6F3B9D", 
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+          zIndex: 9999999,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.boxShadow = "0 10px 28px rgba(0, 0, 0, 0.24)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
+        }}
+      >
+        <span style={{ fontSize: "24px", lineHeight: 1 }}><CircleHelp /> </span>
+      </button>
+  )
+}
+
 function BotaoTutorial({ onClick }) {
   return (
     <button
@@ -138,7 +178,7 @@ function BotaoTutorial({ onClick }) {
         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.18)'
       }}
     >
-      <CircleHelp size={25} strokeWidth={2.2} />
+      <Info size={25} strokeWidth={2.2} />
     </button>
   )
 }
@@ -225,6 +265,12 @@ export default function Arquivos({ uid, professor }) {
   const [carregando, setCarregando] = useState(true)
   const [runTutorialArquivos, setRunTutorialArquivos] = useState(false)
 
+  // Estado do menu de acessibilidade
+const [menuAcessibilidadeAberto, setMenuAcessibilidadeAberto] = useState(false);
+const [altoContraste, setAltoContraste] = useState(false);
+const [fonteLegivel, setFonteLegivel] = useState(false);
+const [zoomTexto, setZoomTexto] = useState(0);
+
   const [turmasPorPeriodo, setTurmasPorPeriodo] = useState({})
   const [turmaSelecionada, setTurmaSelecionada] = useState(null)
   const [nomePeriodoSelecionado, setNomePeriodoSelecionado] = useState(null)
@@ -240,6 +286,21 @@ export default function Arquivos({ uid, professor }) {
       setRunTutorialArquivos(false)
     }
   }
+
+useEffect(() => {
+  const root = document.documentElement;
+
+  // Substitua fontSize por zoom
+  root.style.zoom = `${100 + zoomTexto * 10}%`;
+
+  // Alto contraste
+  root.classList.toggle('bv-alto-contraste', altoContraste);
+
+  // Fonte para dislexia
+  root.classList.toggle('bv-fonte-legivel', fonteLegivel);
+}, [zoomTexto, altoContraste, fonteLegivel]);
+
+
 
   useEffect(() => {
     if (professor) return
@@ -458,6 +519,103 @@ export default function Arquivos({ uid, professor }) {
           </MotionDiv>
         ))
       )}
+
+      {/* ── Painel Flutuante de Acessibilidade ── */}
+      {menuAcessibilidadeAberto && (
+        <div className="bv-acessibilidade-modal" role="dialog" aria-label="Menu de Acessibilidade">
+          <div className="bv-acessibilidade-header">
+            <h4>Acessibilidade</h4>
+            <button 
+              type="button" 
+              className="bv-acessibilidade-fechar"
+              onClick={() => setMenuAcessibilidadeAberto(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="bv-acessibilidade-botoes">
+            <div className="bv-acessibilidade-dupla">
+              <button 
+                type="button"
+                onClick={() => setZoomTexto((prev) => Math.min(prev + 1, 3))}
+              >
+                Texto A+
+              </button>
+              <button 
+                type="button"
+                onClick={() => setZoomTexto((prev) => Math.max(prev - 1, -1))}
+              >
+                Texto A-
+              </button>
+            </div>
+
+            <button 
+              type="button" 
+              className={altoContraste ? "ativo" : ""}
+              onClick={() => setAltoContraste(!altoContraste)}
+            >
+              {altoContraste ? "Desativar Alto Contraste" : "Alto Contraste"}
+            </button>
+
+            <button 
+              type="button" 
+              className={fonteLegivel ? "ativo" : ""}
+              onClick={() => setFonteLegivel(!fonteLegivel)}
+            >
+              {fonteLegivel ? "Fonte Padrão" : "Fonte para Dislexia"}
+            </button>
+
+            <button 
+              type="button"
+              className="bv-acessibilidade-reset"
+              onClick={() => {
+                setZoomTexto(0);
+                setAltoContraste(false);
+                setFonteLegivel(false);
+              }}
+            >
+              Redefinir Opções
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setMenuAcessibilidadeAberto(!menuAcessibilidadeAberto)}
+        title="Acessibilidade"
+        aria-label="Opções de acessibilidade"
+        aria-expanded={menuAcessibilidadeAberto}
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "86px", /* Fica 10px acima do botão ? */
+          width: "52px",
+          height: "52px",
+          borderRadius: "50%",
+          border: "none",
+          background: "#6F3B9D", 
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+          zIndex: 9999999,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.boxShadow = "0 10px 28px rgba(0, 0, 0, 0.24)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.18)";
+        }}
+      >
+        <span style={{ fontSize: "24px", lineHeight: 1 }}><CircleHelp /> </span>
+      </button>      
 
       <BotaoTutorial onClick={() => setRunTutorialArquivos(true)} />
     </div>

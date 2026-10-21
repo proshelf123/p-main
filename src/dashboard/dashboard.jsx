@@ -51,7 +51,7 @@ import PTD from '../secoes/PTD.jsx'
 
 const MotionDiv = motion.div
 
-const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário', 'PTD']
+const SECOES_PROFESSOR = ['Início', 'Cronogramas', 'Turmas', 'Arquivos', 'Calendário']
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -198,7 +198,6 @@ function renderSecao() {
       case 'Alunos': return <AlunosTurmas uid={uid} professor={professor} />
       case 'Arquivos': return <Arquivos uid={uid} professor={professor} />
       case 'Calendário': return <Calendario uid={uid} professor={professor} />
-      case 'PTD': return <PTD uid={uid} professor={professor} /> // <-- ADICIONE AQUI
       case 'Configurações': return <Configuracoes uid={uid} professor={professor} />
       case 'Professores': return <CadastroProfessores />
       case 'Cores': return <CoresDisciplinas uid={uid} professor={professor} cronogramas={cronogramas} />

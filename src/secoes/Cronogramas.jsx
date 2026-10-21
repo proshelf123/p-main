@@ -1723,7 +1723,7 @@ export default function Cronogramas({
                                             cursor: deletandoCursoId ? 'not-allowed' : 'pointer',
                                             color: '#EF4444',
                                             padding: 2,
-                                            marginLeft: 4,
+                                            marginLeft: 'auto', /* <-- ALTERAÇÃO AQUI: mudou de 4 para 'auto' */
                                             borderRadius: '50%',
                                             display: 'inline-flex',
                                             alignItems: 'center',

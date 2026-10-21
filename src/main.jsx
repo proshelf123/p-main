@@ -1,6 +1,6 @@
 import { StrictMode, Suspense, lazy, useState, useEffect, useLayoutEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Route, BrowserRouter, Routes, useLocation } from "react-router"
+import { Route, BrowserRouter, Routes, useLocation, Navigate } from "react-router"
 import { AnimatePresence } from 'framer-motion'
 import PageTransition from './transicao-de-paginas.jsx/transicao'
 import { removerTemaVisual } from './tema'
@@ -10,7 +10,7 @@ import './global.css';
 const Inicio = lazy(() => import('./paginas/inicio'))
 const InicioCelular = lazy(() => import('./inicio-celular/inicio-celular'))
 const Login = lazy(() => import('./login/login'))
-const LoginCelular = lazy(() => import('./login/loginMobile')) // <-- Importe o login mobile (ajuste o caminho se necessário)
+const LoginCelular = lazy(() => import('./login/loginMobile'))
 const Dashboard = lazy(() => import('./dashboard/dashboard'))
 const EsqueciSenha = lazy(() => import('./esqueci-senha/esqueci-senha'))
 const CadastrarEscola = lazy(() => import('./cadastrar-escola/cadastrar-escola'))
@@ -68,10 +68,11 @@ function AnimatedRoutes() {
           <Route path="/primeiro-acesso" element={<PageTransition><PrimeiroAcesso /></PageTransition>} />
           <Route path="/admin-proshelf" element={<AdminGeral />} />
 
+          {/* 🔴 REDIRECIONA ROTAS INEXISTENTES (como /cronograma, /turmas) DE VOLTA PRO DASHBOARD */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
     </AnimatePresence>
-
   );
 }
 

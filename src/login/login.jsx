@@ -170,8 +170,9 @@ function Login() {
                 }}
               />
             </div>
-<div className={styles.campo}> 
-<div className={styles["input-senha-wrapper"]}>
+<div className={styles.campo}>
+  <label>Senha</label>
+  <div className={styles["input-senha-wrapper"]}>
     <input
       type={mostrarSenha ? "text" : "password"}
       placeholder="Digite sua senha"
@@ -194,7 +195,10 @@ function Login() {
         {mostrarSenha ? <Eye size={20} /> : <EyeOff size={20} />}
       </button>
     )}
-{erroLogin && (
+  </div>
+
+  {/* Mensagem de erro posicionada logo abaixo do wrapper do input */}
+  {erroLogin && (
     <div
       key={animacaoErro}
       id="erro-login"
@@ -205,27 +209,27 @@ function Login() {
       {erroLogin}
     </div>
   )}
-  </div>
-              {/* 👇 ADICIONADO: Opções abaixo da senha (Checkbox e Esqueci Senha) */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                <label className={styles["toggle-lembrar"]}>
-                  <input
-                    type="checkbox"
-                    className={styles["toggle-input"]}
-                    checked={lembrar}
-                    onChange={(e) => setLembrar(e.target.checked)}
-                  />
-                  <span className={styles["toggle-track"]}>
-                    <span className={styles["toggle-thumb"]}></span>
-                  </span>
-                  Lembrar de mim
-                </label>
 
-                <Link to="/esqueci-senha" className={styles.esqueci} style={{ marginTop: '0' }}>
-                  Esqueci minha senha
-                </Link>
-              </div>
-            </div>
+  {/* Opções (Checkbox e Esqueci Senha) */}
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+    <label className={styles["toggle-lembrar"]}>
+      <input
+        type="checkbox"
+        className={styles["toggle-input"]}
+        checked={lembrar}
+        onChange={(e) => setLembrar(e.target.checked)}
+      />
+      <span className={styles["toggle-track"]}>
+        <span className={styles["toggle-thumb"]}></span>
+      </span>
+      Lembrar de mim
+    </label>
+
+    <Link to="/esqueci-senha" className={styles.esqueci} style={{ marginTop: '0' }}>
+      Esqueci minha senha
+    </Link>
+  </div>
+</div>
 
             <button className={styles["btn-entrar"]} onClick={handleLogin}>
               Entrar

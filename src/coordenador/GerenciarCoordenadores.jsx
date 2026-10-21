@@ -1,6 +1,6 @@
 // src/coordenador/GerenciarCoordenadores.jsx
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, serverTimestamp, query, where } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { auth, functions, db } from '../firebase'
@@ -10,7 +10,6 @@ import { TriangleAlert, CircleCheckBig, ShieldPlus, Search, Eye, EyeOff } from '
 const FORM_INICIAL = { nome: '', email: '', senha: '' }
 const FUNCTIONS_HTTP_BASE = 'https://us-central1-proshelf-8ecfd.cloudfunctions.net'
 
-// Funções utilitárias mantidas do seu padrão
 function normalizarEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
@@ -23,7 +22,6 @@ function mensagemErro(error, fallback) {
   return error?.message || fallback
 }
 
-// Funções de chamada da Cloud Function
 async function chamarFuncaoHttp(nomeFuncao, dados) {
   const token = await auth.currentUser?.getIdToken()
   if (!token) throw new Error('Sua sessão expirou.')
@@ -120,24 +118,21 @@ function ModalConfirmarPromover({ professor, onConfirmar, onCancelar }) {
 }
 
 export default function GerenciarCoordenadores() {
-  const [aba, setAba] = useState('novo') // 'novo' | 'promover'
+  const [aba, setAba] = useState('novo')
   
-  // Estados para "Novo Coordenador"
   const [form, setForm] = useState(FORM_INICIAL)
   const [salvando, setSalvando] = useState(false)
   const [mostrarSenha, setMostrarSenha] = useState(false)
-  const [camposComErro, setCamposComErro] = useState([]) // quais inputs devem tremer/contornar de vermelho
+  const [camposComErro, setCamposComErro] = useState([])
   
-  // Estados para "Promover"
   const [professores, setProfessores] = useState([])
   const [busca, setBusca] = useState('')
   const [carregandoLista, setCarregandoLista] = useState(false)
   const [promovendoId, setPromovendoId] = useState(null)
   const [professorParaPromover, setProfessorParaPromover] = useState(null)
 
-  // Estados Globais de Feedback
   const [erro, setErro] = useState('')
-  const [animacaoErro, setAnimacaoErro] = useState(0) // dispara a animação da caixa de erro a cada novo erro
+  const [animacaoErro, setAnimacaoErro] = useState(0)
   const [sucesso, setSucesso] = useState('')
 
   const dispararErro = useCallback((mensagem, campos = []) => {
@@ -151,12 +146,13 @@ export default function GerenciarCoordenadores() {
     setErro('')
     try {
       const currentUser = auth.currentUser
+      if (!currentUser) throw new Error('Sua sessão expirou.')
+
       const userSnap = await getDoc(doc(db, 'users', currentUser.uid))
       const escolaId = userSnap.data()?.escolaId
 
       if (!escolaId) throw new Error("Escola não identificada.")
 
-      // Busca usuários dessa escola que têm a role 'professor'
       const q = query(
         collection(db, 'users'),
         where('escolaId', '==', escolaId),
@@ -169,13 +165,13 @@ export default function GerenciarCoordenadores() {
 
       setProfessores(lista)
     } catch (error) {
-      dispararErro('Erro ao carregar lista de professores.')
+      console.error("Erro ao carregar professores:", error)
+      dispararErro(mensagemErro(error, 'Erro ao carregar lista de professores.'))
     } finally {
       setCarregandoLista(false)
     }
   }, [dispararErro])
 
-  // Carrega a lista sempre que mudar para a aba de promover
   useEffect(() => {
     if (aba === 'promover') {
       carregarProfessoresParaPromocao()
@@ -185,7 +181,6 @@ export default function GerenciarCoordenadores() {
     setSucesso('')
   }, [aba, carregarProfessoresParaPromocao])
 
-  // --- LÓGICA: CRIAR NOVO COORDENADOR ---
   async function handleCriarNovo() {
     if (salvando) return
 
@@ -221,13 +216,11 @@ export default function GerenciarCoordenadores() {
       const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid))
       const escolaId = userSnap.data()?.escolaId
 
-      // Aproveita a sua function existente para criar autenticação
       const resultado = await chamarFuncaoServidor('criarProfessor', dados)
       const uidCriado = resultado?.data?.uid
 
       if (!uidCriado) throw new Error('Não foi possível gerar o UID.')
 
-      // O SEGREDOS ESTÁ AQUI: Salva no Firestore com role: 'coordenador'
       await setDoc(doc(db, 'users', uidCriado), {
         nome: dados.nome,
         email: dados.email,
@@ -241,6 +234,7 @@ export default function GerenciarCoordenadores() {
       setTimeout(() => setSucesso(''), 4000)
 
     } catch (error) {
+      console.error("Erro ao criar coordenador:", error)
       dispararErro(mensagemErro(error, 'Erro ao criar coordenador.'))
     } finally {
       setSalvando(false)
@@ -253,38 +247,39 @@ export default function GerenciarCoordenadores() {
     setCamposComErro([])
   }
 
-  // --- LÓGICA: PROMOVER PROFESSOR EXISTENTE ---
   function solicitarPromocao(professor) {
     setProfessorParaPromover(professor)
   }
 
-  async function executarPromocao() {
-    if (!professorParaPromover) return
+async function executarPromocao() {
+  if (!professorParaPromover) return
 
-    const { id, nome } = professorParaPromover
-    setProfessorParaPromover(null) // Fecha o modal imediatamente
+  const { id, nome } = professorParaPromover
+  setProfessorParaPromover(null)
 
-    setPromovendoId(id)
-    setErro('')
-    setCamposComErro([])
-    setSucesso('')
+  setPromovendoId(id)
+  setErro('')
+  setSucesso('')
 
-    try {
-      await updateDoc(doc(db, 'users', id), {
-        role: 'coordenador'
-      })
-      
-      setSucesso(`${nome} foi promovido(a) a Coordenador(a)!`)
-      setTimeout(() => setSucesso(''), 4000)
-      
-      // Atualiza a lista removendo quem acabou de ser promovido
-      setProfessores(prev => prev.filter(p => p.id !== id))
-    } catch (error) {
-      dispararErro('Erro ao promover usuário. Tente novamente.')
-    } finally {
-      setPromovendoId(null)
-    }
+  try {
+    // Atualização direta pelo cliente
+    const userRef = doc(db, 'users', id)
+    await updateDoc(userRef, {
+      role: 'coordenador'
+    })
+    
+    setSucesso(`${nome} foi promovido(a) a Coordenador(a)!`)
+    setTimeout(() => setSucesso(''), 4000)
+    
+    // Remove o usuário promovido da lista de professores exibida
+    setProfessores(prev => prev.filter(p => p.id !== id))
+  } catch (error) {
+    console.error("Erro ao promover:", error.code, error.message)
+    dispararErro(mensagemErro(error, 'Erro ao promover usuário. Tente novamente.'))
+  } finally {
+    setPromovendoId(null)
   }
+}
 
   const professoresFiltrados = professores.filter(p => 
     (p.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
@@ -293,12 +288,10 @@ export default function GerenciarCoordenadores() {
 
   return (
     <div>
-      
-      {/* HEADER */}
       <div style={{ width: "100%", marginBottom: "24px", paddingBottom: "24px", borderBottom: "1px solid var(--borda)" }}>
         <div style={{ paddingLeft: "15px", borderLeft: "3px solid var(--roxo)" }}>
           <span className='upload-badge' style={{ marginBottom: '8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                Coordenador
+            Coordenador
           </span>
           <h2 style={{ fontSize: "25px", fontWeight: 700, color: "var(--texto)", margin: 0, lineHeight: 1.2 }}>
             Gerenciar Coordenadores
@@ -309,7 +302,6 @@ export default function GerenciarCoordenadores() {
         </div>
       </div>
 
-      {/* TOGGLE NOVO / EXISTENTE (Aproveitando o CSS que você já tem) */}
       <div className="turma-modo-toggle" style={{ marginBottom: 24, display: 'flex' }}>
         <button 
           className={`turma-modo-btn ${aba === 'novo' ? 'ativo' : ''}`} 
@@ -327,7 +319,6 @@ export default function GerenciarCoordenadores() {
         </button>
       </div>
 
-      {/* FEEDBACKS GERAIS */}
       {erro && (
         <div key={animacaoErro} className='upload-erro upload-erro-anim' style={{ marginBottom: 16 }}>
           <TriangleAlert size={20}/> {erro}
@@ -335,7 +326,6 @@ export default function GerenciarCoordenadores() {
       )}
       {sucesso && <div className='upload-sucesso' style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><CircleCheckBig size={20}/> {sucesso}</div>}
 
-      {/* --- CONTEÚDO: ABA NOVO --- */}
       {aba === 'novo' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, animation: 'fadeIn 0.3s ease' }}>
           <div className='perfil-grupo'>
@@ -392,7 +382,6 @@ export default function GerenciarCoordenadores() {
         </div>
       )}
 
-      {/* --- CONTEÚDO: ABA PROMOVER --- */}
       {aba === 'promover' && (
         <div style={{ animation: 'fadeIn 0.3s ease' }}>
           <div className="perfil-grupo" style={{ position: 'relative', marginBottom: 20 }}>
@@ -451,7 +440,6 @@ export default function GerenciarCoordenadores() {
         </div>
       )}
 
-      {/* RENDERIZA O MODAL DE CONFIRMAÇÃO SE HOUVER UM PROFESSOR SENDO PROMOVIDO */}
       {professorParaPromover && (
         <ModalConfirmarPromover
           professor={professorParaPromover}

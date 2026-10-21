@@ -34,10 +34,14 @@ export let appCheck;
 // 3. Inicializa os demais serviços
 export const auth = getAuth(app);
 
-// Inicializa o banco usando apenas a Memória RAM
+if (import.meta.env.DEV) {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+// Inicializa o banco forçando Long-Polling para evitar bloqueios de adblockers/firewall
 export const db = initializeFirestore(app, {
   localCache: memoryLocalCache(),
-  experimentalAutoDetectLongPolling: true
+  experimentalForceLongPolling: true, // Força o uso de long-polling
 }, 'firestoreproshelf');
 
 export const defaultDb = db;

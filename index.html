@@ -1,25 +1,40 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="../p-main-1/public/Group 45.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ProShelf — a estante inteligente do professor. Cronogramas, turmas, arquivos e calendário escolar em um só lugar." />
-    <title>ProShelf</title>
 
-    <!-- Fontes: um único request otimizado (substitui os ~12 @import bloqueantes espalhados nos CSS) -->
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../p-main-1/public/Group 45.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="ProShelf — a estante inteligente do professor. Cronogramas, turmas, arquivos e calendário escolar em um só lugar." />
+  <title>ProShelf</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Fontes: um único request otimizado (substitui os ~12 @import bloqueantes espalhados nos CSS) -->
 
-    <!-- 2. Faz o preload do CSS da fonte com alta prioridade -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- 3. Carrega o CSS de forma assíncrona (não bloqueia a renderização da tela) -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <!-- 2. Faz o preload do CSS da fonte com alta prioridade -->
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap">
+
+  <!-- 3. Carrega o CSS de forma assíncrona (não bloqueia a renderização da tela) -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" media="print"
+    onload="this.media='all'">
+</head>
+
+<body>
+
+  <div id="root" ></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <!-- <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script> -->
+<!-- new window.VLibras.Widget({ -->
+    <!-- rootPath: 'https://vlibras.gov.br/app',
+    position: 'L' // 'L' para Esquerda (Left) ou 'R' para Direita (Right)
+  }); -->
+  </script>
+</body>
+
 </html>
