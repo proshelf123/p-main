@@ -1597,6 +1597,7 @@ color: #af8bec !important;
 
 :root.dark-mode .crono-pill-numero-fixo{
   background: transparent !important;
+  font-size: 14px;
   color: white !important;
 }
 
@@ -1709,7 +1710,7 @@ color: #af8bec !important;
   text-align: center !important;
   width: 100% !important;
   min-height: 42px;
-  font-size: 1.5 !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
   color: #666 !important;
   user-select: none;
@@ -2711,19 +2712,12 @@ color: #af8bec !important;
     min-width: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    background: #ffffff !important;
+    background: #ffffff ;
     padding: 20px 16px 16px !important;
     border-radius: 16px !important;
-    border: 1px solid #e0d6ef !important;
     margin-bottom: 16px !important;
     position: relative !important;
     box-shadow: 0 4px 14px rgba(111, 59, 157, 0.06) !important;
-  }
-
-  /* Fundo para turmas divididas (A/B) */
-  .crono-editor-row.dividida {
-    background: #faf7ff !important;
-    border-color: #d9cbed !important;
   }
 
   /* 3. Ajuste das Células e Labels internas do Card */
