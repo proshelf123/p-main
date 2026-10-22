@@ -888,6 +888,10 @@ select.perfil-input option:checked {
    CRONOGRAMAS — novo design
    ══════════════════════════════════════════════════════════════ */
 
+.turma-a-e-b {
+  display: none;
+}
+
 /* Card principal */
 .crono-card {
   background: #fff;
@@ -2610,128 +2614,197 @@ color: #af8bec !important;
 }
 
 /* =======================================================
-   CORREÇÃO: EDITOR DE CRONOGRAMAS NO MOBILE (CARDS)
-   Cole isso na última linha do arquivo secoes.css
+   CORREÇÃO DEFENSIVA: CRONOGRAMAS E EDITOR NO MOBILE
    ======================================================= */
+
+/* Evita quebras de texto artificiais/hifenizadas como "Men-ta-lis-ta" */
+.crono-editor-row,
+.crono-pill-row,
+.dropdown-item,
+.dropdown-trigger {
+  hyphens: manual !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
 @media (max-width: 900px) {
 
-  /* 1. Remove o scroll horizontal e o fundo padrão de tabela */
-  .crono-editor-planilha {
-    border: none;
-    background: transparent;
-    overflow-x: visible;
+  .turma-a-e-b {
+    display: block;
   }
 
-  /* 2. Esconde o cabeçalho das colunas (Aula, Horário, etc.) */
-  .crono-editor-head {
-    display: none;
-  }
-
-  /* 3. Transforma a linha da tabela (row) num lindo Card */
-  .crono-editor-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    /* Duas colunas no topo */
-    gap: 12px;
-    min-width: 0 !important;
-    /* Isso mata o bug do scroll horizontal! */
-    background: #fff;
-    padding: 24px 16px 16px;
-    border-radius: 12px;
-    border: 1px solid #e0d6ef;
-    margin-bottom: 16px;
-    position: relative;
-    box-shadow: 0 4px 12px rgba(111, 59, 157, 0.05);
-  }
-
-  /* Fundo diferenciado quando a turma for dividida (A/B) */
+  /* Reseta as margens negativas e a largura calculada no modo 'Sim' para mobile */
   .crono-editor-row.dividida {
-    background: #faf7ff;
-    border: 1px solid #d9cbed;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #faf7ff !important;
+    border: 1px solid #d9cbed !important;
   }
 
-  /* 4. Reposicionamento dos Inputs dentro do Card */
-  .crono-editor-row>input[type='number'] {
-    grid-column: 1;
-  }
+  /* Suporte para Dark Mode */
+  :root.dark-mode .crono-editor-row.dividida {
+    background: #1f1a2b !important;
+    border-color: #3b2f4a !important;
+  } 
 
-  .crono-editor-row>input[type='time'] {
-    grid-column: 2;
-  }
-
-  /* Elementos que ocupam a largura total do card */
-  .crono-editor-row>.crono-editor-grade-dropdown,
-  .crono-editor-row>.crono-editor-toggle,
-  .crono-editor-row>input[type='text'],
-  /* Input de Sala */
-  .crono-editor-stack {
-    grid-column: 1 / -1;
-  }
-
-  /* Dá um destaque na chave "Sim/Não" (Turma A/B) */
-  .crono-editor-row>.crono-editor-toggle {
-    justify-content: flex-start;
-    padding: 6px 0;
-    border-bottom: 1px dashed #e0d6ef;
-    margin-bottom: 4px;
-    color: #6F3B9D !important;
-  }
-
-  /* Devolve as bordas aos inputs que haviam ficado transparentes na tabela */
-  .crono-editor-row>input,
-  .crono-editor-stack input,
-  .crono-editor-row>.crono-editor-grade-dropdown .dropdown-trigger,
-  .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+  /* Ajusta o container do toggle Sim/Não para não vazar a caixa no mobile */
+  .crono-editor-row .crono-editor-toggle {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    padding: 8px 14px !important;
+    min-height: 42px !important;
+    border-radius: 999px !important;
+    background: #f0ebf8 !important;
     border: 1px solid #e0d6ef !important;
-    border-radius: 8px !important;
-    background: #fff !important;
+    overflow: hidden !important;
   }
 
-  /* Espaçamento interno (Turmas A e B) */
-  .crono-editor-stack {
-    gap: 10px;
-    background: transparent;
+  /* Garante que o texto 'Sim' / 'Não' fique bem posicionado */
+  .crono-editor-row .crono-editor-toggle span {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
   }
 
-  /* 5. Posiciona o botão de deletar (Lixeira) como um botão flutuante no card */
-  .crono-editor-row>.crono-editor-remover {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #fff1f0;
-    border: 1px solid #ffccc7;
-    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15);
+  /* Garante o tamanho correto do checkbox no mobile */
+  .crono-editor-row .crono-editor-toggle input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
   }
 
-  /* --- Suporte ao Dark Mode nos Cards --- */
+  /* Suporte para Dark Mode no Toggle */
+  :root.dark-mode .crono-editor-row .crono-editor-toggle {
+    background: #1f1a2b !important;
+    border-color: #382d47 !important;
+  }
+
+  :root.dark-mode .crono-editor-row .crono-editor-toggle span {
+    color: #af8bec !important;
+  }
+
+  /* 1. Ajustes da Planilha/Container no Editor */
+  .crono-editor-planilha {
+    border: none !important;
+    background: transparent !important;
+    overflow-x: visible !important;
+  }
+
+  .crono-editor-head {
+    display: none !important;
+  }
+
+  /* 2. Transformação das linhas do Editor em Cards Organizados */
+  .crono-editor-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    padding: 20px 16px 16px !important;
+    border-radius: 16px !important;
+    border: 1px solid #e0d6ef !important;
+    margin-bottom: 16px !important;
+    position: relative !important;
+    box-shadow: 0 4px 14px rgba(111, 59, 157, 0.06) !important;
+  }
+
+  /* Fundo para turmas divididas (A/B) */
+  .crono-editor-row.dividida {
+    background: #faf7ff !important;
+    border-color: #d9cbed !important;
+  }
+
+  /* 3. Ajuste das Células e Labels internas do Card */
+  .crono-editor-row > .crono-celula {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    background: transparent !important;
+  }
+
+  /* Exibição limpa das Labels acima de cada input no Card */
+  .crono-celula::before {
+    display: block !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #7a6d86 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Estilização e tamanho padronizado dos campos do Editor no Mobile */
+  .crono-editor-row > .crono-celula input,
+  .crono-editor-row .dropdown-trigger,
+  .crono-editor-stack input,
+  .crono-editor-stack .dropdown-trigger {
+    width: 100% !important;
+    min-height: 44px !important;
+    border: 1px solid #e0d6ef !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Ajuste no botão de Sim/Não (Turma Dividida) */
+  .crono-editor-row .crono-editor-toggle {
+    width: 100% !important;
+    min-height: 40px !important;
+    justify-content: flex-start !important;
+    padding: 0 12px !important;
+    border: 1px solid #e0d6ef !important;
+    border-radius: 10px !important;
+    background: #f0ebf8 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Botão Lixeira posicionado no topo superior direito do Card */
+  .crono-editor-row > .crono-editor-remover {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    background: #fff1f0 !important;
+    border: 1px solid #ffccc7 !important;
+    box-shadow: 0 2px 6px rgba(237, 35, 92, 0.12) !important;
+    z-index: 2 !important;
+  }
+
+  /* Dark Mode Mobile */
   :root.dark-mode .crono-editor-row {
-    background: #1f1a2b;
-    border-color: #30273d;
+    background: #1f1a2b !important;
+    border-color: #30273d !important;
   }
 
   :root.dark-mode .crono-editor-row.dividida {
-    background: #251e33;
-    border-color: #3b2f4a;
+    background: #1f1a2b !important;
+    border-color: #3b2f4a !important;
   }
 
-  :root.dark-mode .crono-editor-row>.crono-editor-toggle {
-    border-bottom-color: #3b2f4a;
-  }
-
-  :root.dark-mode .crono-editor-row>input,
+  :root.dark-mode .crono-editor-row > .crono-celula input,
+  :root.dark-mode .crono-editor-row .dropdown-trigger,
   :root.dark-mode .crono-editor-stack input,
-  :root.dark-mode .crono-editor-row>.crono-editor-grade-dropdown .dropdown-trigger,
-  :root.dark-mode .crono-editor-stack .crono-editor-grade-dropdown .dropdown-trigger {
+  :root.dark-mode .crono-editor-stack .dropdown-trigger {
     border-color: #382d47 !important;
     background: #171321 !important;
-  }
-
-  :root.dark-mode .crono-editor-row>.crono-editor-remover {
-    background: #3b1d24;
-    border-color: #5c222b;
+    color: #ffffff !important;
   }
 }
 

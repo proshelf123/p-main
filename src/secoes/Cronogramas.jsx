@@ -1611,6 +1611,7 @@ useEffect(() => {
                           checked={aula.dividida}
                           onChange={(e) => atualizarAulaEditor(index, 'dividida', e.target.checked)}
                         />
+                                                <p className="turma-a-e-b" style={{color: "#af8bec"}}>Turma A e B: </p>
                         <span>{aula.dividida ? 'Sim ' : 'Não'}</span>
                       </label>
                     </div>
