@@ -1761,6 +1761,13 @@ color: #af8bec !important;
   font-size: 0.92rem;
 }
 
+.date-picker-popup {
+  left: auto !important;
+  right: 0 !important;
+  max-width: 90vw !important;
+  box-sizing: border-box !important;
+}
+
 /* Dark mode – Cronogramas */
 :root.dark-mode .crono-card {
   background: var(--branco);
